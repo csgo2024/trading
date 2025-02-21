@@ -1,0 +1,40 @@
+using Binance.Net.Objects.Models.Spot;
+
+namespace Trading.API.Application.Helpers;
+
+public static class CommonHelper
+{
+    public static decimal AdjustPriceByStepSize(decimal price, BinanceSymbolPriceFilter? filter)
+    {
+        if (filter == null) return 0;
+        decimal adjustedPrice = Math.Round(price / filter.TickSize, MidpointRounding.ToZero) * filter.TickSize;
+        if (adjustedPrice < filter.MinPrice)
+        {
+            throw new InvalidOperationException($"Price must be greater than {filter.MinPrice}");
+        }
+        if (adjustedPrice > filter.MaxPrice)
+        {
+            throw new InvalidOperationException($"Price must be less than {filter.MaxPrice}");
+        }
+        return TrimEndZero(adjustedPrice);
+    }
+
+    public static decimal AdjustQuantityBystepSize(decimal quantity, BinanceSymbolLotSizeFilter? filter)
+    {
+        if (filter == null) return 0;
+        decimal adjustedQuantity = Math.Round(quantity / filter.StepSize, MidpointRounding.ToZero) * filter.StepSize;
+        if (adjustedQuantity < filter.MinQuantity)
+        {
+            throw new InvalidOperationException($"Quantity must be greater than {filter.MinQuantity}");
+        }
+        if (adjustedQuantity > filter.MaxQuantity)
+        {
+            throw new InvalidOperationException($"Quantity must be less than {filter.MaxQuantity}");
+        }
+        return TrimEndZero(adjustedQuantity);
+    }
+    public static decimal TrimEndZero(decimal value)
+    {
+        return decimal.Parse(value.ToString("0.##############").TrimEnd('0'));
+    }
+}

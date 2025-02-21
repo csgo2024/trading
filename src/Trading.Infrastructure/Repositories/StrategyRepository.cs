@@ -1,0 +1,56 @@
+﻿using MongoDB.Driver;
+using Trading.Domain.Entities;
+using Trading.Domain.IRepositories;
+
+namespace Trading.Infrastructure.Repositories;
+
+public class StrategyRepository : BaseRepository<Strategy>, IStrategyRepository
+{
+    public StrategyRepository(IMongoDbContext context) : base(context)
+    {
+    }
+
+    public async Task<Strategy?> Add(Strategy entity)
+    {
+        var exist = await _collection.Find(x => x.Symbol == entity.Symbol && x.StrategyType == entity.StrategyType).FirstOrDefaultAsync();
+        if (exist != null)
+        {
+            throw new InvalidOperationException($"[{entity.StrategyType}-{entity.Symbol}] already exists.");
+        }
+        return await AddAsync(entity);
+    }
+
+    public async Task<List<Strategy>> GetAllStrategies()
+    {
+        var filter = Builders<Strategy>.Filter.Empty;
+        var strategies = await _collection.Find(filter).ToListAsync();
+        return strategies;
+    }
+
+    public async Task<Dictionary<string, Strategy>?> InitializeFeatureStrategies()
+    {
+        var data = await _collection.Find(x => x.StrategyType == StrategyType.Feature && x.Status == StrateStatus.Running).ToListAsync();
+        return data.ToDictionary(config => config.Symbol, config => config);
+    }
+
+    public async Task<Dictionary<string, Strategy>?> InitializeSpotStrategies()
+    {
+        var data = await _collection.Find(x => x.StrategyType == StrategyType.Spot && x.Status == StrateStatus.Running).ToListAsync();
+        return data.ToDictionary(config => config.Symbol, config => config);
+    }
+
+    public async Task<bool> UpdateOrderStatusAsync(Strategy entity, CancellationToken cancellationToken = default)
+    {
+        return await UpdateAsync(entity.Id, entity, cancellationToken);
+    }
+    public async Task<bool> UpdateStatusAsync(StrateStatus newStatus)
+    {
+        var filter = Builders<Strategy>.Filter.Empty; // 匹配所有文档
+        var update = Builders<Strategy>.Update
+            .Set(d => d.Status, newStatus)
+            .Set(d => d.UpdatedAt, DateTime.UtcNow);
+
+        _ = await _collection.UpdateManyAsync(filter, update);
+        return true;
+    }
+}

@@ -1,0 +1,51 @@
+name: 'CI'
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+permissions:
+  contents: read
+  actions: read
+  checks: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    env:
+      BUILD_CONFIGURATION: Release
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v2
+      with:
+        dotnet-version: '8.x'
+
+    - name: Restore dependencies
+      run: dotnet restore Trading.sln
+
+    - name: Build
+      run: dotnet build Trading.sln --configuration ${{ env.BUILD_CONFIGURATION }}
+
+    - name: Run tests
+      run: dotnet test tests/Trading.API.Tests/Trading.API.Tests.csproj --configuration ${{ env.BUILD_CONFIGURATION }} --logger trx --results-directory ${{ runner.temp }}
+
+    - name: Upload test results
+      uses: actions/upload-artifact@v3
+      with:
+        name: upload test-results
+        path: ${{ runner.temp }}/*.trx
+
+    - name: 'Test Report'
+      uses: dorny/test-reporter@v1
+      with:
+        name: Test Results
+        path: ${{ runner.temp }}/*.trx
+        reporter: dotnet-trx
+        fail-on-error: false

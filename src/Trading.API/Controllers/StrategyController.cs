@@ -1,0 +1,51 @@
+using MediatR;
+using Microsoft.AspNetCore.Mvc;
+using Trading.API.Application.Commands;
+using Trading.API.Application.Queries;
+using Trading.Common.Models;
+using Trading.Domain.Entities;
+
+namespace Trading.API.Controllers;
+
+[ApiController]
+[Route("api/v1/[controller]")]
+public class StrategyController : ControllerBase
+{
+    
+    private readonly IMediator _mediator;
+    private readonly IStrategyQuery _strategyQuery;
+
+    public StrategyController(IStrategyQuery strategyQuery, IMediator mediator)
+    {
+        _mediator = mediator;
+        _strategyQuery = strategyQuery;
+    }
+
+    [HttpGet("")]
+    public async Task<IActionResult> GetStrategyList([FromQuery] PagedRequest request, StrategyType type = StrategyType.Spot)
+    {
+        var strategy = await _strategyQuery.GetStrategyListAsync(request);
+        var apiResponse = ApiResponse<PagedResult<Strategy>>.SuccessResponse(strategy);
+        return Ok(apiResponse);
+    }
+    
+    [HttpPost("")]
+    public async Task<IActionResult> AddStrategy(CreateStrategyCommand command)
+    {
+        var result = await _mediator.Send(command);
+        return Ok(result);
+    }
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteStrategy(string id)
+    {
+        var command = new DeleteStrategyCommand() { Id = id };
+        var result = await _mediator.Send(command);
+        return Ok(result);
+    }
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetStrategyById(string id)
+    {
+        var data = await _strategyQuery.GetStrategyByIdAsync(id);
+        return Ok(ApiResponse<Strategy>.SuccessResponse(data));
+    }
+}
