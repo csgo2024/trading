@@ -39,6 +39,12 @@ namespace Trading.Infrastructure.Repositories
             var result = await _collection.DeleteOneAsync(x => x.Id == id, cancellationToken);
             return result.IsAcknowledged && result.DeletedCount > 0;
         }
+        public async Task<bool> EmptyAsync(CancellationToken cancellationToken = default)
+        {
+            var filter = Builders<T>.Filter.Empty;
+            var result = await _collection.DeleteManyAsync(filter, cancellationToken);
+            return result.IsAcknowledged && result.DeletedCount > 0;
+        }
 
         public async Task<PagedResult<T>> GetPagedResultAsync(PagedRequest pagedRequest, CancellationToken cancellationToken = default)
         {

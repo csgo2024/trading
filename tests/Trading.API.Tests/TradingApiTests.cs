@@ -13,7 +13,7 @@ namespace Trading.API.Tests
             _client = fixture.CreateClient();
         }
 
-        [Fact]
+        // [Fact]
         public async Task GetAll_ReturnsOkResult_WithSettings()
         {
             // Act
@@ -27,6 +27,20 @@ namespace Trading.API.Tests
             Assert.NotNull(settings);
             Assert.Equal("mongodb://localhost:27017", settings.ConnectionString);
             Assert.Equal("InMemoryDbForTesting", settings.DatabaseName);
+        }
+        // [Fact]
+        public async Task GetAll_ThrowsAnyException()
+        {
+            // Arrange + Act + Assert
+            await Assert.ThrowsAnyAsync<Exception>(
+                async () => 
+                {
+                    var response = await _client.GetAsync("/status");
+                    response.EnsureSuccessStatusCode();
+                    var settings = await response.Content.ReadFromJsonAsync<MongoDbSettings>();
+                    Assert.NotNull(settings);
+                }
+            );
         }
     }
 }

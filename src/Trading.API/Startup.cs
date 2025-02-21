@@ -1,7 +1,9 @@
+using System.Text;
 using Binance.Net.Clients;
 using CryptoExchange.Net.Authentication;
 using Microsoft.Extensions.Options;
 using Telegram.Bot;
+using Trading.API.Application.Commands;
 using Trading.API.Application.Logging;
 using Trading.API.Application.Middlerwares;
 using Trading.API.Application.Queries;
@@ -27,6 +29,7 @@ public class Startup
     {
         services.Configure<TelegramSettings>(Configuration.GetSection("TelegramSettings"));
         services.Configure<CredentialSettings>(Configuration.GetSection("CredentialSettings"));
+        services.Configure<string>(Configuration.GetSection("PrivateKey"));
 
         services.AddCors(options =>
         {
@@ -72,14 +75,25 @@ public class Startup
 
         services.AddScoped<IStrategyQuery, StrategyQuery>();
         services.AddSingleton<ICredentialQuery, CredentialQuery>();
-        
+
         services.AddSingleton<BinanceRestClient>(provider =>
         {
+            var privateKey = Configuration.GetSection("PrivateKey")?.Value ?? string.Empty;
             var query = provider.GetRequiredService<ICredentialQuery>();
-            var settings =  query.GetCredential() ;
+            var settings = query.GetCredential();
+            var apiKey = "your-api-key";
+            if (settings?.ApiKey != null)
+            {
+                apiKey = Encoding.UTF8.GetString(CreateCredentialCommandHandler.DecryptData(settings.ApiKey, privateKey));
+            }
+            var apiSecret = "your-secret";
+            if (settings?.ApiSecret != null)
+            {
+                apiSecret = Encoding.UTF8.GetString(CreateCredentialCommandHandler.DecryptData(settings.ApiSecret, privateKey));
+            }
             var restClient = new BinanceRestClient(options =>
             {
-                options.ApiCredentials = new ApiCredentials(settings?.ApiKey ?? "your", settings?.ApiSecret ?? "your");
+                options.ApiCredentials = new ApiCredentials(apiKey, apiSecret);
             });
             return restClient;
         });

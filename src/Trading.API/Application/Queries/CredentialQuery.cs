@@ -1,5 +1,4 @@
-﻿using Trading.Common.Models;
-using Trading.Domain.Entities;
+﻿using Trading.Domain.Entities;
 using Trading.Domain.IRepositories;
 
 namespace Trading.API.Application.Queries

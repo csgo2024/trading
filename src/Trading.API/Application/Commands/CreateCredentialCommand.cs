@@ -2,9 +2,9 @@
 
 namespace Trading.API.Application.Commands
 {
-    public class CreateCredentialCommand : IRequest<bool>
+    public class CreateCredentialCommand : IRequest<string>
     {
-        public string ApiKey { get; set; }
-        public string ApiSecret { get; set; }
+        public required string ApiKey { get; set; }
+        public required string ApiSecret { get; set; }
     }
 }
