@@ -1,10 +1,8 @@
 using MongoDB.Driver;
 using Testcontainers.MongoDb;
-using Trading.Domain;
-using Trading.Infrastructure.Repositories;
 using Xunit;
 
-namespace Trading.Infrastructure.Tests.Repositories;
+namespace Trading.Infrastructure.Tests;
 
 public class MongoDbFixture : IAsyncLifetime
 {
@@ -14,7 +12,7 @@ public class MongoDbFixture : IAsyncLifetime
     public MongoDbFixture()
     {
         MongoDbContainer = new MongoDbBuilder()
-            .WithName($"test-mongo-{Guid.NewGuid()}")
+            .WithName($"Trading-Infrastructure-Tests-{Guid.NewGuid()}")
             .WithPortBinding(27017, true)
             .Build();
     }

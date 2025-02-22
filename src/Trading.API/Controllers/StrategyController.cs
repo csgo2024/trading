@@ -33,14 +33,16 @@ public class StrategyController : ControllerBase
     public async Task<IActionResult> AddStrategy(CreateStrategyCommand command)
     {
         var result = await _mediator.Send(command);
-        return Ok(result);
+        var apiResponse = ApiResponse<Strategy>.SuccessResponse(result);
+        return Ok(apiResponse);
     }
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteStrategy(string id)
     {
         var command = new DeleteStrategyCommand() { Id = id };
         var result = await _mediator.Send(command);
-        return Ok(result);
+        var apiResponse = ApiResponse<bool>.SuccessResponse(result);
+        return Ok(apiResponse);
     }
     [HttpGet("{id}")]
     public async Task<IActionResult> GetStrategyById(string id)

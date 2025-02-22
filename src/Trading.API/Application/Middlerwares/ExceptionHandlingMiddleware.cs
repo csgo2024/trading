@@ -7,24 +7,24 @@ namespace Trading.API.Application.Middlerwares;
 
 public class CustomException : Exception
 {
-    public string ErrorCode { get; }
+    public int ErrorCode { get; }
 
     // 构造函数只接收 ErrorCode
-    public CustomException(string errorCode)
+    public CustomException(int errorCode)
         : base($"Error occurred with code: {errorCode}")
     {
         ErrorCode = errorCode;
     }
 
     // 构造函数接收 ErrorCode 和自定义消息
-    public CustomException(string errorCode, string message)
+    public CustomException(int errorCode, string message)
         : base(message)
     {
         ErrorCode = errorCode;
     }
 
     // 构造函数接收 ErrorCode、自定义消息和内部异常
-    public CustomException(string errorCode, string message, Exception innerException)
+    public CustomException(int errorCode, string message, Exception innerException)
         : base(message, innerException)
     {
         ErrorCode = errorCode;
@@ -121,7 +121,7 @@ public class ExceptionHandlingMiddleware
                $"Body: {bodyText}";
     }
 
-    private (string ErrorCode, string ErrorMessage) GetErrorDetails(IEnumerable<Exception> exceptions)
+    private (int errorCode, string ErrorMessage) GetErrorDetails(IEnumerable<Exception> exceptions)
     {
         // 优先获取CustomException
         var customException = exceptions.OfType<CustomException>().FirstOrDefault();
@@ -131,32 +131,32 @@ public class ExceptionHandlingMiddleware
         }
 
         // 如果没有CustomException，返回通用错误
-        return ("SYSTEM_ERROR", "An unexpected error occurred.");
+        return (-1, "An unexpected error occurred.");
     }
 }
 
 // 定义错误消息解析器接口
 public interface IErrorMessageResolver
 {
-    Task<string> ResolveAsync(string errorCode, string defaultMessage);
+    Task<string> ResolveAsync(int errorCode, string defaultMessage);
 }
 
 // 错误消息解析器的示例实现
 public class DefaultErrorMessageResolver : IErrorMessageResolver
 {
-    private readonly Dictionary<string, string> _errorMessages;
+    private readonly Dictionary<int, string> _errorMessages;
 
     public DefaultErrorMessageResolver()
     {
-        _errorMessages = new Dictionary<string, string>
+        _errorMessages = new Dictionary<int, string>
         {
             // 在这里定义错误代码对应的消息
-            { "SYSTEM_ERROR", "系统错误" },
+            { -1, "系统错误" },
             // 添加更多错误码和对应消息...
         };
     }
 
-    public Task<string> ResolveAsync(string errorCode, string defaultMessage)
+    public Task<string> ResolveAsync(int errorCode, string defaultMessage)
     {
         return Task.FromResult(_errorMessages.TryGetValue(errorCode, out string message)
             ? message

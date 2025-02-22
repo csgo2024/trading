@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Trading.API.Application.Commands;
+using Trading.Common.Models;
 
 namespace Trading.API.Controllers;
 
@@ -19,6 +20,7 @@ public class CredentialSettingController : ControllerBase
     public async Task<IActionResult> Add(CreateCredentialCommand command)
     {
         var result = await _mediator.Send(command);
-        return Ok(result);
+        var apiResponse = ApiResponse<string>.SuccessResponse(result);
+        return Ok(apiResponse);
     }
 }

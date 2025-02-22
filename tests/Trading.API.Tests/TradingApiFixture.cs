@@ -19,7 +19,7 @@ public class TradingApiFixture : WebApplicationFactory<Program>, IAsyncLifetime
     public TradingApiFixture()
     {
         _mongoDbContainer = new MongoDbBuilder()
-            .WithName("test-mongo-" + Guid.NewGuid())
+            .WithName("Trading-API-Tests" + Guid.NewGuid())
             .WithPortBinding(27017, true)
             .Build();
     }

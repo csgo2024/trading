@@ -18,6 +18,10 @@ public class PagedResult<T>
     public int PageSize { get; set; }    // 每页大小
     public int TotalCount { get; set; }  // 总记录数
 
+    public PagedResult()
+    {
+
+    }
     public PagedResult(List<T> items, int pageIndex, int pageSize, int totalCount)
     {
         Items = items;
