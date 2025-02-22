@@ -2,31 +2,30 @@ using MediatR;
 using Trading.Domain.Entities;
 using Trading.Domain.IRepositories;
 
-namespace Trading.API.Application.Telegram.Handlers
+namespace Trading.API.Application.Telegram.Handlers;
+
+public class ResumeStrategyHandler : ICommandHandler
 {
-    public class ResumeStrategyHandler : ICommandHandler
+    private readonly IMediator _mediator;
+    private readonly ILogger<ResumeStrategyHandler> _logger;
+
+    private readonly IStrategyRepository _strategyRepository;
+
+    public static string Command => "/resume";
+
+    public ResumeStrategyHandler(IMediator mediator, ILogger<ResumeStrategyHandler> logger, IStrategyRepository strategyRepository)
     {
-        private readonly IMediator _mediator;
-        private readonly ILogger<ResumeStrategyHandler> _logger;
+        _mediator = mediator;
+        _logger = logger;
+        _strategyRepository = strategyRepository;
+    }
 
-        private readonly IStrategyRepository _strategyRepository;
-
-        public static string Command => "/resume";
-
-        public ResumeStrategyHandler(IMediator mediator, ILogger<ResumeStrategyHandler> logger, IStrategyRepository strategyRepository)
+    public async Task HandleAsync(string parameters)
+    {
+        var result = await _strategyRepository.UpdateStatusAsync(StrateStatus.Running);
+        if (result)
         {
-            _mediator = mediator;
-            _logger = logger;
-            _strategyRepository = strategyRepository;
-        }
-
-        public async Task HandleAsync(string parameters)
-        {
-            var result = await _strategyRepository.UpdateStatusAsync(StrateStatus.Running);
-            if (result)
-            {
-                _logger.LogInformation("<pre>策略已成功恢复运行️</pre>");
-            }
+            _logger.LogInformation("<pre>策略已成功恢复运行️</pre>");
         }
     }
 }

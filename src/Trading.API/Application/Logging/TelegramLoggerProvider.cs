@@ -2,27 +2,26 @@ using Microsoft.Extensions.Options;
 using Telegram.Bot;
 using Trading.Common.Models;
 
-namespace Trading.API.Application.Logging
+namespace Trading.API.Application.Logging;
+
+public class TelegramLoggerProvider : ILoggerProvider
 {
-    public class TelegramLoggerProvider : ILoggerProvider
+    private readonly ITelegramBotClient _botClient;
+    private readonly TelegramSettings _settings;
+
+    public TelegramLoggerProvider(ITelegramBotClient botClient, IOptions<TelegramSettings> settings)
     {
-        private readonly ITelegramBotClient _botClient;
-        private readonly TelegramSettings _settings;
+        _botClient = botClient;
+        _settings = settings.Value;
+    }
 
-        public TelegramLoggerProvider(ITelegramBotClient botClient, IOptions<TelegramSettings> settings)
-        {
-            _botClient = botClient;
-            _settings = settings.Value;
-        }
+    public ILogger CreateLogger(string categoryName)
+    {
+        return new TelegramLogger(_botClient, _settings, categoryName);
+    }
 
-        public ILogger CreateLogger(string categoryName)
-        {
-            return new TelegramLogger(_botClient, _settings, categoryName);
-        }
-
-        public void Dispose()
-        {
-            // Cleanup if needed
-        }
+    public void Dispose()
+    {
+        // Cleanup if needed
     }
 }

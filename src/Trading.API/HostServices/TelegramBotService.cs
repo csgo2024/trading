@@ -3,70 +3,68 @@ using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Trading.API.Application.Telegram;
 
-namespace Trading.API.HostServices
+namespace Trading.API.HostServices;
+
+public class TelegramBotService : BackgroundService
 {
-    public class TelegramBotService : BackgroundService
+    private readonly ITelegramBotClient _botClient;
+    private readonly ITelegramCommandHandler _commandHandler;
+    private readonly ILogger<TelegramBotService> _logger;
+
+    public TelegramBotService(
+        ITelegramBotClient botClient,
+        ITelegramCommandHandler commandHandler,
+        ILogger<TelegramBotService> logger
+    )
     {
-        private readonly ITelegramBotClient _botClient;
-        private readonly ITelegramCommandHandler _commandHandler;
-        private readonly ILogger<TelegramBotService> _logger;
+        _botClient = botClient;
+        _commandHandler = commandHandler;
+        _logger = logger;
+    }
 
-        public TelegramBotService(
-            ITelegramBotClient botClient,
-            ITelegramCommandHandler commandHandler,
-            ILogger<TelegramBotService> logger
-            )
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        try
         {
-            _botClient = botClient;
-            _commandHandler = commandHandler;
-            _logger = logger;
+            _botClient.StartReceiving(
+                updateHandler: HandleUpdateAsync,
+                pollingErrorHandler: HandlePollingErrorAsync,
+                receiverOptions: new ReceiverOptions { AllowedUpdates = { } },
+                cancellationToken: stoppingToken
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "<pre>Failed to start bot service</pre>");
         }
 
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        await Task.Delay(-1, stoppingToken);
+    }
+
+    private async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
+    {
+        try
         {
-            try
-            {
-                _botClient.StartReceiving(
-                    updateHandler: HandleUpdateAsync,
-                    pollingErrorHandler: HandlePollingErrorAsync,
-                    receiverOptions: new ReceiverOptions { AllowedUpdates = { } },
-                    cancellationToken: stoppingToken
-                );
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "<pre>Failed to start bot service</pre>");
-            }
+            if (update.Message is not { } message)
+                return;
 
-            await Task.Delay(-1, stoppingToken);
-        }
+            if (message.Text is not { } messageText)
+                return;
 
-        private async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
-        {
-            try
+            if (messageText.StartsWith('/'))
             {
-                if (update.Message is not { } message)
-                    return;
-
-                if (message.Text is not { } messageText)
-                    return;
-
-                if (messageText.StartsWith('/'))
-                {
-                    await _commandHandler.HandleCommand(message);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "<pre>Error handling update {UpdateId}</pre>", update.Id);
+                await _commandHandler.HandleCommand(message);
             }
         }
-
-        private Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
+        catch (Exception ex)
         {
-            _logger.LogError(exception, "<pre>Telegram Polling Error</pre>");
-            return Task.CompletedTask;
+            _logger.LogError(ex, "<pre>Error handling update {UpdateId}</pre>", update.Id);
         }
     }
 
+    private Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
+    {
+        _logger.LogError(exception, "<pre>Telegram Polling Error</pre>");
+        return Task.CompletedTask;
+    }
 }

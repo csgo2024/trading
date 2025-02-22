@@ -1,4 +1,3 @@
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
@@ -8,98 +7,97 @@ using MongoDB.Driver;
 using Testcontainers.MongoDb;
 using Trading.API.HostServices;
 
-namespace Trading.API.Tests
+namespace Trading.API.Tests;
+
+public class TradingApiFixture : WebApplicationFactory<Program>, IAsyncLifetime 
 {
-    public class TradingApiFixture : WebApplicationFactory<Program>, IAsyncLifetime 
+    public IMongoDatabase Database { get; private set; }
+    private MongoClient _client;
+
+    private readonly MongoDbContainer _mongoDbContainer;
+
+    public TradingApiFixture()
     {
-        public IMongoDatabase Database { get; private set; }
-        private MongoClient _client;
+        _mongoDbContainer = new MongoDbBuilder()
+            .WithName("test-mongo-" + Guid.NewGuid())
+            .WithPortBinding(27017, true)
+            .Build();
+    }
 
-        private readonly MongoDbContainer _mongoDbContainer;
+    protected override IWebHostBuilder CreateWebHostBuilder()
+    {
+        return new WebHostBuilder()
+            .UseStartup<Startup>(); // 使用 Program 类作为启动类
+    }
 
-        public TradingApiFixture()
+    public async Task InitializeAsync()
+    {
+        await _mongoDbContainer.StartAsync();
+    }
+
+    protected override void ConfigureWebHost(IWebHostBuilder builder)
+    {
+        builder.ConfigureAppConfiguration(config => {
+            config.AddInMemoryCollection(
+            [
+                new KeyValuePair<string, string?>("MongoDbSettings:ConnectionString", _mongoDbContainer.GetConnectionString()), 
+                new KeyValuePair<string, string?>("MongoDbSettings:DatabaseName", "InMemoryDbForTesting")
+            ]);
+        });
+
+        builder.ConfigureServices(services =>
         {
-            _mongoDbContainer = new MongoDbBuilder()
-                .WithName("test-mongo-" + Guid.NewGuid())
-                .WithPortBinding(27017, true)
-                .Build();
-        }
+            // Remove the app's MongoDB registration.
+            var descriptor = services.SingleOrDefault(
+                d => d.ServiceType == typeof(IMongoDatabase));
 
-        protected override IWebHostBuilder CreateWebHostBuilder()
-        {
-            return new WebHostBuilder()
-                .UseStartup<Startup>(); // 使用 Program 类作为启动类
-        }
-
-        public async Task InitializeAsync()
-        {
-            await _mongoDbContainer.StartAsync();
-        }
-
-        protected override void ConfigureWebHost(IWebHostBuilder builder)
-        {
-            builder.ConfigureAppConfiguration(config => {
-                config.AddInMemoryCollection(
-                [
-                    new KeyValuePair<string, string?>("MongoDbSettings:ConnectionString", _mongoDbContainer.GetConnectionString()), 
-                    new KeyValuePair<string, string?>("MongoDbSettings:DatabaseName", "InMemoryDbForTesting")
-                ]);
-            });
-
-            builder.ConfigureServices(services =>
+            if (descriptor != null)
             {
-                // Remove the app's MongoDB registration.
-                var descriptor = services.SingleOrDefault(
-                    d => d.ServiceType == typeof(IMongoDatabase));
-
-                if (descriptor != null)
-                {
-                    services.Remove(descriptor);
-                }
-
-                // // Add a MongoDB context using an in-memory database for testing.
-                services.AddSingleton<IMongoDatabase>(sp =>
-                {
-                    var settings = MongoClientSettings.FromConnectionString(_mongoDbContainer.GetConnectionString());
-                    _client = new MongoClient(settings);
-                    return _client.GetDatabase("InMemoryDbForTesting");
-                });
-
-                // Remove the BackgroundService registration.
-                var hostedServiceDescriptor = services.SingleOrDefault(
-                    d => d.ServiceType == typeof(IHostedService) &&
-                         d.ImplementationType == typeof(SpotTradingService));
-
-                if (hostedServiceDescriptor != null)
-                {
-                    services.Remove(hostedServiceDescriptor);
-                }
-
-                // Build the service provider.
-                var sp = services.BuildServiceProvider();
-
-                // Create a scope to obtain a reference to the database context (IMongoDatabase).
-                using (var scope = sp.CreateScope())
-                {
-                    var scopedServices = scope.ServiceProvider;
-                    Database = scopedServices.GetRequiredService<IMongoDatabase>();
-                }
-            });
-        }
-
-        public new async Task DisposeAsync()
-        {
-            if (_client != null)
-            {
-                // Clean up the database after tests
-                _client.DropDatabase("InMemoryDbForTesting");
+                services.Remove(descriptor);
             }
-            await _mongoDbContainer.DisposeAsync();
-        }
 
-        public new void Dispose()
+            // // Add a MongoDB context using an in-memory database for testing.
+            services.AddSingleton<IMongoDatabase>(sp =>
+            {
+                var settings = MongoClientSettings.FromConnectionString(_mongoDbContainer.GetConnectionString());
+                _client = new MongoClient(settings);
+                return _client.GetDatabase("InMemoryDbForTesting");
+            });
+
+            // Remove the BackgroundService registration.
+            var hostedServiceDescriptor = services.SingleOrDefault(
+                d => d.ServiceType == typeof(IHostedService) &&
+                     d.ImplementationType == typeof(SpotTradingService));
+
+            if (hostedServiceDescriptor != null)
+            {
+                services.Remove(hostedServiceDescriptor);
+            }
+
+            // Build the service provider.
+            var sp = services.BuildServiceProvider();
+
+            // Create a scope to obtain a reference to the database context (IMongoDatabase).
+            using (var scope = sp.CreateScope())
+            {
+                var scopedServices = scope.ServiceProvider;
+                Database = scopedServices.GetRequiredService<IMongoDatabase>();
+            }
+        });
+    }
+
+    public new async Task DisposeAsync()
+    {
+        if (_client != null)
         {
-            base.Dispose();
+            // Clean up the database after tests
+            _client.DropDatabase("InMemoryDbForTesting");
         }
+        await _mongoDbContainer.DisposeAsync();
+    }
+
+    public new void Dispose()
+    {
+        base.Dispose();
     }
 }

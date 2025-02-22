@@ -4,58 +4,57 @@ using MediatR;
 using Trading.Domain.Entities;
 using Trading.Domain.IRepositories;
 
-namespace Trading.API.Application.Commands
+namespace Trading.API.Application.Commands;
+
+public class CreateCredentialCommandHandler : IRequestHandler<CreateCredentialCommand, string>
 {
-    public class CreateCredentialCommandHandler : IRequestHandler<CreateCredentialCommand, string>
+    private readonly ICredentialSettingRepository _credentialSettingRepository;
+    public CreateCredentialCommandHandler(ICredentialSettingRepository credentialSettingRepository)
     {
-        private readonly ICredentialSettingRepository _credentialSettingRepository;
-        public CreateCredentialCommandHandler(ICredentialSettingRepository credentialSettingRepository)
+        _credentialSettingRepository = credentialSettingRepository;
+    }
+
+    public static byte[] EncryptData(string data, string publicKey)
+    {
+        using (var rsa = new RSACryptoServiceProvider())
         {
-            _credentialSettingRepository = credentialSettingRepository;
-        }
+            rsa.FromXmlString(publicKey);
 
-        public static byte[] EncryptData(string data, string publicKey)
+            byte[] dataBytes = Encoding.UTF8.GetBytes(data);
+            byte[] encryptedData = rsa.Encrypt(dataBytes, false); // false 表示不使用 OAEP
+            return encryptedData;
+        }
+    }
+
+    // 使用私钥解密数据
+    public static byte[] DecryptData(byte[] encryptedBytes, string privateKey)
+    {
+        using (var rsa = new RSACryptoServiceProvider())
         {
-            using (var rsa = new RSACryptoServiceProvider())
-            {
-                rsa.FromXmlString(publicKey);
+            rsa.FromXmlString(privateKey);
 
-                byte[] dataBytes = Encoding.UTF8.GetBytes(data);
-                byte[] encryptedData = rsa.Encrypt(dataBytes, false); // false 表示不使用 OAEP
-                return encryptedData;
-            }
+            byte[] decryptedData = rsa.Decrypt(encryptedBytes, false); // false 表示不使用 OAEP
+            return decryptedData;
         }
+    }
 
-        // 使用私钥解密数据
-        public static byte[] DecryptData(byte[] encryptedBytes, string privateKey)
+    public async Task<string> Handle(CreateCredentialCommand request, CancellationToken cancellationToken)
+    {
+        var entity = new CredentialSettings();
+        entity.CreatedAt = DateTime.Now;
+        string privateKey = "";
+        // 生成密钥对
+        using (var rsa = new RSACryptoServiceProvider(2048))
         {
-            using (var rsa = new RSACryptoServiceProvider())
-            {
-                rsa.FromXmlString(privateKey);
+            string publicKey = rsa.ToXmlString(false); // 公钥
+            privateKey = rsa.ToXmlString(true); // 私钥
 
-                byte[] decryptedData = rsa.Decrypt(encryptedBytes, false); // false 表示不使用 OAEP
-                return decryptedData;
-            }
+            entity.ApiKey = EncryptData(request.ApiKey, publicKey);
+            entity.ApiSecret = EncryptData(request.ApiSecret, publicKey);
         }
-
-        public async Task<string> Handle(CreateCredentialCommand request, CancellationToken cancellationToken)
-        {
-            var entity = new CredentialSettings();
-            entity.CreatedAt = DateTime.Now;
-            string privateKey = "";
-            // 生成密钥对
-            using (var rsa = new RSACryptoServiceProvider(2048))
-            {
-                string publicKey = rsa.ToXmlString(false); // 公钥
-                privateKey = rsa.ToXmlString(true); // 私钥
-
-                entity.ApiKey = EncryptData(request.ApiKey, publicKey);
-                entity.ApiSecret = EncryptData(request.ApiSecret, publicKey);
-            }
-            entity.Status = 1;
-            await _credentialSettingRepository.EmptyAsync(cancellationToken);
-            await _credentialSettingRepository.AddAsync(entity, cancellationToken);
-            return privateKey;
-        }
+        entity.Status = 1;
+        await _credentialSettingRepository.EmptyAsync(cancellationToken);
+        await _credentialSettingRepository.AddAsync(entity, cancellationToken);
+        return privateKey;
     }
 }

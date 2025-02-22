@@ -2,55 +2,54 @@ using System.Text;
 using Trading.Domain.Entities;
 using Trading.Domain.IRepositories;
 
-namespace Trading.API.Application.Telegram.Handlers
+namespace Trading.API.Application.Telegram.Handlers;
+
+public class StatusCommandHandler : ICommandHandler
 {
-    public class StatusCommandHandler : ICommandHandler
+    private readonly IStrategyRepository _strategyRepository;
+    private readonly ILogger<StatusCommandHandler> _logger;
+    private const string DateTimeFormat = "yyyy-MM-dd HH:mm:ss";
+
+    public static string Command => "/status";
+
+    public StatusCommandHandler(
+        IStrategyRepository strategyRepository,
+        ILogger<StatusCommandHandler> logger)
     {
-        private readonly IStrategyRepository _strategyRepository;
-        private readonly ILogger<StatusCommandHandler> _logger;
-        private const string DateTimeFormat = "yyyy-MM-dd HH:mm:ss";
-
-        public static string Command => "/status";
-
-        public StatusCommandHandler(
-            IStrategyRepository strategyRepository,
-            ILogger<StatusCommandHandler> logger)
-        {
-            _strategyRepository = strategyRepository;
-            _logger = logger;
-        }
-
-        public async Task HandleAsync(string parameters)
-        {
-            var strategies = await _strategyRepository.GetAllStrategies();
-            var htmlBuilder = new StringBuilder();
-
-            htmlBuilder.AppendLine("<pre>");
-            foreach (var strategy in strategies)
-            {
-                var statusInfo = GetStatusInfo(strategy);
-                htmlBuilder.AppendLine($"ID: {strategy.Id}");
-                htmlBuilder.AppendLine($"{statusInfo.emoji} [{strategy.StrategyType}-{strategy.Symbol}]: {statusInfo.status}");
-                htmlBuilder.AppendLine($"目标价格: {strategy.TargetPrice} 💰");
-                htmlBuilder.AppendLine($"金额: {strategy.Amount} / 数量: {strategy.Quantity}");
-
-                if (strategy.UpdatedAt.HasValue)
-                {
-                    var updatedTime = strategy.UpdatedAt.Value.AddHours(8).ToString(DateTimeFormat);
-                    htmlBuilder.AppendLine($"最后更新: {updatedTime} 🕒");
-                }
-                htmlBuilder.AppendLine("------------------------");
-            }
-            htmlBuilder.AppendLine("</pre>");
-
-            _logger.LogInformation(htmlBuilder.ToString());
-        }
-
-        private static (string emoji, string status) GetStatusInfo(Strategy strategy) => strategy.Status switch
-        {
-            StrateStatus.Running => ("🟢", "运行中"),
-            StrateStatus.Paused => ("🔴", "已暂停"),
-            _ => ("⚠️", "未知状态")
-        };
+        _strategyRepository = strategyRepository;
+        _logger = logger;
     }
+
+    public async Task HandleAsync(string parameters)
+    {
+        var strategies = await _strategyRepository.GetAllStrategies();
+        var htmlBuilder = new StringBuilder();
+
+        htmlBuilder.AppendLine("<pre>");
+        foreach (var strategy in strategies)
+        {
+            var statusInfo = GetStatusInfo(strategy);
+            htmlBuilder.AppendLine($"ID: {strategy.Id}");
+            htmlBuilder.AppendLine($"{statusInfo.emoji} [{strategy.StrategyType}-{strategy.Symbol}]: {statusInfo.status}");
+            htmlBuilder.AppendLine($"目标价格: {strategy.TargetPrice} 💰");
+            htmlBuilder.AppendLine($"金额: {strategy.Amount} / 数量: {strategy.Quantity}");
+
+            if (strategy.UpdatedAt.HasValue)
+            {
+                var updatedTime = strategy.UpdatedAt.Value.AddHours(8).ToString(DateTimeFormat);
+                htmlBuilder.AppendLine($"最后更新: {updatedTime} 🕒");
+            }
+            htmlBuilder.AppendLine("------------------------");
+        }
+        htmlBuilder.AppendLine("</pre>");
+
+        _logger.LogInformation(htmlBuilder.ToString());
+    }
+
+    private static (string emoji, string status) GetStatusInfo(Strategy strategy) => strategy.Status switch
+    {
+        StrateStatus.Running => ("🟢", "运行中"),
+        StrateStatus.Paused => ("🔴", "已暂停"),
+        _ => ("⚠️", "未知状态")
+    };
 }

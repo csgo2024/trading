@@ -55,7 +55,7 @@ public class Startup
         services.AddSingleton<DeleteStrategyHandler>();
         services.AddSingleton<StopStrategyHandler>();
         services.AddSingleton<ResumeStrategyHandler>();
-        services.AddSingleton<CommandHandlerFactory>();
+        services.AddSingleton<TelegramCommandHandlerFactory>();
         services.AddSingleton<ITelegramCommandHandler, TelegramCommandHandler>();
 
         services.AddHostedService<TelegramBotService>();

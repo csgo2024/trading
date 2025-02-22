@@ -3,17 +3,17 @@ using Telegram.Bot;
 using Telegram.Bot.Types.Enums;
 using Trading.Common.Models;
 
-namespace Trading.API.Application.Telegram.Handlers
+namespace Trading.API.Application.Telegram.Handlers;
+
+public class StartCommandHandler : ICommandHandler
 {
-    public class StartCommandHandler : ICommandHandler
-    {
-        private readonly ILogger<StartCommandHandler> _logger;
-        private readonly ITelegramBotClient _botClient;
-        private readonly string _chatId;
+    private readonly ILogger<StartCommandHandler> _logger;
+    private readonly ITelegramBotClient _botClient;
+    private readonly string _chatId;
 
-        public static string Command => "/start";
+    public static string Command => "/start";
 
-        private static string HelpText = @"
+    private static string HelpText = @"
 📚 <b>命令帮助</b>
 /start - 显示此帮助信息
 /status - 查看所有策略状态
@@ -23,28 +23,27 @@ namespace Trading.API.Application.Telegram.Handlers
 /delete - 删除指定的策略
 ";
 
-        private static string CreateStrategyText = @"
+    private static string CreateStrategyText = @"
 创建策略
 ```/create {""Symbol"":""BTCUSDT"",""Amount"":1000,""PriceDropPercentage"":0.2,""Leverage"":5,""StrategyType"":""Feature""}```
 删除策略
 ```/delete 12345```";
 
 
-        public StartCommandHandler(ILogger<StartCommandHandler> logger, ITelegramBotClient botClient, IOptions<TelegramSettings> settings)
-        {
-            _logger = logger;
-            _botClient = botClient;
-            _chatId = settings.Value.ChatId;
-        }
+    public StartCommandHandler(ILogger<StartCommandHandler> logger, ITelegramBotClient botClient, IOptions<TelegramSettings> settings)
+    {
+        _logger = logger;
+        _botClient = botClient;
+        _chatId = settings.Value.ChatId;
+    }
 
-        public async Task HandleAsync(string parameters)
-        {
-            _logger.LogInformation(HelpText);
-            await _botClient.SendTextMessageAsync(
-                chatId: _chatId,
-                text: CreateStrategyText,
-                parseMode: ParseMode.MarkdownV2
-            );
-        }
+    public async Task HandleAsync(string parameters)
+    {
+        _logger.LogInformation(HelpText);
+        await _botClient.SendTextMessageAsync(
+            chatId: _chatId,
+            text: CreateStrategyText,
+            parseMode: ParseMode.MarkdownV2
+        );
     }
 }

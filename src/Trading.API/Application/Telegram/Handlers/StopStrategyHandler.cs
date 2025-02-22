@@ -2,30 +2,29 @@ using MediatR;
 using Trading.Domain.Entities;
 using Trading.Domain.IRepositories;
 
-namespace Trading.API.Application.Telegram.Handlers
+namespace Trading.API.Application.Telegram.Handlers;
+
+public class StopStrategyHandler : ICommandHandler
 {
-    public class StopStrategyHandler : ICommandHandler
+    private readonly IMediator _mediator;
+    private readonly ILogger<StopStrategyHandler> _logger;
+    private readonly IStrategyRepository _strategyRepository;
+
+    public static string Command => "/stop";
+
+    public StopStrategyHandler(IMediator mediator, ILogger<StopStrategyHandler> logger, IStrategyRepository strategyRepository) 
     {
-        private readonly IMediator _mediator;
-        private readonly ILogger<StopStrategyHandler> _logger;
-        private readonly IStrategyRepository _strategyRepository;
+        _mediator = mediator;
+        _logger = logger;
+        _strategyRepository = strategyRepository;
+    }
 
-        public static string Command => "/stop";
-
-        public StopStrategyHandler(IMediator mediator, ILogger<StopStrategyHandler> logger, IStrategyRepository strategyRepository) 
+    public async Task HandleAsync(string parameters)
+    {
+        var result = await _strategyRepository.UpdateStatusAsync(StrateStatus.Paused);
+        if (result)
         {
-            _mediator = mediator;
-            _logger = logger;
-            _strategyRepository = strategyRepository;
-        }
-
-        public async Task HandleAsync(string parameters)
-        {
-            var result = await _strategyRepository.UpdateStatusAsync(StrateStatus.Paused);
-            if (result)
-            {
-                _logger.LogInformation("<pre>策略已成功暂停 ⏸️</pre>");
-            }
+            _logger.LogInformation("<pre>策略已成功暂停 ⏸️</pre>");
         }
     }
 }

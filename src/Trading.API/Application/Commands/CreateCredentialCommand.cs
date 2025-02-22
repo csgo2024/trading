@@ -1,10 +1,9 @@
 ﻿using MediatR;
 
-namespace Trading.API.Application.Commands
+namespace Trading.API.Application.Commands;
+
+public class CreateCredentialCommand : IRequest<string>
 {
-    public class CreateCredentialCommand : IRequest<string>
-    {
-        public required string ApiKey { get; set; }
-        public required string ApiSecret { get; set; }
-    }
+    public required string ApiKey { get; set; }
+    public required string ApiSecret { get; set; }
 }
