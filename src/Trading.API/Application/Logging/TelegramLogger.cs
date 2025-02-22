@@ -1,5 +1,6 @@
 using System.Text;
 using Telegram.Bot;
+using Telegram.Bot.Requests;
 using Telegram.Bot.Types.Enums;
 using Trading.Common.Models;
 
@@ -32,34 +33,44 @@ public class TelegramLogger : ILogger
         if (!IsEnabled(logLevel))
             return;
 
-        Task.Run(async () =>
-        {
-            try
-            {
-                var message = new StringBuilder();
-                message.AppendLine($"{GetEmoji(logLevel)} [{logLevel.ToString()}]");
-                message.AppendLine($"⏰ {DateTime.UtcNow.AddHours(8)}");
-                message.AppendLine($"{formatter(state, exception)}");
-
-                if (exception != null)
-                {
-                    message.AppendLine($"❌ {exception.Message}");
-                    message.AppendLine($"🔍 {exception.StackTrace}");
-                }
-
-                await _botClient.SendTextMessageAsync(
-                    chatId: _chatId,
-                    text: message.ToString(),
-                    parseMode: ParseMode.Html
-                );
-            }
-            catch
-            {
-                // Fallback logging if needed
-            }
-        });
+        // 将异步操作包装在一个可等待的任务中
+        var task = LogInternalAsync(logLevel, state, exception, formatter);
+        task.ConfigureAwait(false).GetAwaiter().GetResult();
     }
 
+    // 新增内部异步方法
+    internal async Task LogInternalAsync<TState>(
+        LogLevel logLevel,
+        TState state,
+        Exception? exception,
+        Func<TState, Exception?, string> formatter)
+    {
+        try
+        {
+            var message = new StringBuilder();
+            message.AppendLine($"{GetEmoji(logLevel)} [{logLevel.ToString()}]");
+            message.AppendLine($"⏰ {DateTime.UtcNow.AddHours(8)}");
+            message.AppendLine($"{formatter(state, exception)}");
+
+            if (exception != null)
+            {
+                message.AppendLine($"❌ {exception.Message}");
+                message.AppendLine($"🔍 {exception.StackTrace}");
+            }
+
+            await _botClient.SendRequest(new SendMessageRequest
+                {
+                    ChatId = _chatId,
+                    Text = message.ToString(),
+                    ParseMode = ParseMode.Html,
+                }
+            );
+        }
+        catch(Exception e )
+        {
+            // Fallback logging if needed
+        }
+    }
     private static string GetEmoji(LogLevel level) => level switch
     {
         LogLevel.Trace => "🔍",

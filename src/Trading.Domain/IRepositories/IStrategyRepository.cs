@@ -4,7 +4,7 @@ namespace Trading.Domain.IRepositories;
 
 public interface IStrategyRepository: IRepository<Strategy>
 {
-    Task<Strategy?> Add(Strategy entity);
+    Task<Strategy?> Add(Strategy entity, CancellationToken cancellationToken = default);
     Task<bool> UpdateOrderStatusAsync(Strategy entity, CancellationToken cancellationToken = default);
 
     Task<bool> UpdateStatusAsync(StrateStatus newStatus);

@@ -41,7 +41,9 @@ public class TradingApiFixture : WebApplicationFactory<Program>, IAsyncLifetime
             config.AddInMemoryCollection(
             [
                 new KeyValuePair<string, string?>("MongoDbSettings:ConnectionString", _mongoDbContainer.GetConnectionString()), 
-                new KeyValuePair<string, string?>("MongoDbSettings:DatabaseName", "InMemoryDbForTesting")
+                new KeyValuePair<string, string?>("MongoDbSettings:DatabaseName", "InMemoryDbForTesting"),
+                // BotToken Format: {chatId}:{string} , chatId type is long.
+                new KeyValuePair<string, string?>("TelegramSettings:BotToken", "6061388873:your-bot-token")
             ]);
         });
 

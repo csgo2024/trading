@@ -28,18 +28,4 @@ public class TradingApiTests : IClassFixture<TradingApiFixture>
         Assert.Contains("mongodb://", settings.ConnectionString);
         Assert.Equal("InMemoryDbForTesting", settings.DatabaseName);
     }
-
-    public async Task GetAll_ThrowsAnyException()
-    {
-        // Arrange + Act + Assert
-        await Assert.ThrowsAnyAsync<Exception>(
-            async () => 
-            {
-                var response = await _client.GetAsync("/status");
-                response.EnsureSuccessStatusCode();
-                var settings = await response.Content.ReadFromJsonAsync<MongoDbSettings>();
-                Assert.NotNull(settings);
-            }
-        );
-    }
 }

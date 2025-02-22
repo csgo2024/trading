@@ -1,10 +1,11 @@
-﻿using MediatR;
+﻿using System.ComponentModel.DataAnnotations;
+using MediatR;
 using Trading.Domain.Entities;
 using Trading.Domain.IRepositories;
 
 namespace Trading.API.Application.Commands;
 
-public class CreateStrategyCommandHandler : IRequestHandler<CreateStrategyCommand, bool>
+public class CreateStrategyCommandHandler : IRequestHandler<CreateStrategyCommand, Strategy>
 {
     private readonly IStrategyRepository _strategyRepository;
 
@@ -12,17 +13,30 @@ public class CreateStrategyCommandHandler : IRequestHandler<CreateStrategyComman
     {
         _strategyRepository = strategyRepository;
     }
-    public async Task<bool> Handle(CreateStrategyCommand request, CancellationToken cancellationToken)
+
+    public async Task<Strategy> Handle(CreateStrategyCommand request, CancellationToken cancellationToken)
     {
-        var entity = new Strategy();
-        entity.CreatedAt = DateTime.Now;
-        entity.PriceDropPercentage = request.PriceDropPercentage;
-        entity.StrategyType = request.StrategyType;
-        entity.Symbol = request.Symbol;
-        entity.Amount = request.Amount;
-        entity.Leverage = request.Leverage;
-        entity.Status = StrateStatus.Running;
-        await _strategyRepository.Add(entity);
-        return true;
+        // Validate the command
+        var validationContext = new ValidationContext(request);
+        var validationResults = new List<ValidationResult>();
+        if (!Validator.TryValidateObject(request, validationContext, validationResults, validateAllProperties: true))
+        {
+            var errorMessage = string.Join("; ", validationResults.Select(r => r.ErrorMessage));
+            throw new ValidationException(errorMessage);
+        }
+
+        var entity = new Strategy
+        {
+            CreatedAt = DateTime.Now,
+            PriceDropPercentage = request.PriceDropPercentage,
+            StrategyType = request.StrategyType,
+            Symbol = request.Symbol,
+            Amount = request.Amount,
+            Leverage = request.Leverage,
+            Status = StrateStatus.Running
+        };
+
+        await _strategyRepository.Add(entity, cancellationToken);
+        return entity;
     }
 }
