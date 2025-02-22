@@ -44,7 +44,7 @@ public static class ServiceCollectionExtensions
         services.Configure<MongoDbSettings>(
             configuration.GetSection("MongoDbSettings"));
 
-        services.AddSingleton<IMongoDatabase>(provider =>
+        services.AddSingleton(provider =>
         {
             var value = provider.GetRequiredService<IOptions<MongoDbSettings>>().Value;
             var settings = MongoClientSettings.FromConnectionString(value.ConnectionString);

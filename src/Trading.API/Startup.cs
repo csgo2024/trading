@@ -76,7 +76,7 @@ public class Startup
         services.AddScoped<IStrategyQuery, StrategyQuery>();
         services.AddSingleton<ICredentialQuery, CredentialQuery>();
 
-        services.AddSingleton<BinanceRestClient>(provider =>
+        services.AddSingleton(provider =>
         {
             var privateKey = Configuration.GetSection("PrivateKey")?.Value ?? string.Empty;
             var query = provider.GetRequiredService<ICredentialQuery>();

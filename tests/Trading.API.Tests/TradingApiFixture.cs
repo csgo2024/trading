@@ -59,7 +59,7 @@ public class TradingApiFixture : WebApplicationFactory<Program>, IAsyncLifetime
             }
 
             // // Add a MongoDB context using an in-memory database for testing.
-            services.AddSingleton<IMongoDatabase>(sp =>
+            services.AddSingleton(sp =>
             {
                 var settings = MongoClientSettings.FromConnectionString(_mongoDbContainer.GetConnectionString());
                 _client = new MongoClient(settings);

@@ -30,7 +30,7 @@ public class CreateStrategyHandler : ICommandHandler
             {
                 throw new InvalidOperationException("<pre>Failed to Deserialize parameters.</pre>");
             }
-            await _mediator.Send(command);
+            await _mediator.Send(command, CancellationToken.None);
             _logger.LogInformation("<pre>策略创建成功 ✅</pre>");
         }
         catch (Exception ex)
