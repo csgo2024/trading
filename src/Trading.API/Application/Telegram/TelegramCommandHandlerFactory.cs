@@ -21,7 +21,7 @@ public class TelegramCommandHandlerFactory
         };
     }
 
-    public ICommandHandler? GetHandler(string command)
+    public virtual ICommandHandler? GetHandler(string command)
     {
         return _handlers.TryGetValue(command, out var handlerType)
             ? _serviceProvider.GetService(handlerType) as ICommandHandler

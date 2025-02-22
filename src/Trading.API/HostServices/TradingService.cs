@@ -5,6 +5,18 @@ using Trading.Domain.IRepositories;
 
 namespace Trading.API.HostServices;
 
+/*
+    The  TradingService  class is a background service that runs every 2 minutes. 
+    It initializes and executes the strategies that are active in the system. 
+    It uses the  AccountProcessorFactory  and  ExecutorFactory  to 
+    get the appropriate account processor and executor for each strategy. 
+    The  ExecuteAsync  method is the main method of the background service. 
+    It runs in a loop until the service is stopped. 
+    It calls the  InitializeAndExecuteStrategies  method to initialize and execute the strategies. 
+    The  InitializeAndExecuteStrategies  method initializes the active strategies 
+    from the database and then executes them.
+    It creates a task for each strategy and executes it using the appropriate account processor and executor.
+*/
 public class TradingService : BackgroundService
 {
     private readonly ILogger<TradingService> _logger;
@@ -16,7 +28,7 @@ public class TradingService : BackgroundService
     public TradingService(
         ILogger<TradingService> logger,
         AccountProcessorFactory accountProcessorFactory,
-        IStrategyRepository strategyRepository, 
+        IStrategyRepository strategyRepository,
         ExecutorFactory executorFactory)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -31,27 +43,35 @@ public class TradingService : BackgroundService
         {
             try
             {
-                _strategies = await _strategyRepository.InitializeActiveStrategies();
-                if (_strategies != null && _strategies.Count > 0)
-                {
-                    var tasks = new List<Task>();
-                    foreach (var strategy in _strategies.Values)
-                    {
-                        var accountProcessor = _accountProcessorFactory.GetAccountProcessor(strategy.AccountType);
-                        var executor = _executorFactory.GetExecutor(strategy.StrategyType);
-                        if (executor != null && accountProcessor != null)
-                        {
-                            tasks.Add(executor.Execute(accountProcessor, strategy, stoppingToken));
-                        }
-                    }
-                    await Task.WhenAll(tasks);
-                }
+                await InitializeAndExecuteStrategies(stoppingToken);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Trading strategy execution failed.");
             }
-            await Task.Delay(TimeSpan.FromMinutes(2), stoppingToken);
+            await SimulateDelay(TimeSpan.FromMinutes(2), stoppingToken);
         }
+    }
+
+    private async Task InitializeAndExecuteStrategies(CancellationToken stoppingToken)
+    {
+        _strategies = await _strategyRepository.InitializeActiveStrategies();
+        if (_strategies == null || _strategies.Count == 0) return;
+
+        var tasks = _strategies.Values.Select(strategy =>
+        {
+            var accountProcessor = _accountProcessorFactory.GetAccountProcessor(strategy.AccountType);
+            var executor = _executorFactory.GetExecutor(strategy.StrategyType);
+            return executor != null && accountProcessor != null
+                ? executor.Execute(accountProcessor, strategy, stoppingToken)
+                : Task.CompletedTask;
+        }).ToList();
+
+        await Task.WhenAll(tasks);
+    }
+    // 新增的模拟延迟方法
+    public virtual Task SimulateDelay(TimeSpan delay, CancellationToken stoppingToken)
+    {
+        return Task.Delay(delay, stoppingToken);  // 默认行为使用 Task.Delay
     }
 }

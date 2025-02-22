@@ -17,7 +17,7 @@ public class AccountProcessorFactory
         };
     }
 
-    public IAccountProcessor? GetAccountProcessor(AccountType type)
+    public virtual IAccountProcessor? GetAccountProcessor(AccountType type)
     {
         return _handlers.TryGetValue(type, out var handlerType)
             ? _serviceProvider.GetService(handlerType) as IAccountProcessor

@@ -17,7 +17,7 @@ public class ExecutorFactory
         };
     }
 
-    public IExecutor? GetExecutor(StrategyType strategyType)
+    public virtual IExecutor? GetExecutor(StrategyType strategyType)
     {
         return _handlers.TryGetValue(strategyType, out var handlerType)
             ? _serviceProvider.GetService(handlerType) as IExecutor
