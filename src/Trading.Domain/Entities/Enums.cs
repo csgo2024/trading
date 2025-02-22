@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 namespace Trading.Domain.Entities;
 
 [JsonConverter(typeof(JsonStringEnumConverter))]
-public enum StrategyType
+public enum AccountType
 {
     [Description("Spot")]
     Spot,
@@ -13,11 +13,21 @@ public enum StrategyType
     Feature,
 }
 [JsonConverter(typeof(JsonStringEnumConverter))]
-public enum StrateStatus
+public enum StateStatus
 {
     [Description("Paused")]
     Paused,
 
     [Description("Running")]
     Running,
+}
+
+[JsonConverter(typeof(JsonStringEnumConverter))]
+public enum StrategyType
+{
+    [Description("DCA")]
+    DCA,
+
+    [Description("BuyBottom")]
+    BuyBottom,
 }

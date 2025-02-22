@@ -16,8 +16,10 @@ public class Strategy: BaseEntity
     
     public decimal Quantity { get; set; }
     public int? Leverage { get; set; }
+    public AccountType AccountType { get; set; }
+    
     public StrategyType StrategyType { get; set; }
 
-    public StrateStatus Status { get; set; }
+    public StateStatus Status { get; set; }
 
 }

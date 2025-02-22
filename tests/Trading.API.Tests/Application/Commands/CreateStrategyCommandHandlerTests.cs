@@ -26,7 +26,7 @@ public class CreateStrategyCommandHandlerTests
         { 
             Symbol = "BTCUSDT",
             PriceDropPercentage = 0.05m,
-            StrategyType = StrategyType.Spot,
+            AccountType = AccountType.Spot,
             Amount = 100,
             Leverage = 10
         };
@@ -46,10 +46,10 @@ public class CreateStrategyCommandHandlerTests
         // Verify entity properties
         Assert.Equal(command.Symbol, result.Symbol);
         Assert.Equal(command.PriceDropPercentage, result.PriceDropPercentage);
-        Assert.Equal(command.StrategyType, result.StrategyType);
+        Assert.Equal(command.AccountType, result.AccountType);
         Assert.Equal(command.Amount, result.Amount);
         Assert.Equal(command.Leverage, result.Leverage);
-        Assert.Equal(StrateStatus.Running, result.Status);
+        Assert.Equal(StateStatus.Running, result.Status);
         Assert.True(result.CreatedAt <= DateTime.Now);
         Assert.True(result.CreatedAt > DateTime.Now.AddMinutes(-1));
 
@@ -67,7 +67,7 @@ public class CreateStrategyCommandHandlerTests
             Amount = 5, // Invalid: less than minimum 10
             PriceDropPercentage = 0.5m,
             Leverage = 10,
-            StrategyType = StrategyType.Spot
+            AccountType = AccountType.Spot
         };
 
         // Act & Assert
@@ -85,7 +85,7 @@ public class CreateStrategyCommandHandlerTests
             Amount = 100,
             PriceDropPercentage = 1.0m, // Invalid: greater than maximum 0.9
             Leverage = 10,
-            StrategyType = StrategyType.Spot
+            AccountType = AccountType.Spot
         };
 
         // Act & Assert

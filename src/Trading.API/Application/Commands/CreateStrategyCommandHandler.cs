@@ -29,11 +29,12 @@ public class CreateStrategyCommandHandler : IRequestHandler<CreateStrategyComman
         {
             CreatedAt = DateTime.Now,
             PriceDropPercentage = request.PriceDropPercentage,
-            StrategyType = request.StrategyType,
+            AccountType = request.AccountType,
             Symbol = request.Symbol,
             Amount = request.Amount,
             Leverage = request.Leverage,
-            Status = StrateStatus.Running
+            Status = StateStatus.Running,
+            StrategyType = request.StrategyType,
         };
 
         await _strategyRepository.Add(entity, cancellationToken);

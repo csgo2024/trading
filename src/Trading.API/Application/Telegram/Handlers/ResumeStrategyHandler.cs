@@ -22,7 +22,7 @@ public class ResumeStrategyHandler : ICommandHandler
 
     public async Task HandleAsync(string parameters)
     {
-        var result = await _strategyRepository.UpdateStatusAsync(StrateStatus.Running);
+        var result = await _strategyRepository.UpdateStatusAsync(StateStatus.Running);
         if (result)
         {
             _logger.LogInformation("<pre>策略已成功恢复运行️</pre>");

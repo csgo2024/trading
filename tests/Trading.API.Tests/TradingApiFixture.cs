@@ -68,8 +68,8 @@ public class TradingApiFixture : WebApplicationFactory<Program>, IAsyncLifetime
 
             // Remove the BackgroundService registration.
             var hostedServiceDescriptor = services.SingleOrDefault(
-                d => d.ServiceType == typeof(IHostedService) &&
-                     d.ImplementationType == typeof(SpotTradingService));
+            d => d.ServiceType == typeof(IHostedService) &&
+                 d.ImplementationType == typeof(TradingService));
 
             if (hostedServiceDescriptor != null)
             {

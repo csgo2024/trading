@@ -1,7 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using System.Net;
-using Trading.API.Application.Extensions;
+using Trading.API.Extensions;
 
 namespace Trading.API.Application.Middlerwares;
 

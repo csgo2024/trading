@@ -24,10 +24,10 @@ public class StrategyRepositoryTests : IClassFixture<MongoDbFixture>
         var strategy = new Strategy
         {
             Symbol = "BTCUSDT",
-            StrategyType = StrategyType.Spot,
+            AccountType = AccountType.Spot,
             Amount = 100,
             PriceDropPercentage = 0.1m,
-            Status = StrateStatus.Running
+            Status = StateStatus.Running
         };
 
         // Act
@@ -47,18 +47,18 @@ public class StrategyRepositoryTests : IClassFixture<MongoDbFixture>
         var strategy = new Strategy
         {
             Symbol = "ETHUSDT",
-            StrategyType = StrategyType.Feature,
+            AccountType = AccountType.Feature,
             Amount = 100,
-            Status = StrateStatus.Running
+            Status = StateStatus.Running
         };
         await _repository.Add(strategy);
 
         var duplicateStrategy = new Strategy
         {
             Symbol = "ETHUSDT",
-            StrategyType = StrategyType.Feature,
+            AccountType = AccountType.Feature,
             Amount = 200,
-            Status = StrateStatus.Running
+            Status = StateStatus.Running
         };
 
         // Act & Assert
@@ -74,8 +74,8 @@ public class StrategyRepositoryTests : IClassFixture<MongoDbFixture>
         await _repository.EmptyAsync();
         var strategies = new List<Strategy>
         {
-            new() { Symbol = "BTC1", StrategyType = StrategyType.Spot },
-            new() { Symbol = "BTC2", StrategyType = StrategyType.Feature }
+            new() { Symbol = "BTC1", AccountType = AccountType.Spot },
+            new() { Symbol = "BTC2", AccountType = AccountType.Feature }
         };
 
         foreach (var strategy in strategies)
@@ -99,9 +99,9 @@ public class StrategyRepositoryTests : IClassFixture<MongoDbFixture>
         await _repository.EmptyAsync();
         var strategies = new List<Strategy>
         {
-            new() { Symbol = "F1", StrategyType = StrategyType.Feature, Status = StrateStatus.Running },
-            new() { Symbol = "F2", StrategyType = StrategyType.Feature, Status = StrateStatus.Paused },
-            new() { Symbol = "S1", StrategyType = StrategyType.Spot, Status = StrateStatus.Running }
+            new() { Symbol = "F1", AccountType = AccountType.Feature, Status = StateStatus.Running },
+            new() { Symbol = "F2", AccountType = AccountType.Feature, Status = StateStatus.Paused },
+            new() { Symbol = "S1", AccountType = AccountType.Spot, Status = StateStatus.Running }
         };
 
         foreach (var strategy in strategies)
@@ -124,9 +124,9 @@ public class StrategyRepositoryTests : IClassFixture<MongoDbFixture>
         await _repository.EmptyAsync();
         var strategies = new List<Strategy>
         {
-            new() { Symbol = "S1", StrategyType = StrategyType.Spot, Status = StrateStatus.Running },
-            new() { Symbol = "S2", StrategyType = StrategyType.Spot, Status = StrateStatus.Paused },
-            new() { Symbol = "F1", StrategyType = StrategyType.Feature, Status = StrateStatus.Running }
+            new() { Symbol = "S1", AccountType = AccountType.Spot, Status = StateStatus.Running },
+            new() { Symbol = "S2", AccountType = AccountType.Spot, Status = StateStatus.Paused },
+            new() { Symbol = "F1", AccountType = AccountType.Feature, Status = StateStatus.Running }
         };
 
         foreach (var strategy in strategies)
@@ -151,13 +151,13 @@ public class StrategyRepositoryTests : IClassFixture<MongoDbFixture>
         var strategy = new Strategy
         {
             Symbol = "BTCUSDT",
-            StrategyType = StrategyType.Spot,
-            Status = StrateStatus.Running
+            AccountType = AccountType.Spot,
+            Status = StateStatus.Running
         };
         var addedStrategy = await _repository.Add(strategy);
 
         // Update status
-        addedStrategy.Status = StrateStatus.Paused;
+        addedStrategy.Status = StateStatus.Paused;
 
         // Act
         var result = await _repository.UpdateOrderStatusAsync(addedStrategy);
@@ -165,7 +165,7 @@ public class StrategyRepositoryTests : IClassFixture<MongoDbFixture>
         // Assert
         Assert.True(result);
         var updatedStrategy = await _repository.GetByIdAsync(addedStrategy.Id);
-        Assert.Equal(StrateStatus.Paused, updatedStrategy.Status);
+        Assert.Equal(StateStatus.Paused, updatedStrategy.Status);
     }
 
     [Fact]
@@ -175,8 +175,8 @@ public class StrategyRepositoryTests : IClassFixture<MongoDbFixture>
         await _repository.EmptyAsync();
         var strategies = new List<Strategy>
         {
-            new() { Symbol = "S1", Status = StrateStatus.Running },
-            new() { Symbol = "S2", Status = StrateStatus.Running }
+            new() { Symbol = "S1", Status = StateStatus.Running },
+            new() { Symbol = "S2", Status = StateStatus.Running }
         };
 
         foreach (var strategy in strategies)
@@ -185,11 +185,11 @@ public class StrategyRepositoryTests : IClassFixture<MongoDbFixture>
         }
 
         // Act
-        var result = await _repository.UpdateStatusAsync(StrateStatus.Paused);
+        var result = await _repository.UpdateStatusAsync(StateStatus.Paused);
 
         // Assert
         Assert.True(result);
         var allStrategies = await _repository.GetAllStrategies();
-        Assert.All(allStrategies, s => Assert.Equal(StrateStatus.Paused, s.Status));
+        Assert.All(allStrategies, s => Assert.Equal(StateStatus.Paused, s.Status));
     }
 }

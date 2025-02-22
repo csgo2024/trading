@@ -9,6 +9,7 @@ using Trading.API.Application.Middlerwares;
 using Trading.API.Application.Queries;
 using Trading.API.Application.Telegram;
 using Trading.API.Application.Telegram.Handlers;
+using Trading.API.Extensions;
 using Trading.API.HostServices;
 using Trading.Common.Models;
 using Trading.Domain.Entities;
@@ -58,9 +59,6 @@ public class Startup
         services.AddSingleton<TelegramCommandHandlerFactory>();
         services.AddSingleton<ITelegramCommandHandler, TelegramCommandHandler>();
 
-        services.AddHostedService<TelegramBotService>();
-        services.AddHostedService<SpotTradingService>();
-        services.AddHostedService<FeatureTradingService>();
         services.AddSingleton<IErrorMessageResolver, DefaultErrorMessageResolver>();
         services.AddLogging(builder =>
         {
@@ -110,6 +108,9 @@ public class Startup
             cfg.RegisterServicesFromAssemblyContaining(typeof(Program));
 
         });
+        services.AddHostedService<TelegramBotService>();
+        services.AddHostedService<TradingService>();
+        services.AddTradingServices();
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

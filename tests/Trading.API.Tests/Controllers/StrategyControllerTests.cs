@@ -60,7 +60,7 @@ public class StrategyControllerTests
             Symbol = "BTCUSDT",
             Amount = 100,
             PriceDropPercentage = 0.1m,
-            StrategyType = StrategyType.Spot
+            AccountType = AccountType.Spot
         };
 
         _mockMediator
@@ -107,7 +107,7 @@ public class StrategyControllerTests
         {
             Id = id,
             Symbol = "BTCUSDT",
-            StrategyType = StrategyType.Spot
+            AccountType = AccountType.Spot
         };
 
         _mockStrategyQuery

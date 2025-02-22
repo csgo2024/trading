@@ -16,6 +16,8 @@ public class CreateStrategyCommand : IRequest<Strategy>
     
     [Range(1, 20, ErrorMessage = "Leverage must be between 1 and 20")]
     public int Leverage { get; set; }
-    
-    public StrategyType StrategyType { get; set; }
+
+    public AccountType AccountType { get; set; } = AccountType.Spot;
+
+    public StrategyType StrategyType { get; set; } = StrategyType.BuyBottom;
 }

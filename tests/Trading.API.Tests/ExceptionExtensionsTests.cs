@@ -1,4 +1,4 @@
-using Trading.API.Application.Extensions;
+using Trading.API.Extensions;
 
 namespace Trading.API.Tests;
 

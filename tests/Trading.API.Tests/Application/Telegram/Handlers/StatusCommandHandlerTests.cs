@@ -33,7 +33,7 @@ public class StatusCommandHandlerTests
         _mockStrategyRepository.Setup(x => x.GetAllStrategies())
             .ReturnsAsync(new List<Strategy>
             {
-                new Strategy { Symbol = "BTCUSDT", Status = StrateStatus.Running }
+                new Strategy { Symbol = "BTCUSDT", Status = StateStatus.Running }
             });
 
         // Act

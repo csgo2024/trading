@@ -22,7 +22,7 @@ public class StrategyController : ControllerBase
     }
 
     [HttpGet("")]
-    public async Task<IActionResult> GetStrategyList([FromQuery] PagedRequest request, StrategyType type = StrategyType.Spot)
+    public async Task<IActionResult> GetStrategyList([FromQuery] PagedRequest request, AccountType type = AccountType.Spot)
     {
         var strategy = await _strategyQuery.GetStrategyListAsync(request);
         var apiResponse = ApiResponse<PagedResult<Strategy>>.SuccessResponse(strategy);

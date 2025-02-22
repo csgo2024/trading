@@ -1,4 +1,4 @@
-namespace Trading.API.Application.Extensions;
+namespace Trading.API.Extensions;
 
 public static class ExceptionExtensions
 {

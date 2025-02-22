@@ -12,12 +12,18 @@ public class StrategyRepository : BaseRepository<Strategy>, IStrategyRepository
 
     public async Task<Strategy?> Add(Strategy entity, CancellationToken cancellationToken = default)
     {
-        var exist = await _collection.Find(x => x.Symbol == entity.Symbol && x.StrategyType == entity.StrategyType).FirstOrDefaultAsync(cancellationToken);
+        var exist = await _collection.Find(x => x.Symbol == entity.Symbol && x.AccountType == entity.AccountType).FirstOrDefaultAsync(cancellationToken);
         if (exist != null)
         {
-            throw new InvalidOperationException($"[{entity.StrategyType}-{entity.Symbol}] already exists.");
+            throw new InvalidOperationException($"[{entity.AccountType}-{entity.Symbol}] already exists.");
         }
         return await AddAsync(entity, cancellationToken);
+    }
+
+    public async Task<Dictionary<string, Strategy>?> InitializeActiveStrategies()
+    {
+        var data = await _collection.Find(x => x.Status == StateStatus.Running).ToListAsync();
+        return data.ToDictionary(config => $"{config.Symbol}{config.AccountType}", config => config);
     }
 
     public async Task<List<Strategy>> GetAllStrategies()
@@ -29,13 +35,13 @@ public class StrategyRepository : BaseRepository<Strategy>, IStrategyRepository
 
     public async Task<Dictionary<string, Strategy>?> InitializeFeatureStrategies()
     {
-        var data = await _collection.Find(x => x.StrategyType == StrategyType.Feature && x.Status == StrateStatus.Running).ToListAsync();
+        var data = await _collection.Find(x => x.AccountType == AccountType.Feature && x.Status == StateStatus.Running).ToListAsync();
         return data.ToDictionary(config => config.Symbol, config => config);
     }
 
     public async Task<Dictionary<string, Strategy>?> InitializeSpotStrategies()
     {
-        var data = await _collection.Find(x => x.StrategyType == StrategyType.Spot && x.Status == StrateStatus.Running).ToListAsync();
+        var data = await _collection.Find(x => x.AccountType == AccountType.Spot && x.Status == StateStatus.Running).ToListAsync();
         return data.ToDictionary(config => config.Symbol, config => config);
     }
 
@@ -43,7 +49,7 @@ public class StrategyRepository : BaseRepository<Strategy>, IStrategyRepository
     {
         return await UpdateAsync(entity.Id, entity, cancellationToken);
     }
-    public async Task<bool> UpdateStatusAsync(StrateStatus newStatus)
+    public async Task<bool> UpdateStatusAsync(StateStatus newStatus)
     {
         var filter = Builders<Strategy>.Filter.Empty; // 匹配所有文档
         var update = Builders<Strategy>.Update

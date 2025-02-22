@@ -30,7 +30,7 @@ public class StatusCommandHandler : ICommandHandler
         {
             var statusInfo = GetStatusInfo(strategy);
             htmlBuilder.AppendLine($"ID: {strategy.Id}");
-            htmlBuilder.AppendLine($"{statusInfo.emoji} [{strategy.StrategyType}-{strategy.Symbol}]: {statusInfo.status}");
+            htmlBuilder.AppendLine($"{statusInfo.emoji} [{strategy.AccountType}-{strategy.Symbol}]: {statusInfo.status}");
             htmlBuilder.AppendLine($"目标价格: {strategy.TargetPrice} 💰");
             htmlBuilder.AppendLine($"金额: {strategy.Amount} / 数量: {strategy.Quantity}");
 
@@ -48,8 +48,8 @@ public class StatusCommandHandler : ICommandHandler
 
     private static (string emoji, string status) GetStatusInfo(Strategy strategy) => strategy.Status switch
     {
-        StrateStatus.Running => ("🟢", "运行中"),
-        StrateStatus.Paused => ("🔴", "已暂停"),
+        StateStatus.Running => ("🟢", "运行中"),
+        StateStatus.Paused => ("🔴", "已暂停"),
         _ => ("⚠️", "未知状态")
     };
 }

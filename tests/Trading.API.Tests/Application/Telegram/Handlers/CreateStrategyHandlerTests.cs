@@ -31,7 +31,7 @@ public class CreateStrategyHandlerTests
             Amount = 100,
             PriceDropPercentage = 0.1m,
             Leverage = 10,
-            StrategyType = StrategyType.Spot
+            AccountType = AccountType.Spot
         };
         var parameters = JsonConvert.SerializeObject(command);
 
@@ -42,8 +42,8 @@ public class CreateStrategyHandlerTests
             Amount = command.Amount,
             PriceDropPercentage = command.PriceDropPercentage,
             Leverage = command.Leverage,
-            StrategyType = command.StrategyType,
-            Status = StrateStatus.Running
+            AccountType = command.AccountType,
+            Status = StateStatus.Running
         };
 
         _mockMediator
@@ -60,7 +60,7 @@ public class CreateStrategyHandlerTests
         Assert.Equal(command.Amount, capturedCommand.Amount);
         Assert.Equal(command.PriceDropPercentage, capturedCommand.PriceDropPercentage);
         Assert.Equal(command.Leverage, capturedCommand.Leverage);
-        Assert.Equal(command.StrategyType, capturedCommand.StrategyType);
+        Assert.Equal(command.AccountType, capturedCommand.AccountType);
 
         _mockMediator.Verify(x => x.Send(It.IsAny<CreateStrategyCommand>(), default), Times.Once);
         VerifyLoggerCalled("策略创建成功 ✅", LogLevel.Information);
@@ -104,7 +104,7 @@ public class CreateStrategyHandlerTests
             Amount = 100,
             PriceDropPercentage = 0.1m,
             Leverage = 10,
-            StrategyType = StrategyType.Spot
+            AccountType = AccountType.Spot
         };
         var parameters = JsonConvert.SerializeObject(command);
 

@@ -21,7 +21,7 @@ public class StopStrategyHandler : ICommandHandler
 
     public async Task HandleAsync(string parameters)
     {
-        var result = await _strategyRepository.UpdateStatusAsync(StrateStatus.Paused);
+        var result = await _strategyRepository.UpdateStatusAsync(StateStatus.Paused);
         if (result)
         {
             _logger.LogInformation("<pre>策略已成功暂停 ⏸️</pre>");
