@@ -1,17 +1,29 @@
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using MongoDB.Driver;
+using Testcontainers.MongoDb;
 using Trading.API.HostServices;
 
 namespace Trading.API.Tests
 {
-    public class TradingApiFixture : WebApplicationFactory<Program>, IDisposable
+    public class TradingApiFixture : WebApplicationFactory<Program>, IAsyncLifetime 
     {
         public IMongoDatabase Database { get; private set; }
         private MongoClient _client;
+
+        private readonly MongoDbContainer _mongoDbContainer;
+
+        public TradingApiFixture()
+        {
+            _mongoDbContainer = new MongoDbBuilder()
+                .WithName("test-mongo-" + Guid.NewGuid())
+                .WithPortBinding(27017, true)
+                .Build();
+        }
 
         protected override IWebHostBuilder CreateWebHostBuilder()
         {
@@ -19,34 +31,39 @@ namespace Trading.API.Tests
                 .UseStartup<Startup>(); // 使用 Program 类作为启动类
         }
 
+        public async Task InitializeAsync()
+        {
+            await _mongoDbContainer.StartAsync();
+        }
+
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
             builder.ConfigureAppConfiguration(config => {
                 config.AddInMemoryCollection(
                 [
-                    new KeyValuePair<string, string?>("MongoDbSettings:ConnectionString", "mongodb://localhost:27017"),
+                    new KeyValuePair<string, string?>("MongoDbSettings:ConnectionString", _mongoDbContainer.GetConnectionString()), 
                     new KeyValuePair<string, string?>("MongoDbSettings:DatabaseName", "InMemoryDbForTesting")
                 ]);
             });
+
             builder.ConfigureServices(services =>
             {
-                // // Remove the app's MongoDB registration.
-                // var descriptor = services.SingleOrDefault(
-                //     d => d.ServiceType ==
-                //         typeof(IMongoDatabase));
+                // Remove the app's MongoDB registration.
+                var descriptor = services.SingleOrDefault(
+                    d => d.ServiceType == typeof(IMongoDatabase));
 
-                // if (descriptor != null)
-                // {
-                //     services.Remove(descriptor);
-                // }
+                if (descriptor != null)
+                {
+                    services.Remove(descriptor);
+                }
 
                 // // Add a MongoDB context using an in-memory database for testing.
-                // services.AddSingleton<IMongoDatabase>(sp =>
-                // {
-                //     var settings = MongoClientSettings.FromConnectionString("mongodb://localhost:27017");
-                //     _client = new MongoClient(settings);
-                //     return _client.GetDatabase("InMemoryDbForTesting");
-                // });
+                services.AddSingleton<IMongoDatabase>(sp =>
+                {
+                    var settings = MongoClientSettings.FromConnectionString(_mongoDbContainer.GetConnectionString());
+                    _client = new MongoClient(settings);
+                    return _client.GetDatabase("InMemoryDbForTesting");
+                });
 
                 // Remove the BackgroundService registration.
                 var hostedServiceDescriptor = services.SingleOrDefault(
@@ -70,13 +87,18 @@ namespace Trading.API.Tests
             });
         }
 
-        public new void Dispose()
+        public new async Task DisposeAsync()
         {
             if (_client != null)
             {
                 // Clean up the database after tests
                 _client.DropDatabase("InMemoryDbForTesting");
             }
+            await _mongoDbContainer.DisposeAsync();
+        }
+
+        public new void Dispose()
+        {
             base.Dispose();
         }
     }
