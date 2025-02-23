@@ -1,18 +1,17 @@
-name: 'CI'
+name: Trading Service CI
+
 on:
   push:
-    branches:
-      - main
+    branches: [ main, master ]
   pull_request:
-    branches:
-      - main
+    branches: [ main, master ]
 permissions:
   contents: read
   actions: read
   checks: write
 
 jobs:
-  build:
+  build-and-test:
     runs-on: ubuntu-latest
 
     env:
@@ -20,12 +19,12 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
 
     - name: Setup .NET Core
-      uses: actions/setup-dotnet@v2
+      uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '8.x'
+        dotnet-version: '8.0.x'
 
     - name: Restore dependencies
       run: dotnet restore Trading.sln
@@ -34,10 +33,10 @@ jobs:
       run: dotnet build Trading.sln --configuration ${{ env.BUILD_CONFIGURATION }}
 
     - name: Run tests
-      run: dotnet test tests/Trading.API.Tests/Trading.API.Tests.csproj --configuration ${{ env.BUILD_CONFIGURATION }} --logger trx --results-directory ${{ runner.temp }}
+      run: dotnet test Trading.sln --configuration ${{ env.BUILD_CONFIGURATION }} --logger trx --results-directory ${{ runner.temp }}
 
     - name: Upload test results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: upload test-results
         path: ${{ runner.temp }}/*.trx
