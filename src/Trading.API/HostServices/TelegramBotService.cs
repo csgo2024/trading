@@ -64,7 +64,7 @@ public class TelegramBotService : BackgroundService
 
     private Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
     {
-        _logger.LogError(exception, "<pre>Telegram Polling Error</pre>");
+        // _logger.LogError(exception, "<pre>Telegram Polling Error</pre>");
         return Task.CompletedTask;
     }
 }
