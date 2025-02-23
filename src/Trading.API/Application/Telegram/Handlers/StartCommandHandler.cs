@@ -40,7 +40,7 @@ public class StartCommandHandler : ICommandHandler
     public async Task HandleAsync(string parameters)
     {
         _logger.LogInformation(HelpText);
-        await _botClient.SendTextMessageAsync(
+        await _botClient.SendMessage(
             chatId: _chatId,
             text: CreateStrategyText,
             parseMode: ParseMode.MarkdownV2
