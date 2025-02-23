@@ -1,3 +1,4 @@
+using System.Text;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
@@ -43,7 +44,10 @@ public class TradingApiFixture : WebApplicationFactory<Program>, IAsyncLifetime
                 new KeyValuePair<string, string?>("MongoDbSettings:ConnectionString", _mongoDbContainer.GetConnectionString()), 
                 new KeyValuePair<string, string?>("MongoDbSettings:DatabaseName", "InMemoryDbForTesting"),
                 // BotToken Format: {chatId}:{string} , chatId type is long.
-                new KeyValuePair<string, string?>("TelegramSettings:BotToken", "6061388873:your-bot-token")
+                new KeyValuePair<string, string?>("TelegramSettings:BotToken", "6061388873:your-bot-token"),
+                
+                new KeyValuePair<string, string?>("CredentialSettings:ApiKey", Convert.ToBase64String(Encoding.UTF8.GetBytes("your-api-secret"))),
+                new KeyValuePair<string, string?>("CredentialSettings:ApiSecret", Convert.ToBase64String(Encoding.UTF8.GetBytes("your-api-secret"))),
             ]);
         });
 
