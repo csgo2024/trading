@@ -11,6 +11,7 @@ using Trading.API.Application.Telegram;
 using Trading.API.Application.Telegram.Handlers;
 using Trading.API.Extensions;
 using Trading.API.HostServices;
+using Trading.API.Services.Trading.Account;
 using Trading.Common.Models;
 using Trading.Domain.Entities;
 using Trading.Infrastructure;
@@ -100,6 +101,19 @@ public class Startup
         {
             var settings = provider.GetRequiredService<IOptions<TelegramSettings>>().Value;
             return new TelegramBotClient(settings.BotToken);
+        });
+
+        services.AddSingleton<BinanceSpotRestClientWrapper>(provider =>
+        {
+            var binanceRestClient = provider.GetRequiredService<BinanceRestClient>();
+            return new BinanceSpotRestClientWrapper(binanceRestClient.SpotApi.Trading,
+                                                    binanceRestClient.SpotApi.ExchangeData);
+        });
+        services.AddSingleton<BinanceFeatureRestClientWrapper>(provider =>
+        {
+            var binanceRestClient = provider.GetRequiredService<BinanceRestClient>();
+            return new BinanceFeatureRestClientWrapper(binanceRestClient.UsdFuturesApi.Trading,
+                                                       binanceRestClient.UsdFuturesApi.ExchangeData);
         });
 
 
