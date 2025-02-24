@@ -75,7 +75,7 @@ public class TradingServiceTests
         // Arrange
         _mockStrategyRepository
             .Setup(x => x.InitializeActiveStrategies())
-            .ReturnsAsync((Dictionary<string, Strategy>)null);
+            .ReturnsAsync(new Dictionary<string, Strategy> { });
 
         // Act
         Task executeTask = Task.Run(() => _service.Object.StartAsync(_cts.Token));
@@ -96,9 +96,9 @@ public class TradingServiceTests
     public async Task ExecuteAsync_WithActiveStrategies_ShouldExecuteStrategies()
     {
         // Arrange
-        var strategy = new Strategy 
-        { 
-            Symbol = "BTCUSDT", 
+        var strategy = new Strategy
+        {
+            Symbol = "BTCUSDT",
             StrategyType = StrategyType.BuyBottom,
             AccountType = AccountType.Spot,
             Status = StateStatus.Running
@@ -128,13 +128,13 @@ public class TradingServiceTests
     [InlineData(false, true)]  // accountProcessor is null
     [InlineData(false, false)] // both are null
     public async Task ExecuteAsync_WhenProcessorOrExecutorIsNull_ShouldSkipStrategy(
-        bool hasExecutor, 
+        bool hasExecutor,
         bool hasProcessor)
     {
         // Arrange
-        var strategy = new Strategy 
-        { 
-            Symbol = "BTCUSDT", 
+        var strategy = new Strategy
+        {
+            Symbol = "BTCUSDT",
             StrategyType = StrategyType.BuyBottom,
             AccountType = AccountType.Spot,
             Status = StateStatus.Running
@@ -165,7 +165,7 @@ public class TradingServiceTests
             x => x.Execute(_mockAccountProcessor.Object, strategy, It.IsAny<CancellationToken>()),
             Times.Never,
             "Strategy should not be executed when processor or executor is null");
-            
+
         // Verify the service continues running
         _service.Verify(
             x => x.SimulateDelay(It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()),

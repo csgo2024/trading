@@ -7,8 +7,8 @@ namespace Trading.Infrastructure.Tests;
 public class MongoDbFixture : IAsyncLifetime
 {
     public MongoDbContainer MongoDbContainer { get; }
-    public IMongoDbContext MongoContext { get; private set; }
-    
+    public IMongoDbContext? MongoContext { get; private set; }
+
     public MongoDbFixture()
     {
         MongoDbContainer = new MongoDbBuilder()
@@ -20,7 +20,7 @@ public class MongoDbFixture : IAsyncLifetime
     public async Task InitializeAsync()
     {
         await MongoDbContainer.StartAsync();
-        
+
         var mongoClient = new MongoClient(MongoDbContainer.GetConnectionString());
         MongoContext = new MongoDbContext(mongoClient.GetDatabase(Guid.NewGuid().ToString()));
         MongoDbConfigration.Configure();

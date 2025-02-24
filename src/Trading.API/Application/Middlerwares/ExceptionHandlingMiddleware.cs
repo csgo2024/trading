@@ -1,6 +1,6 @@
+using System.Net;
 using System.Text;
 using System.Text.Json;
-using System.Net;
 using Trading.API.Extensions;
 
 namespace Trading.API.Application.Middlerwares;
@@ -9,21 +9,18 @@ public class CustomException : Exception
 {
     public int ErrorCode { get; }
 
-    // 构造函数只接收 ErrorCode
     public CustomException(int errorCode)
         : base($"Error occurred with code: {errorCode}")
     {
         ErrorCode = errorCode;
     }
 
-    // 构造函数接收 ErrorCode 和自定义消息
     public CustomException(int errorCode, string message)
         : base(message)
     {
         ErrorCode = errorCode;
     }
 
-    // 构造函数接收 ErrorCode、自定义消息和内部异常
     public CustomException(int errorCode, string message, Exception innerException)
         : base(message, innerException)
     {
@@ -63,13 +60,10 @@ public class ExceptionHandlingMiddleware
     {
         context.Response.ContentType = "application/json";
 
-        // 记录请求信息
         var requestInfo = await GetRequestInfoAsync(context.Request);
 
-        // 获取所有嵌套异常
         var exceptions = exception.FlattenExceptions().ToList();
 
-        // 记录所有异常信息
         var exceptionMessages = exceptions.Select(ex => ex.Message);
         _logger.LogError(
             "Request: {RequestInfo}\nExceptions: {ExceptionMessages}",
@@ -77,7 +71,6 @@ public class ExceptionHandlingMiddleware
             string.Join("\n", exceptionMessages)
         );
 
-        // 获取自定义异常信息
         var (errorCode, errorMessage) = GetErrorDetails(exceptions);
 
         context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
@@ -91,11 +84,10 @@ public class ExceptionHandlingMiddleware
         await context.Response.WriteAsync(JsonSerializer.Serialize(response));
     }
 
-    private async Task<string> GetRequestInfoAsync(HttpRequest request)
+    private static async Task<string> GetRequestInfoAsync(HttpRequest request)
     {
         var bodyText = string.Empty;
 
-        // 确保可以重复读取Request.Body
         request.EnableBuffering();
 
         if (request.Body.CanRead)
@@ -108,7 +100,7 @@ public class ExceptionHandlingMiddleware
                 leaveOpen: true);
 
             bodyText = await reader.ReadToEndAsync();
-            request.Body.Position = 0;  // 重置位置以供后续中间件读取
+            request.Body.Position = 0;
         }
 
         var queryString = request.QueryString.HasValue
@@ -121,27 +113,23 @@ public class ExceptionHandlingMiddleware
                $"Body: {bodyText}";
     }
 
-    private (int errorCode, string ErrorMessage) GetErrorDetails(IEnumerable<Exception> exceptions)
+    private static (int errorCode, string ErrorMessage) GetErrorDetails(IEnumerable<Exception> exceptions)
     {
-        // 优先获取CustomException
         var customException = exceptions.OfType<CustomException>().FirstOrDefault();
         if (customException != null)
         {
             return (customException.ErrorCode, customException.Message);
         }
 
-        // 如果没有CustomException，返回通用错误
         return (-1, "An unexpected error occurred.");
     }
 }
 
-// 定义错误消息解析器接口
 public interface IErrorMessageResolver
 {
     Task<string> ResolveAsync(int errorCode, string defaultMessage);
 }
 
-// 错误消息解析器的示例实现
 public class DefaultErrorMessageResolver : IErrorMessageResolver
 {
     private readonly Dictionary<int, string> _errorMessages;
@@ -150,21 +138,18 @@ public class DefaultErrorMessageResolver : IErrorMessageResolver
     {
         _errorMessages = new Dictionary<int, string>
         {
-            // 在这里定义错误代码对应的消息
             { -1, "系统错误" },
-            // 添加更多错误码和对应消息...
         };
     }
 
     public Task<string> ResolveAsync(int errorCode, string defaultMessage)
     {
-        return Task.FromResult(_errorMessages.TryGetValue(errorCode, out string message)
+        return Task.FromResult(_errorMessages.TryGetValue(errorCode, out var message)
             ? message
             : defaultMessage);
     }
 }
 
-// 中间件扩展方法
 public static class ExceptionMiddlewareExtensions
 {
     public static IApplicationBuilder UseExceptionHandlingMiddleware(

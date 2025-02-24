@@ -100,7 +100,7 @@ public class Startup
         services.AddSingleton<ITelegramBotClient>(provider =>
         {
             var settings = provider.GetRequiredService<IOptions<TelegramSettings>>().Value;
-            return new TelegramBotClient(settings.BotToken);
+            return new TelegramBotClient(settings.BotToken ?? throw new InvalidOperationException("TelegramSettings is not valid."));
         });
 
         services.AddSingleton<BinanceSpotRestClientWrapper>(provider =>
@@ -115,7 +115,6 @@ public class Startup
             return new BinanceFeatureRestClientWrapper(binanceRestClient.UsdFuturesApi.Trading,
                                                        binanceRestClient.UsdFuturesApi.ExchangeData);
         });
-
 
         services.AddMediatR(cfg =>
         {

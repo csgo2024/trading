@@ -56,7 +56,10 @@ public class TradingService : BackgroundService
     private async Task InitializeAndExecuteStrategies(CancellationToken stoppingToken)
     {
         _strategies = await _strategyRepository.InitializeActiveStrategies();
-        if (_strategies == null || _strategies.Count == 0) return;
+        if (_strategies == null || _strategies.Count == 0)
+        {
+            return;
+        }
 
         var tasks = _strategies.Values.Select(strategy =>
         {

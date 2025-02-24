@@ -8,7 +8,6 @@ using Trading.API.Application.Telegram;
 using Trading.API.Application.Telegram.Handlers;
 using Trading.Common.Models;
 using Trading.Domain.IRepositories;
-using Xunit;
 
 namespace Trading.API.Tests.Application.Telegram;
 
@@ -30,7 +29,7 @@ public class TelegramCommandHandlerFactoryTests
         // Configure Telegram settings
         var telegramSettings = new TelegramSettings { ChatId = "test-chat-id" };
         services.AddSingleton(Options.Create(telegramSettings));
-        
+
         // Add mock dependencies
         services.AddSingleton(Mock.Of<IMediator>());
         services.AddSingleton(Mock.Of<IStrategyRepository>());
@@ -43,7 +42,7 @@ public class TelegramCommandHandlerFactoryTests
         services.AddTransient<DeleteStrategyHandler>();
         services.AddTransient<StopStrategyHandler>();
         services.AddTransient<ResumeStrategyHandler>();
-        
+
         _serviceProvider = services.BuildServiceProvider();
         _factory = new TelegramCommandHandlerFactory(_serviceProvider);
     }

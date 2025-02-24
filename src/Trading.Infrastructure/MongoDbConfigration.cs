@@ -12,11 +12,17 @@ public static class MongoDbConfigration
 
     public static void Configure()
     {
-        if (_initialized) return;
+        if (_initialized)
+        {
+            return;
+        }
 
         lock (_lock)
         {
-            if (_initialized) return;
+            if (_initialized)
+            {
+                return;
+            }
 
             RegisterClassMap<BaseEntity>(cm =>
             {

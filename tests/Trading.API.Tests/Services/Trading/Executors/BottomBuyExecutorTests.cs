@@ -21,9 +21,9 @@ public static class LoggerExtensions
             x => x.Log(
                 It.IsAny<LogLevel>(),
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString().Contains(expectedMessage)),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(expectedMessage)),
                 It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
     }
 
@@ -35,9 +35,9 @@ public static class LoggerExtensions
                 x => x.Log(
                     It.IsAny<LogLevel>(),
                     It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((v, t) => v.ToString().Contains(expectedMessage)),
+                    It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(expectedMessage)),
                     It.IsAny<Exception>(),
-                    It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
                 Times.Once);
         }
     }
@@ -144,9 +144,9 @@ public class BottomBuyExecutorTests
 
         // Assert
         Assert.True(strategy.HasOpenOrder);
-        Assert.Equal(strategy.OrderId,54321);
+        Assert.Equal(strategy.OrderId, 54321);
         Assert.NotNull(strategy.OrderPlacedTime);
-        Assert.NotEqual(0, strategy.TargetPrice); 
+        Assert.NotEqual(0, strategy.TargetPrice);
         Assert.NotEqual(0, strategy.Quantity);
         _mockLogger.VerifyLogging($"[{strategy.AccountType}-{strategy.Symbol}] Previous day's order not filled, cancelling order before reset.");
         _mockLogger.VerifyLogging($"[{strategy.AccountType}-{strategy.Symbol}] Successfully cancelled order");
@@ -186,7 +186,7 @@ public class BottomBuyExecutorTests
 
         // Verify strategy state after cancellation , should reset order stats
         Assert.False(strategy.HasOpenOrder);
-        Assert.Null( strategy.OrderId); 
+        Assert.Null(strategy.OrderId);
         Assert.Null(strategy.OrderPlacedTime);
     }
 
@@ -215,15 +215,15 @@ public class BottomBuyExecutorTests
         Assert.True(strategy.HasOpenOrder);
         Assert.Equal(12345L, strategy.OrderId); // Same order ID
         Assert.NotNull(strategy.OrderPlacedTime);
-        
+
         // Verify no cancellation logs
         _mockLogger.Verify(
             x => x.Log(
                 It.IsAny<LogLevel>(),
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("initiating cancellation")),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("initiating cancellation")),
                 It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Never);
     }
 
@@ -279,7 +279,7 @@ public class BottomBuyExecutorTests
         Assert.False(strategy.IsTradedToday);
     }
 
-    private Strategy CreateTestStrategy(
+    private static Strategy CreateTestStrategy(
         bool hasOpenOrder = false,
         long? orderId = null,
         DateTime? lastTradeDate = null)

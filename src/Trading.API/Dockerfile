@@ -1,4 +1,4 @@
-﻿FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine AS base
+FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine AS base
 WORKDIR /app
 EXPOSE 8080
 
@@ -12,11 +12,11 @@ COPY ["src/Trading.Infrastructure/Trading.Infrastructure.csproj", "Trading.Infra
 RUN dotnet restore "Trading.API/Trading.API.csproj"
 COPY src .
 WORKDIR "/src/Trading.API"
-RUN dotnet build "Trading.API.csproj" -p:NoWarn=8618 -c $BUILD_CONFIGURATION -o /app/build
+RUN dotnet build "Trading.API.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "Trading.API.csproj" -p:NoWarn=8618 -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "Trading.API.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
 FROM base AS final
 WORKDIR /app

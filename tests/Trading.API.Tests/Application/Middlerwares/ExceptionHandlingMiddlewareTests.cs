@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Trading.API.Application.Middlerwares;
-using Xunit;
 
 namespace Trading.API.Tests.Application.Middlerwares;
 
@@ -18,7 +17,7 @@ public class ExceptionHandlingMiddlewareTests
         _mockLogger = new Mock<ILogger<ExceptionHandlingMiddleware>>();
         _mockErrorResolver = new Mock<IErrorMessageResolver>();
         _middleware = new ExceptionHandlingMiddleware(
-            next: _ => throw new Exception("Test exception"),
+            next: _ => throw new InvalidOperationException("Test exception"),
             logger: _mockLogger.Object,
             errorMessageResolver: _mockErrorResolver.Object);
     }
@@ -59,8 +58,8 @@ public class ExceptionHandlingMiddlewareTests
         // Arrange
         var context = new DefaultHttpContext();
         context.Response.Body = new MemoryStream();
-        var innerException = new Exception("Inner exception");
-        var outerException = new Exception("Outer exception", innerException);
+        var innerException = new InvalidOperationException("Inner exception");
+        var outerException = new InvalidOperationException("Outer exception", innerException);
         var middleware = new ExceptionHandlingMiddleware(
             next: _ => throw outerException,
             _mockLogger.Object,
@@ -74,8 +73,8 @@ public class ExceptionHandlingMiddlewareTests
             x => x.Log(
                 LogLevel.Error,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => 
-                    v.ToString()!.Contains("Inner exception") && 
+                It.Is<It.IsAnyType>((v, t) =>
+                    v.ToString()!.Contains("Inner exception") &&
                     v.ToString()!.Contains("Outer exception")),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
@@ -94,7 +93,7 @@ public class ExceptionHandlingMiddlewareTests
         context.Response.Body = new MemoryStream();
 
         var middleware = new ExceptionHandlingMiddleware(
-            next: _ => throw new Exception("Test"),
+            next: _ => throw new InvalidOperationException("Test"),
             _mockLogger.Object,
             _mockErrorResolver.Object);
 
@@ -121,7 +120,7 @@ public class ExceptionHandlingMiddlewareTests
         context.Response.Body = new MemoryStream();
 
         var middleware = new ExceptionHandlingMiddleware(
-            next: _ => throw new Exception("Test"),
+            next: _ => throw new InvalidOperationException("Test"),
             _mockLogger.Object,
             _mockErrorResolver.Object);
 

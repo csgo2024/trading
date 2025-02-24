@@ -1,4 +1,3 @@
-using Binance.Net.Clients;
 using Binance.Net.Enums;
 using Binance.Net.Interfaces;
 using Binance.Net.Interfaces.Clients.SpotApi;

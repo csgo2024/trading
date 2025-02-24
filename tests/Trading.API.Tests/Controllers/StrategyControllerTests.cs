@@ -6,7 +6,6 @@ using Trading.API.Application.Queries;
 using Trading.API.Controllers;
 using Trading.Common.Models;
 using Trading.Domain.Entities;
-using Xunit;
 
 namespace Trading.API.Tests.Controllers;
 
@@ -28,13 +27,7 @@ public class StrategyControllerTests
     {
         // Arrange
         var request = new PagedRequest { PageIndex = 1, PageSize = 10 };
-        var expectedResult = new PagedResult<Strategy>
-        {
-            Items = new List<Strategy> { new() { Id = "1", Symbol = "BTCUSDT" } },
-            TotalCount = 1,
-            PageIndex = 1,
-            PageSize = 10
-        };
+        var expectedResult = new PagedResult<Strategy>(new List<Strategy> { new() { Id = "1", Symbol = "BTCUSDT" } }, 1, 1, 10);
 
         _mockStrategyQuery
             .Setup(x => x.GetStrategyListAsync(request, CancellationToken.None))
@@ -47,6 +40,7 @@ public class StrategyControllerTests
         var okResult = Assert.IsType<OkObjectResult>(actionResult);
         var apiResponse = Assert.IsType<ApiResponse<PagedResult<Strategy>>>(okResult.Value);
         Assert.True(apiResponse.Success);
+        Assert.NotNull(apiResponse.Data);
         Assert.Equal(expectedResult.TotalCount, apiResponse.Data.TotalCount);
         Assert.Equal(expectedResult.Items.First().Symbol, apiResponse.Data.Items.First().Symbol);
     }
@@ -94,7 +88,7 @@ public class StrategyControllerTests
         var apiResponse = Assert.IsType<ApiResponse<bool>>(okResult.Value);
         Assert.True(apiResponse.Success);
         _mockMediator.Verify(
-            x => x.Send(It.Is<DeleteStrategyCommand>(c => c.Id == id), default), 
+            x => x.Send(It.Is<DeleteStrategyCommand>(c => c.Id == id), default),
             Times.Once);
     }
 
@@ -121,26 +115,24 @@ public class StrategyControllerTests
         var okResult = Assert.IsType<OkObjectResult>(actionResult);
         var apiResponse = Assert.IsType<ApiResponse<Strategy>>(okResult.Value);
         Assert.True(apiResponse.Success);
+        Assert.NotNull(apiResponse.Data);
         Assert.Equal(expectedStrategy.Id, apiResponse.Data.Id);
         Assert.Equal(expectedStrategy.Symbol, apiResponse.Data.Symbol);
     }
 
     [Fact]
-    public async Task GetStrategyById_WithNonExistingId_ShouldReturnNull()
+    public async Task GetStrategyById_WithNonExistingId_ShouldReturnNotFound()
     {
         // Arrange
         var id = "non-existing-id";
         _mockStrategyQuery
-            .Setup(x => x.GetStrategyByIdAsync(id,CancellationToken.None))
-            .ReturnsAsync((Strategy)null);
+            .Setup(x => x.GetStrategyByIdAsync(id, CancellationToken.None))
+            .ReturnsAsync(value: null);
 
         // Act
         var actionResult = await _controller.GetStrategyById(id);
 
         // Assert
-        var okResult = Assert.IsType<OkObjectResult>(actionResult);
-        var apiResponse = Assert.IsType<ApiResponse<Strategy>>(okResult.Value);
-        Assert.True(apiResponse.Success);
-        Assert.Null(apiResponse.Data);
+        Assert.IsType<NotFoundResult>(actionResult);
     }
 }

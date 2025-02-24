@@ -1,4 +1,4 @@
-﻿using Telegram.Bot;
+using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Trading.API.Application.Telegram;
@@ -46,10 +46,14 @@ public class TelegramBotService : BackgroundService
         try
         {
             if (update.Message is not { } message)
+            {
                 return;
+            }
 
             if (message.Text is not { } messageText)
+            {
                 return;
+            }
 
             if (messageText.StartsWith('/'))
             {

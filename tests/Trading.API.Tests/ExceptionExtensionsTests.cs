@@ -15,8 +15,8 @@ public class ExceptionExtensionsTests : IClassFixture<TradingApiFixture>
     public void FlattenExceptions_ShouldReturnAllExceptions()
     {
         // Arrange
-        var innerException = new Exception("Inner exception");
-        var exception = new Exception("Outer exception", innerException);
+        var innerException = new InvalidOperationException("Inner exception");
+        var exception = new InvalidOperationException("Outer exception", innerException);
 
         // Act
         var result = exception.FlattenExceptions().ToList();
@@ -31,8 +31,8 @@ public class ExceptionExtensionsTests : IClassFixture<TradingApiFixture>
     public void FlattenExceptions_WithAggregateException_ShouldReturnAllExceptions()
     {
         // Arrange
-        var innerException1 = new Exception("Inner exception 1");
-        var innerException2 = new Exception("Inner exception 2");
+        var innerException1 = new InvalidOperationException("Inner exception 1");
+        var innerException2 = new InvalidOperationException("Inner exception 2");
         var aggregateException = new AggregateException("Aggregate exception", innerException1, innerException2);
 
         // Act

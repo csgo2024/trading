@@ -1,4 +1,4 @@
-﻿using MongoDB.Driver;
+using MongoDB.Driver;
 using Trading.Domain.Entities;
 using Trading.Domain.IRepositories;
 
@@ -20,7 +20,7 @@ public class StrategyRepository : BaseRepository<Strategy>, IStrategyRepository
         return await AddAsync(entity, cancellationToken);
     }
 
-    public async Task<Dictionary<string, Strategy>?> InitializeActiveStrategies()
+    public async Task<Dictionary<string, Strategy>> InitializeActiveStrategies()
     {
         var data = await _collection.Find(x => x.Status == StateStatus.Running).ToListAsync();
         return data.ToDictionary(config => $"{config.Symbol}{config.AccountType}", config => config);

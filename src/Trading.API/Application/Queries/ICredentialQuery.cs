@@ -1,4 +1,4 @@
-﻿using Trading.Domain.Entities;
+using Trading.Domain.Entities;
 
 namespace Trading.API.Application.Queries;
 

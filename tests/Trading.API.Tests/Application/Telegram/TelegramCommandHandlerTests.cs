@@ -26,19 +26,6 @@ public class TelegramCommandHandlerTests
     }
 
     [Fact]
-    public async Task HandleCommand_WithNullMessage_ShouldReturnWithoutProcessing()
-    {
-        // Act
-        await _handler.HandleCommand(null);
-
-        // Assert
-        _mockHandlerFactory.Verify(
-            x => x.GetHandler(It.IsAny<string>()),
-            Times.Never,
-            "Factory should not be called with null message");
-    }
-
-    [Fact]
     public async Task HandleCommand_WithNullText_ShouldReturnWithoutProcessing()
     {
         // Arrange
@@ -56,7 +43,7 @@ public class TelegramCommandHandlerTests
 
     [Theory]
     [InlineData("/help", "", "/help")]
-    [InlineData("/help", "", "/help")]
+    [InlineData("/status", "", "/status")]
     [InlineData("/create BTCUSDT", "BTCUSDT", "/create")]
     [InlineData("/delete 123", "123", "/delete")]
     [InlineData("/stop strategy1", "strategy1", "/stop")]
@@ -78,7 +65,7 @@ public class TelegramCommandHandlerTests
             x => x.GetHandler(expectedCommand),
             Times.Once,
             "Factory should be called with correct command");
-        
+
         _mockCommandHandler.Verify(
             x => x.HandleAsync(expectedParams),
             Times.Once,
@@ -92,7 +79,7 @@ public class TelegramCommandHandlerTests
         var message = new Message { Text = "/unknowncommand" };
         _mockHandlerFactory
             .Setup(x => x.GetHandler(It.IsAny<string>()))
-            .Returns((ICommandHandler)null);
+            .Returns(value: null);
 
         // Act
         await _handler.HandleCommand(message);
@@ -104,7 +91,7 @@ public class TelegramCommandHandlerTests
                 It.IsAny<EventId>(),
                 It.IsAny<It.IsAnyType>(),
                 It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Never);
     }
 
@@ -113,8 +100,8 @@ public class TelegramCommandHandlerTests
     {
         // Arrange
         var message = new Message { Text = "/errorcommand" };
-        var expectedException = new Exception("Test exception");
-        
+        var expectedException = new InvalidOperationException("Test exception");
+
         _mockHandlerFactory
             .Setup(x => x.GetHandler(It.IsAny<string>()))
             .Returns(_mockCommandHandler.Object);
@@ -133,7 +120,7 @@ public class TelegramCommandHandlerTests
                 It.IsAny<EventId>(),
                 It.IsAny<It.IsAnyType>(),
                 expectedException,
-                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
     }
 

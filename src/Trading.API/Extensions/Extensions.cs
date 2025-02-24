@@ -10,8 +10,7 @@ public static class Extensions
         services.AddSingleton<FeatureProcessor>();
         services.AddSingleton<SpotProcessor>();
         services.AddSingleton<AccountProcessorFactory>();
-        
-        
+
         services.AddSingleton<BottomBuyExecutor>();
         services.AddSingleton<DCABuyExecutor>();
         services.AddSingleton<ExecutorFactory>();

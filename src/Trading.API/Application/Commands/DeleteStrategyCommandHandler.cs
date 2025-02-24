@@ -11,7 +11,7 @@ public class DeleteStrategyCommandHandler : IRequestHandler<DeleteStrategyComman
     {
         _strategyRepository = strategyRepository;
     }
-    
+
     public async Task<bool> Handle(DeleteStrategyCommand request, CancellationToken cancellationToken)
     {
         return await _strategyRepository.DeleteAsync(request.Id, cancellationToken);

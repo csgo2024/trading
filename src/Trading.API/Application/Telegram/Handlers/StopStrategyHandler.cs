@@ -12,7 +12,7 @@ public class StopStrategyHandler : ICommandHandler
 
     public static string Command => "/stop";
 
-    public StopStrategyHandler(IMediator mediator, ILogger<StopStrategyHandler> logger, IStrategyRepository strategyRepository) 
+    public StopStrategyHandler(IMediator mediator, ILogger<StopStrategyHandler> logger, IStrategyRepository strategyRepository)
     {
         _mediator = mediator;
         _logger = logger;

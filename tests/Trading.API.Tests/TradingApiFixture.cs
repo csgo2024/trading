@@ -10,10 +10,10 @@ using Trading.API.HostServices;
 
 namespace Trading.API.Tests;
 
-public class TradingApiFixture : WebApplicationFactory<Program>, IAsyncLifetime 
+public class TradingApiFixture : WebApplicationFactory<Program>, IAsyncLifetime
 {
-    public IMongoDatabase Database { get; private set; }
-    private MongoClient _client;
+    public IMongoDatabase? Database { get; private set; }
+    private MongoClient? _client;
 
     private readonly MongoDbContainer _mongoDbContainer;
 
@@ -38,14 +38,15 @@ public class TradingApiFixture : WebApplicationFactory<Program>, IAsyncLifetime
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        builder.ConfigureAppConfiguration(config => {
+        builder.ConfigureAppConfiguration(config =>
+        {
             config.AddInMemoryCollection(
             [
-                new KeyValuePair<string, string?>("MongoDbSettings:ConnectionString", _mongoDbContainer.GetConnectionString()), 
+                new KeyValuePair<string, string?>("MongoDbSettings:ConnectionString", _mongoDbContainer.GetConnectionString()),
                 new KeyValuePair<string, string?>("MongoDbSettings:DatabaseName", "InMemoryDbForTesting"),
                 // BotToken Format: {chatId}:{string} , chatId type is long.
                 new KeyValuePair<string, string?>("TelegramSettings:BotToken", "6061388873:your-bot-token"),
-                
+
                 new KeyValuePair<string, string?>("CredentialSettings:ApiKey", Convert.ToBase64String(Encoding.UTF8.GetBytes("your-api-secret"))),
                 new KeyValuePair<string, string?>("CredentialSettings:ApiSecret", Convert.ToBase64String(Encoding.UTF8.GetBytes("your-api-secret"))),
             ]);
@@ -94,11 +95,8 @@ public class TradingApiFixture : WebApplicationFactory<Program>, IAsyncLifetime
 
     public new async Task DisposeAsync()
     {
-        if (_client != null)
-        {
-            // Clean up the database after tests
-            _client.DropDatabase("InMemoryDbForTesting");
-        }
+        // Clean up the database after tests
+        _client?.DropDatabase("InMemoryDbForTesting");
         await _mongoDbContainer.DisposeAsync();
     }
 

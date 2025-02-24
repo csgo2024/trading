@@ -11,7 +11,7 @@ namespace Trading.API.Controllers;
 [Route("api/v1/[controller]")]
 public class StrategyController : ControllerBase
 {
-    
+
     private readonly IMediator _mediator;
     private readonly IStrategyQuery _strategyQuery;
 
@@ -28,7 +28,7 @@ public class StrategyController : ControllerBase
         var apiResponse = ApiResponse<PagedResult<Strategy>>.SuccessResponse(strategy);
         return Ok(apiResponse);
     }
-    
+
     [HttpPost("")]
     public async Task<IActionResult> AddStrategy(CreateStrategyCommand command)
     {
@@ -48,6 +48,10 @@ public class StrategyController : ControllerBase
     public async Task<IActionResult> GetStrategyById(string id)
     {
         var data = await _strategyQuery.GetStrategyByIdAsync(id);
+        if (data == null)
+        {
+            return NotFound();
+        }
         return Ok(ApiResponse<Strategy>.SuccessResponse(data));
     }
 }

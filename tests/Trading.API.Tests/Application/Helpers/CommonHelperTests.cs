@@ -1,5 +1,5 @@
-using Trading.API.Application.Helpers;
 using Binance.Net.Objects.Models.Spot;
+using Trading.API.Application.Helpers;
 
 namespace Trading.API.Tests.Application.Helpers;
 
@@ -9,9 +9,9 @@ public class CommonHelperTests
     public void AdjustPriceByStepSize_WhenFilterIsNull_ShouldThrowArgumentNullException()
     {
         // Arrange & Act & Assert
-        var exception = Assert.Throws<ArgumentNullException>(() => 
+        var exception = Assert.Throws<ArgumentNullException>(() =>
             CommonHelper.AdjustPriceByStepSize(100m, null));
-        
+
         Assert.Equal("filter", exception.ParamName);
     }
 
@@ -53,7 +53,7 @@ public class CommonHelperTests
         };
 
         // Act & Assert
-        var exception = Assert.Throws<InvalidOperationException>(() => 
+        var exception = Assert.Throws<InvalidOperationException>(() =>
             CommonHelper.AdjustPriceByStepSize(price, filter));
         Assert.Equal(expectedMessage, exception.Message);
     }
@@ -62,9 +62,9 @@ public class CommonHelperTests
     public void AdjustQuantityBystepSize_WhenFilterIsNull_ShouldThrowArgumentNullException()
     {
         // Arrange & Act & Assert
-        var exception = Assert.Throws<ArgumentNullException>(() => 
+        var exception = Assert.Throws<ArgumentNullException>(() =>
             CommonHelper.AdjustQuantityBystepSize(100m, null));
-        
+
         Assert.Equal("filter", exception.ParamName);
     }
 
@@ -106,7 +106,7 @@ public class CommonHelperTests
         };
 
         // Act & Assert
-        var exception = Assert.Throws<InvalidOperationException>(() => 
+        var exception = Assert.Throws<InvalidOperationException>(() =>
             CommonHelper.AdjustQuantityBystepSize(quantity, filter));
         Assert.Equal(expectedMessage, exception.Message);
     }

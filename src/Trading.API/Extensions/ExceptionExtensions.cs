@@ -9,7 +9,10 @@ public static class ExceptionExtensions
     /// <returns>异常及其所有内部异常的集合</returns>
     public static IEnumerable<Exception> FlattenExceptions(this Exception exception)
     {
-        if (exception == null) yield break;
+        if (exception == null)
+        {
+            yield break;
+        }
 
         yield return exception;
 

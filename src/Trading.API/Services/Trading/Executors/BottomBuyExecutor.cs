@@ -6,7 +6,7 @@ using Trading.Domain.IRepositories;
 
 namespace Trading.API.Services.Trading.Executors;
 
-public class BottomBuyExecutor: IExecutor
+public class BottomBuyExecutor : IExecutor
 {
     private readonly ILogger<BottomBuyExecutor> _logger;
     private readonly IStrategyRepository _strategyRepository;
@@ -113,7 +113,10 @@ public class BottomBuyExecutor: IExecutor
 
     public async Task CancelExistingOrder(IAccountProcessor accountProcessor, Strategy strategy, CancellationToken ct)
     {
-        if (strategy.OrderId is null) return;
+        if (strategy.OrderId is null)
+        {
+            return;
+        }
 
         try
         {
@@ -141,7 +144,7 @@ public class BottomBuyExecutor: IExecutor
 
     public async Task ResetDailyStrategy(IAccountProcessor accountProcessor, Strategy strategy, DateTime currentDate, CancellationToken ct)
     {
-        var kLines = await accountProcessor.GetKlines(strategy.Symbol, KlineInterval.OneDay, startTime: currentDate, limit: 1);
+        var kLines = await accountProcessor.GetKlines(strategy.Symbol, KlineInterval.OneDay, startTime: currentDate, limit: 1, ct: ct);
         if (kLines.Success && kLines.Data.Any())
         {
             var openPrice = CommonHelper.TrimEndZero(kLines.Data.First().OpenPrice);

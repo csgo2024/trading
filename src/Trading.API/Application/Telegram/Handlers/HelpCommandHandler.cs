@@ -13,7 +13,7 @@ public class HelpCommandHandler : ICommandHandler
 
     public static string Command => "/help";
 
-    private static string HelpText = @"
+    private const string HelpText = @"
 📚 <b>命令帮助</b>
 /help - 显示此帮助信息
 /status - 查看所有策略状态
@@ -23,18 +23,17 @@ public class HelpCommandHandler : ICommandHandler
 /delete - 删除指定的策略
 ";
 
-    private static string CreateStrategyText = @"
+    private const string CreateStrategyText = @"
 创建策略
 ```/create {""Symbol"":""BTCUSDT"",""Amount"":1000,""PriceDropPercentage"":0.2,""Leverage"":5,""AccountType"":""Spot"",""StrategyType"":""BuyBottom""}```
 删除策略
 ```/delete 12345```";
 
-
     public HelpCommandHandler(ILogger<HelpCommandHandler> logger, ITelegramBotClient botClient, IOptions<TelegramSettings> settings)
     {
         _logger = logger;
         _botClient = botClient;
-        _chatId = settings.Value.ChatId;
+        _chatId = settings.Value.ChatId ?? throw new ArgumentNullException(nameof(settings), "TelegramSettings is not valid.");
     }
 
     public async Task HandleAsync(string parameters)

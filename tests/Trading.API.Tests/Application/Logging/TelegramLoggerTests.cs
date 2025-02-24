@@ -77,7 +77,7 @@ public class TelegramLoggerTests
         _mockBotClient.Verify(x => x.SendRequest(
             It.Is<SendMessageRequest>(r =>
                 r.ChatId == _testChatId &&
-                r.Text.Contains("❌") &&
+                r.Text.Contains('❌') &&
                 r.Text.Contains(logMessage) &&
                 exception != null &&
                 r.Text.Contains(exception.Message) &&
@@ -139,8 +139,8 @@ public class TelegramLoggerTests
         // Assert
         Assert.True(result);
     }
-    private void ThrowTestException(string message)
+    private static void ThrowTestException(string message)
     {
-        throw new Exception(message);
+        throw new InvalidOperationException(message);
     }
 }

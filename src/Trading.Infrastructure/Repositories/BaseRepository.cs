@@ -84,7 +84,7 @@ public class BaseRepository<T> : IRepository<T> where T : BaseEntity
         };
 
         // 执行聚合查询
-        var result = await _collection.Aggregate<BsonDocument>(pipeline).FirstOrDefaultAsync(cancellationToken);
+        var result = await _collection.Aggregate<BsonDocument>(pipeline, cancellationToken: cancellationToken).FirstOrDefaultAsync(cancellationToken);
 
         if (result == null)
         {

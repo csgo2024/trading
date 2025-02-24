@@ -65,7 +65,7 @@ public class CreateStrategyHandlerTests
         _mockMediator.Verify(x => x.Send(It.IsAny<CreateStrategyCommand>(), default), Times.Once);
         VerifyLoggerCalled("策略创建成功 ✅", LogLevel.Information);
     }
-    
+
     [Theory]
     [InlineData(null)]
     [InlineData("")]
@@ -109,7 +109,7 @@ public class CreateStrategyHandlerTests
         var parameters = JsonConvert.SerializeObject(command);
 
         _mockMediator.Setup(x => x.Send(It.IsAny<CreateStrategyCommand>(), default))
-            .ThrowsAsync(new Exception("Test exception"));
+            .ThrowsAsync(new InvalidOperationException("Test exception"));
 
         // Act
         await _handler.HandleAsync(parameters);

@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using MediatR;
 using Trading.Domain.Entities;
 using Trading.Domain.IRepositories;

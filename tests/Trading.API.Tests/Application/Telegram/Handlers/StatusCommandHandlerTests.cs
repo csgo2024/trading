@@ -2,11 +2,9 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Telegram.Bot;
 using Telegram.Bot.Types;
-using Telegram.Bot.Types.Enums;
 using Trading.API.Application.Telegram.Handlers;
 using Trading.Domain.Entities;
 using Trading.Domain.IRepositories;
-using Xunit;
 
 namespace Trading.API.Tests.Application.Telegram.Handlers;
 

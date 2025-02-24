@@ -1,8 +1,9 @@
-﻿using Telegram.Bot.Types;
+using System.Diagnostics.CodeAnalysis;
+using Telegram.Bot.Types;
 
 namespace Trading.API.Application.Telegram;
 
 public interface ITelegramCommandHandler
 {
-    Task HandleCommand(Message message);
+    Task HandleCommand([NotNull] Message message);
 }

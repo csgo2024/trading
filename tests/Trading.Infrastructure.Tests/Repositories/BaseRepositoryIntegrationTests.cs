@@ -14,7 +14,7 @@ public class BaseRepositoryIntegrationTests : IClassFixture<MongoDbFixture>
     public BaseRepositoryIntegrationTests(MongoDbFixture fixture)
     {
         _fixture = fixture;
-        _repository = new BaseRepository<TestEntity>(_fixture.MongoContext);
+        _repository = new BaseRepository<TestEntity>(_fixture.MongoContext!);
     }
 
     [Fact]
@@ -44,10 +44,10 @@ public class BaseRepositoryIntegrationTests : IClassFixture<MongoDbFixture>
     {
         // Arrange
         var existingId = "507f1f77bcf86cd799439011";
-        var entity = new TestEntity 
-        { 
+        var entity = new TestEntity
+        {
             Id = existingId,
-            Name = "Test Entity" 
+            Name = "Test Entity"
         };
 
         // Act
@@ -84,7 +84,7 @@ public class BaseRepositoryIntegrationTests : IClassFixture<MongoDbFixture>
         // Arrange
         var entity = new TestEntity { Name = "Original Name" };
         var savedEntity = await _repository.AddAsync(entity);
-        
+
         savedEntity.Name = "Updated Name";
 
         // Act

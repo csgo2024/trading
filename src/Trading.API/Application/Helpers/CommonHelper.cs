@@ -6,10 +6,7 @@ public static class CommonHelper
 {
     public static decimal AdjustPriceByStepSize(decimal price, BinanceSymbolPriceFilter? filter)
     {
-        if (filter == null)
-        {
-            throw new ArgumentNullException(nameof(filter));
-        }
+        ArgumentNullException.ThrowIfNull(filter);
         decimal adjustedPrice = Math.Round(price / filter.TickSize, MidpointRounding.ToZero) * filter.TickSize;
         if (adjustedPrice < filter.MinPrice)
         {
@@ -24,10 +21,7 @@ public static class CommonHelper
 
     public static decimal AdjustQuantityBystepSize(decimal quantity, BinanceSymbolLotSizeFilter? filter)
     {
-        if (filter == null)
-        {
-            throw new ArgumentNullException(nameof(filter));
-        }
+        ArgumentNullException.ThrowIfNull(filter);
         decimal adjustedQuantity = Math.Round(quantity / filter.StepSize, MidpointRounding.ToZero) * filter.StepSize;
         if (adjustedQuantity < filter.MinQuantity)
         {

@@ -1,4 +1,5 @@
-﻿using Telegram.Bot.Types;
+using System.Diagnostics.CodeAnalysis;
+using Telegram.Bot.Types;
 
 namespace Trading.API.Application.Telegram;
 
@@ -15,12 +16,15 @@ public class TelegramCommandHandler : ITelegramCommandHandler
         _handlerFactory = handlerFactory;
     }
 
-    public async Task HandleCommand(Message message)
+    public async Task HandleCommand([NotNull] Message message)
     {
-        if (message?.Text == null) return;
+        if (string.IsNullOrEmpty(message.Text))
+        {
+            return;
+        }
 
         var (command, parameters) = ParseCommand(message.Text);
-            
+
         try
         {
             var handler = _handlerFactory.GetHandler(command);
@@ -38,8 +42,8 @@ public class TelegramCommandHandler : ITelegramCommandHandler
     private static (string command, string parameters) ParseCommand(string messageText)
     {
         var index = messageText.IndexOf(' ');
-        return index == -1 
-            ? (messageText, string.Empty) 
+        return index == -1
+            ? (messageText, string.Empty)
             : (messageText[..index], messageText[(index + 1)..]);
     }
 }

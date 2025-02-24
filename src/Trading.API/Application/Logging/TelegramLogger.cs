@@ -16,10 +16,10 @@ public class TelegramLogger : ILogger
     {
         _botClient = botClient;
         _categoryName = categoryName;
-        _chatId = settings.ChatId;
+        _chatId = settings.ChatId ?? throw new ArgumentNullException(nameof(settings), "TelegramSettings is not valid.");
     }
 
-    public IDisposable BeginScope<TState>(TState state) => default!;
+    public IDisposable BeginScope<TState>(TState state) where TState : notnull => default!;
 
     public bool IsEnabled(LogLevel logLevel) => logLevel != LogLevel.None;
 
@@ -31,7 +31,9 @@ public class TelegramLogger : ILogger
         Func<TState, Exception?, string> formatter)
     {
         if (!IsEnabled(logLevel))
+        {
             return;
+        }
 
         // 将异步操作包装在一个可等待的任务中
         var task = LogInternalAsync(logLevel, state, exception, formatter);
@@ -59,14 +61,14 @@ public class TelegramLogger : ILogger
             }
 
             await _botClient.SendRequest(new SendMessageRequest
-                {
-                    ChatId = _chatId,
-                    Text = message.ToString(),
-                    ParseMode = ParseMode.Html,
-                }
+            {
+                ChatId = _chatId,
+                Text = message.ToString(),
+                ParseMode = ParseMode.Html,
+            }
             );
         }
-        catch(Exception e )
+        catch (Exception)
         {
             // Fallback logging if needed
         }

@@ -4,7 +4,6 @@ using Moq;
 using Trading.API.Application.Commands;
 using Trading.API.Controllers;
 using Trading.Common.Models;
-using Xunit;
 
 namespace Trading.API.Tests.Controllers;
 

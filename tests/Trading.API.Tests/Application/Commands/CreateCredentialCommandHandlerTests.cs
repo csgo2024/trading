@@ -21,8 +21,8 @@ public class CreateCredentialCommandHandlerTests
     public async Task Handle_ShouldCreateCredentialAndReturnPrivateKey()
     {
         // Arrange
-        var command = new CreateCredentialCommand 
-        { 
+        var command = new CreateCredentialCommand
+        {
             ApiKey = "testApiKey",
             ApiSecret = "testApiSecret"
         };
@@ -64,13 +64,13 @@ public class CreateCredentialCommandHandlerTests
     public async Task Handle_ShouldSetCorrectEntityProperties()
     {
         // Arrange
-        var command = new CreateCredentialCommand 
-        { 
+        var command = new CreateCredentialCommand
+        {
             ApiKey = "testApiKey",
             ApiSecret = "testApiSecret"
         };
 
-        CredentialSettings capturedEntity = new CredentialSettings() ;
+        CredentialSettings capturedEntity = new CredentialSettings();
         _mockRepository.Setup(x => x.AddAsync(It.IsAny<CredentialSettings>(), It.IsAny<CancellationToken>()))
             .Callback<CredentialSettings, CancellationToken>((entity, _) => capturedEntity = entity)
             .Returns(Task.FromResult(capturedEntity));  // Changed to return Task<CredentialSettings>

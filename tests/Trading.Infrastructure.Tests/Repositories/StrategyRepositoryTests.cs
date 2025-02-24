@@ -1,4 +1,3 @@
-using MongoDB.Driver;
 using Trading.Domain.Entities;
 using Trading.Infrastructure.Repositories;
 using Xunit;
@@ -13,7 +12,7 @@ public class StrategyRepositoryTests : IClassFixture<MongoDbFixture>
     public StrategyRepositoryTests(MongoDbFixture fixture)
     {
         _fixture = fixture;
-        _repository = new StrategyRepository(_fixture.MongoContext);
+        _repository = new StrategyRepository(_fixture.MongoContext!);
     }
 
     [Fact]
@@ -113,6 +112,7 @@ public class StrategyRepositoryTests : IClassFixture<MongoDbFixture>
         var result = await _repository.InitializeFeatureStrategies();
 
         // Assert
+        Assert.NotNull(result);
         Assert.Single(result);
         Assert.True(result.ContainsKey("F1"));
     }
@@ -156,6 +156,7 @@ public class StrategyRepositoryTests : IClassFixture<MongoDbFixture>
         };
         var addedStrategy = await _repository.Add(strategy);
 
+        Assert.NotNull(addedStrategy);
         // Update status
         addedStrategy.Status = StateStatus.Paused;
 
