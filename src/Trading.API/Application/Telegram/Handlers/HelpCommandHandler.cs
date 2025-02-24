@@ -5,17 +5,17 @@ using Trading.Common.Models;
 
 namespace Trading.API.Application.Telegram.Handlers;
 
-public class StartCommandHandler : ICommandHandler
+public class HelpCommandHandler : ICommandHandler
 {
-    private readonly ILogger<StartCommandHandler> _logger;
+    private readonly ILogger<HelpCommandHandler> _logger;
     private readonly ITelegramBotClient _botClient;
     private readonly string _chatId;
 
-    public static string Command => "/start";
+    public static string Command => "/help";
 
     private static string HelpText = @"
 📚 <b>命令帮助</b>
-/start - 显示此帮助信息
+/help - 显示此帮助信息
 /status - 查看所有策略状态
 /create - 创建新策略 (需要JSON格式数据)
 /resume - 恢复所有策略运行
@@ -30,7 +30,7 @@ public class StartCommandHandler : ICommandHandler
 ```/delete 12345```";
 
 
-    public StartCommandHandler(ILogger<StartCommandHandler> logger, ITelegramBotClient botClient, IOptions<TelegramSettings> settings)
+    public HelpCommandHandler(ILogger<HelpCommandHandler> logger, ITelegramBotClient botClient, IOptions<TelegramSettings> settings)
     {
         _logger = logger;
         _botClient = botClient;

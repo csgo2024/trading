@@ -37,7 +37,7 @@ public class TelegramCommandHandlerFactoryTests
         services.AddSingleton(Mock.Of<ICredentialSettingRepository>());
         services.AddSingleton(Mock.Of<ITelegramBotClient>()); // Add TelegramBotClient mock
 
-        services.AddTransient<StartCommandHandler>();
+        services.AddTransient<HelpCommandHandler>();
         services.AddTransient<StatusCommandHandler>();
         services.AddTransient<CreateStrategyHandler>();
         services.AddTransient<DeleteStrategyHandler>();
@@ -49,7 +49,7 @@ public class TelegramCommandHandlerFactoryTests
     }
 
     [Theory]
-    [InlineData("/start", typeof(StartCommandHandler))]
+    [InlineData("/help", typeof(HelpCommandHandler))]
     [InlineData("/status", typeof(StatusCommandHandler))]
     [InlineData("/create", typeof(CreateStrategyHandler))]
     [InlineData("/delete", typeof(DeleteStrategyHandler))]

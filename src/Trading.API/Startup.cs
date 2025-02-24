@@ -51,7 +51,7 @@ public class Startup
         services.AddSwaggerGen();
 
         services.AddMongoDb(Configuration);
-        services.AddSingleton<StartCommandHandler>();
+        services.AddSingleton<HelpCommandHandler>();
         services.AddSingleton<StatusCommandHandler>();
         services.AddSingleton<CreateStrategyHandler>();
         services.AddSingleton<DeleteStrategyHandler>();
