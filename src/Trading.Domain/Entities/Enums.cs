@@ -28,6 +28,6 @@ public enum StrategyType
     [Description("DCA")]
     DCA,
 
-    [Description("BuyBottom")]
-    BuyBottom,
+    [Description("BottomBuy")]
+    BottomBuy,
 }

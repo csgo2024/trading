@@ -19,5 +19,5 @@ public class CreateStrategyCommand : IRequest<Strategy>
 
     public AccountType AccountType { get; set; } = AccountType.Spot;
 
-    public StrategyType StrategyType { get; set; } = StrategyType.BuyBottom;
+    public StrategyType StrategyType { get; set; } = StrategyType.BottomBuy;
 }

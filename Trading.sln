@@ -27,6 +27,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trading.Common", "src\Tradi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trading.Infrastructure.Tests", "tests\Trading.Infrastructure.Tests\Trading.Infrastructure.Tests.csproj", "{D6290072-58B7-451F-9E39-A396E220B315}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trading.Common.Tests", "tests\Trading.Common.Tests\Trading.Common.Tests.csproj", "{22998950-45EB-445D-9FEA-6D20D1D72B4E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -57,6 +59,10 @@ Global
 		{D6290072-58B7-451F-9E39-A396E220B315}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D6290072-58B7-451F-9E39-A396E220B315}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D6290072-58B7-451F-9E39-A396E220B315}.Release|Any CPU.Build.0 = Release|Any CPU
+		{22998950-45EB-445D-9FEA-6D20D1D72B4E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{22998950-45EB-445D-9FEA-6D20D1D72B4E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{22998950-45EB-445D-9FEA-6D20D1D72B4E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{22998950-45EB-445D-9FEA-6D20D1D72B4E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -68,5 +74,6 @@ Global
 		{80AE411B-9263-44CE-B490-BB269CC924EB} = {6DCED638-232D-454B-9235-EB325E60C173}
 		{221D403C-C618-483C-B019-BA6E827646A5} = {4DF6F243-A8E9-4C0D-AC15-AB7F187D27C4}
 		{D6290072-58B7-451F-9E39-A396E220B315} = {6DCED638-232D-454B-9235-EB325E60C173}
+		{22998950-45EB-445D-9FEA-6D20D1D72B4E} = {6DCED638-232D-454B-9235-EB325E60C173}
 	EndGlobalSection
 EndGlobal

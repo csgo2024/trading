@@ -99,7 +99,7 @@ public class TradingServiceTests
         var strategy = new Strategy
         {
             Symbol = "BTCUSDT",
-            StrategyType = StrategyType.BuyBottom,
+            StrategyType = StrategyType.BottomBuy,
             AccountType = AccountType.Spot,
             Status = StateStatus.Running
         };
@@ -135,7 +135,7 @@ public class TradingServiceTests
         var strategy = new Strategy
         {
             Symbol = "BTCUSDT",
-            StrategyType = StrategyType.BuyBottom,
+            StrategyType = StrategyType.BottomBuy,
             AccountType = AccountType.Spot,
             Status = StateStatus.Running
         };

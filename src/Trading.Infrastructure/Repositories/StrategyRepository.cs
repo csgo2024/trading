@@ -29,7 +29,7 @@ public class StrategyRepository : BaseRepository<Strategy>, IStrategyRepository
     public async Task<List<Strategy>> GetAllStrategies()
     {
         var filter = Builders<Strategy>.Filter.Empty;
-        var strategies = await _collection.Find(filter).ToListAsync();
+        var strategies = await _collection.Find(filter).SortBy(x => x.Symbol).SortBy(x => x.AccountType).ToListAsync();
         return strategies;
     }
 

@@ -12,7 +12,7 @@ public class ExecutorFactory
         _serviceProvider = serviceProvider;
         _handlers = new Dictionary<StrategyType, Type>
         {
-            {StrategyType.BuyBottom, typeof(BottomBuyExecutor)},
+            {StrategyType.BottomBuy, typeof(BottomBuyExecutor)},
             {StrategyType.DCA, typeof(DCABuyExecutor)},
         };
     }

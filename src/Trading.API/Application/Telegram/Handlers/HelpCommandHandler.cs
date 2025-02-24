@@ -25,7 +25,7 @@ public class HelpCommandHandler : ICommandHandler
 
     private const string CreateStrategyText = @"
 创建策略
-```/create {""Symbol"":""BTCUSDT"",""Amount"":1000,""PriceDropPercentage"":0.2,""Leverage"":5,""AccountType"":""Spot"",""StrategyType"":""BuyBottom""}```
+```/create {""Symbol"":""BTCUSDT"",""Amount"":1000,""PriceDropPercentage"":0.2,""Leverage"":5,""AccountType"":""Spot"",""StrategyType"":""BottomBuy""}```
 删除策略
 ```/delete 12345```";
 

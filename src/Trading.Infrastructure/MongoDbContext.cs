@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using MongoDB.Bson;
 using MongoDB.Driver;
+using Trading.Common.Extensions;
 using Trading.Common.Models;
 using Trading.Domain.IRepositories;
 using Trading.Infrastructure.Repositories;
@@ -20,7 +21,7 @@ public class MongoDbContext : IMongoDbContext
 
     public IMongoCollection<T> GetCollection<T>() where T : class
     {
-        return _database.GetCollection<T>(typeof(T).Name);
+        return _database.GetCollection<T>(typeof(T).Name.ToSnakeCase());
     }
     public async Task<bool> Ping()
     {

@@ -1,7 +1,9 @@
 using MongoDB.Bson.Serialization;
+using MongoDB.Bson.Serialization.Conventions;
 using MongoDB.Bson.Serialization.IdGenerators;
 using Trading.Domain;
 using Trading.Domain.Entities;
+using Trading.Infrastructure.Conventions;
 
 namespace Trading.Infrastructure;
 
@@ -23,6 +25,15 @@ public static class MongoDbConfigration
             {
                 return;
             }
+
+            // 注册 Snake Case 命名约定
+            var pack = new ConventionPack
+            {
+                new SnakeCaseElementNameConvention(),
+                new IgnoreExtraElementsConvention(true)
+            };
+
+            ConventionRegistry.Register("CustomConventions", pack, t => true);
 
             RegisterClassMap<BaseEntity>(cm =>
             {
