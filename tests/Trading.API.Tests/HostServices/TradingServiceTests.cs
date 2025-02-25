@@ -70,7 +70,7 @@ public class TradingServiceTests
     }
 
     [Fact]
-    public async Task ExecuteAsync_WithNullStrategies_ShouldContinueExecution()
+    public async Task ExecuteAsync_WithEmptyStrategies_ShouldContinueLoop()
     {
         // Arrange
         _mockStrategyRepository
@@ -80,7 +80,7 @@ public class TradingServiceTests
         // Act
         Task executeTask = Task.Run(() => _service.Object.StartAsync(_cts.Token));
 
-        await Task.Delay(100); // 让主循环运行 100ms
+        await Task.Delay(1000); // 让主循环运行 1000ms
         _cts.Cancel();  // 立即取消操作，避免长时间等待
         await executeTask; // 等待任务完成
 
