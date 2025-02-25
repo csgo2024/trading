@@ -1,8 +1,8 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
-using Trading.API.Application.Commands;
 using Trading.API.Controllers;
+using Trading.Application.Commands;
 using Trading.Common.Models;
 
 namespace Trading.API.Tests.Controllers;

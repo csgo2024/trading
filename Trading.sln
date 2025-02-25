@@ -29,6 +29,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trading.Infrastructure.Test
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trading.Common.Tests", "tests\Trading.Common.Tests\Trading.Common.Tests.csproj", "{22998950-45EB-445D-9FEA-6D20D1D72B4E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trading.Application", "src\Trading.Application\Trading.Application.csproj", "{43005073-5847-4AFD-BA3B-78E954B72839}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trading.Application.Tests", "tests\Trading.Application.Tests\Trading.Application.Tests.csproj", "{D034A153-5775-48B6-BA79-37E5F852BA89}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -63,6 +67,14 @@ Global
 		{22998950-45EB-445D-9FEA-6D20D1D72B4E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{22998950-45EB-445D-9FEA-6D20D1D72B4E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{22998950-45EB-445D-9FEA-6D20D1D72B4E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{43005073-5847-4AFD-BA3B-78E954B72839}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{43005073-5847-4AFD-BA3B-78E954B72839}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{43005073-5847-4AFD-BA3B-78E954B72839}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{43005073-5847-4AFD-BA3B-78E954B72839}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D034A153-5775-48B6-BA79-37E5F852BA89}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D034A153-5775-48B6-BA79-37E5F852BA89}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D034A153-5775-48B6-BA79-37E5F852BA89}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D034A153-5775-48B6-BA79-37E5F852BA89}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -75,5 +87,7 @@ Global
 		{221D403C-C618-483C-B019-BA6E827646A5} = {4DF6F243-A8E9-4C0D-AC15-AB7F187D27C4}
 		{D6290072-58B7-451F-9E39-A396E220B315} = {6DCED638-232D-454B-9235-EB325E60C173}
 		{22998950-45EB-445D-9FEA-6D20D1D72B4E} = {6DCED638-232D-454B-9235-EB325E60C173}
+		{43005073-5847-4AFD-BA3B-78E954B72839} = {4DF6F243-A8E9-4C0D-AC15-AB7F187D27C4}
+		{D034A153-5775-48B6-BA79-37E5F852BA89} = {6DCED638-232D-454B-9235-EB325E60C173}
 	EndGlobalSection
 EndGlobal

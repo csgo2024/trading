@@ -1,12 +1,12 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Trading.API.Application.Commands;
+using Trading.Application.Commands;
 using Trading.Common.Models;
 
 namespace Trading.API.Controllers;
 
 [ApiController]
-[Route("api/v1/[controller]")]
+[Route("api/v1/credential-setting")]
 public class CredentialSettingController : ControllerBase
 {
     private readonly IMediator _mediator;

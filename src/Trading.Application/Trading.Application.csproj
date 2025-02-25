@@ -7,13 +7,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <Compile Remove="Constants\**" />
-      <EmbeddedResource Remove="Constants\**" />
-      <None Remove="Constants\**" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Utils\" />
+      <PackageReference Include="MediatR" Version="12.4.1" />
+      <ProjectReference Include="..\Trading.Infrastructure\Trading.Infrastructure.csproj" />
     </ItemGroup>
 
 </Project>

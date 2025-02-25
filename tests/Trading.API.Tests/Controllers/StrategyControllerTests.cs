@@ -1,9 +1,9 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
-using Trading.API.Application.Commands;
-using Trading.API.Application.Queries;
 using Trading.API.Controllers;
+using Trading.Application.Commands;
+using Trading.Application.Queries;
 using Trading.Common.Models;
 using Trading.Domain.Entities;
 

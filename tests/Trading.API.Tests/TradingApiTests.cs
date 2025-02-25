@@ -17,7 +17,7 @@ public class TradingApiTests : IClassFixture<TradingApiFixture>
     public async Task GetAll_ReturnsOkResult_WithSettings()
     {
         // Act
-        var response = await _client.GetAsync("/status");
+        var response = await _client.GetAsync("/api/v1/status");
 
         // Assert
         response.EnsureSuccessStatusCode();

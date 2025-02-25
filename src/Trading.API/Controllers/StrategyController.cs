@@ -1,14 +1,14 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Trading.API.Application.Commands;
-using Trading.API.Application.Queries;
+using Trading.Application.Commands;
+using Trading.Application.Queries;
 using Trading.Common.Models;
 using Trading.Domain.Entities;
 
 namespace Trading.API.Controllers;
 
 [ApiController]
-[Route("api/v1/[controller]")]
+[Route("api/v1/strategy")]
 public class StrategyController : ControllerBase
 {
 

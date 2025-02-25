@@ -9,6 +9,7 @@ COPY ["src/Trading.API/Trading.API.csproj", "Trading.API/"]
 COPY ["src/Trading.Common/Trading.Common.csproj", "Trading.Common/"]
 COPY ["src/Trading.Domain/Trading.Domain.csproj", "Trading.Domain/"]
 COPY ["src/Trading.Infrastructure/Trading.Infrastructure.csproj", "Trading.Infrastructure/"]
+COPY ["src/Trading.Application/Trading.Application.csproj", "Trading.Application/"]
 RUN dotnet restore "Trading.API/Trading.API.csproj"
 COPY src .
 WORKDIR "/src/Trading.API"

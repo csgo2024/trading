@@ -7,7 +7,7 @@ using Trading.Infrastructure;
 namespace Trading.API.Controllers;
 
 [ApiController]
-[Route("[controller]")]
+[Route("api/v1/status")]
 public class StatusController : ControllerBase
 {
     private readonly IMongoDbContext _mongoDbContext;
