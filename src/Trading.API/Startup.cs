@@ -1,4 +1,5 @@
 using Trading.API.Extensions;
+using Trading.Application.Commands;
 using Trading.Application.Middlerwares;
 using Trading.Application.Queries;
 using Trading.Domain.Entities;
@@ -45,7 +46,7 @@ public class Startup
 
         services.AddMediatR(cfg =>
         {
-            cfg.RegisterServicesFromAssemblyContaining(typeof(Program));
+            cfg.RegisterServicesFromAssemblyContaining(typeof(CreateCredentialCommand));
 
         });
         services.AddTradingServices();
