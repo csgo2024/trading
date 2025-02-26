@@ -30,7 +30,7 @@ public class CreateStrategyCommandHandler : IRequestHandler<CreateStrategyComman
             CreatedAt = DateTime.Now,
             PriceDropPercentage = request.PriceDropPercentage,
             AccountType = request.AccountType,
-            Symbol = request.Symbol,
+            Symbol = request.Symbol.ToUpper(),
             Amount = request.Amount,
             Leverage = request.Leverage,
             Status = StateStatus.Running,

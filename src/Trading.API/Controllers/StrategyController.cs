@@ -30,7 +30,7 @@ public class StrategyController : ControllerBase
     }
 
     [HttpPost("")]
-    public async Task<IActionResult> AddStrategy(CreateStrategyCommand command)
+    public async Task<IActionResult> AddStrategy([FromBody] CreateStrategyCommand command)
     {
         var result = await _mediator.Send(command);
         var apiResponse = ApiResponse<Strategy>.SuccessResponse(result);

@@ -15,7 +15,7 @@ public class CreateStrategyCommand : IRequest<Strategy>
     public decimal PriceDropPercentage { get; set; }
 
     [Range(1, 20, ErrorMessage = "Leverage must be between 1 and 20")]
-    public int Leverage { get; set; }
+    public int? Leverage { get; set; }
 
     public AccountType AccountType { get; set; } = AccountType.Spot;
 
