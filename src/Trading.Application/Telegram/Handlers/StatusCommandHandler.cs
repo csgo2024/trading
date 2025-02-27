@@ -32,7 +32,7 @@ public class StatusCommandHandler : ICommandHandler
             var statusInfo = GetStatusInfo(strategy);
             htmlBuilder.AppendLine($"ID: {strategy.Id}");
             htmlBuilder.AppendLine($"{statusInfo.emoji} [{strategy.AccountType}-{strategy.Symbol}]: {statusInfo.status}");
-            htmlBuilder.AppendLine($"目标价格: {strategy.TargetPrice} 💰");
+            htmlBuilder.AppendLine($"跌幅: {strategy.PriceDropPercentage} / 目标价格: {strategy.TargetPrice} 💰");
             htmlBuilder.AppendLine($"金额: {strategy.Amount} / 数量: {strategy.Quantity}");
 
             if (strategy.UpdatedAt.HasValue)
