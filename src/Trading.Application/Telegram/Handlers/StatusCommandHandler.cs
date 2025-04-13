@@ -50,7 +50,8 @@ public class StatusCommandHandler : ICommandHandler
         foreach (var alert in alerts)
         {
             htmlBuilder.AppendLine($"Symbol: {alert.Symbol}");
-            htmlBuilder.AppendLine($"Condition: {alert.Condition}");
+            var safeMessage = alert.Condition.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;");
+            htmlBuilder.AppendLine($"Condition: {safeMessage}");
             htmlBuilder.AppendLine("------------------------");
         }
         htmlBuilder.AppendLine("</pre>");
