@@ -18,17 +18,18 @@ public class JavaScriptEvaluator
         );
     }
 
-    public bool ValidateCondition(string condition)
+    public bool ValidateCondition(string condition, out string message)
     {
         try
         {
             SetDefaultValues();
             _jsEngine.Evaluate(condition);
+            message = string.Empty;
             return true;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Invalid JavaScript condition: {Condition}", condition);
+            message = ex.Message;
             return false;
         }
     }

@@ -1,9 +1,5 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using Telegram.Bot;
-using Telegram.Bot.Types.Enums;
-using Trading.Common.Models;
 using Trading.Common.Tools;
 using Trading.Domain.Entities;
 using Trading.Domain.Events;
@@ -13,25 +9,19 @@ namespace Trading.Application.Telegram.Handlers;
 
 public class PriceAlertCommandHandler : ICommandHandler
 {
-    private readonly ITelegramBotClient _botClient;
     private readonly ILogger<PriceAlertCommandHandler> _logger;
-    private readonly string _chatId;
     private readonly IPriceAlertRepository _alertRepository;
     private readonly IMediator _mediator;
     private readonly JavaScriptEvaluator _javaScriptEvaluator;
     public static string Command => "/alert";
 
     public PriceAlertCommandHandler(
-        ITelegramBotClient botClient,
         ILogger<PriceAlertCommandHandler> logger,
-        IOptions<TelegramSettings> settings,
         IMediator mediator,
         JavaScriptEvaluator javaScriptEvaluator,
         IPriceAlertRepository alertRepository)
     {
-        _botClient = botClient;
         _logger = logger;
-        _chatId = settings.Value.ChatId ?? throw new ArgumentNullException(nameof(settings));
         _alertRepository = alertRepository;
         _mediator = mediator;
         _javaScriptEvaluator = javaScriptEvaluator;
@@ -44,11 +34,7 @@ public class PriceAlertCommandHandler : ICommandHandler
             var parts = parameters.Trim().Split([' '], 2);
             if (parts.Length != 2)
             {
-                await _botClient.SendMessage(
-                    chatId: _chatId,
-                    text: "<pre>格式错误! 正确格式:\n/alert BTCUSDT close > 50000</pre>",
-                    parseMode: ParseMode.Html
-                );
+                _logger.LogError("<pre>格式错误! 正确格式:\n/alert BTCUSDT close > 50000</pre>");
                 return;
             }
 
@@ -56,13 +42,9 @@ public class PriceAlertCommandHandler : ICommandHandler
             var condition = parts[1];
 
             // Validate JavaScript condition
-            if (!_javaScriptEvaluator.ValidateCondition(condition))
+            if (!_javaScriptEvaluator.ValidateCondition(condition, out var message))
             {
-                await _botClient.SendMessage(
-                    chatId: _chatId,
-                    text: "<pre>条件语法错误</pre>",
-                    parseMode: ParseMode.Html
-                );
+                _logger.LogError("<pre>条件语法错误: {Message}</pre>", message);
                 return;
             }
 
@@ -75,12 +57,7 @@ public class PriceAlertCommandHandler : ICommandHandler
             };
 
             await _alertRepository.AddAsync(alert);
-
-            await _botClient.SendMessage(
-                chatId: _chatId,
-                text: $"<pre>已设置 {symbol} 价格预警\n条件: {condition}</pre>",
-                parseMode: ParseMode.Html
-            );
+            _logger.LogInformation("<pre>已设置 {Symbol} 价格预警\n条件: {Condition}</pre>", symbol, condition);
         }
         catch (Exception ex)
         {
