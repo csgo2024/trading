@@ -12,6 +12,7 @@ public class StatusCommandHandlerTests
 {
     private readonly Mock<ITelegramBotClient> _mockBotClient;
     private readonly Mock<IStrategyRepository> _mockStrategyRepository;
+    private readonly Mock<IPriceAlertRepository> _mockPriceAlertRepository;
     private readonly Mock<ILogger<StatusCommandHandler>> _mockLogger;
     private readonly StatusCommandHandler _handler;
 
@@ -19,8 +20,9 @@ public class StatusCommandHandlerTests
     {
         _mockBotClient = new Mock<ITelegramBotClient>();
         _mockStrategyRepository = new Mock<IStrategyRepository>();
+        _mockPriceAlertRepository = new Mock<IPriceAlertRepository>();
         _mockLogger = new Mock<ILogger<StatusCommandHandler>>();
-        _handler = new StatusCommandHandler(_mockStrategyRepository.Object, _mockLogger.Object);
+        _handler = new StatusCommandHandler(_mockStrategyRepository.Object, _mockPriceAlertRepository.Object, _mockLogger.Object);
     }
 
     [Fact]

@@ -50,8 +50,7 @@ public class StatusCommandHandler : ICommandHandler
         foreach (var alert in alerts)
         {
             htmlBuilder.AppendLine($"Symbol: {alert.Symbol}");
-            htmlBuilder.AppendLine($"TargetPrice: {alert.TargetPrice}");
-            htmlBuilder.AppendLine($"Alert Type: {alert.Type}");
+            htmlBuilder.AppendLine($"Condition: {alert.Condition}");
             htmlBuilder.AppendLine("------------------------");
         }
         htmlBuilder.AppendLine("</pre>");

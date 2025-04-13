@@ -31,7 +31,7 @@ public class HelpCommandHandler : ICommandHandler
 删除策略
 ```/delete 12345```
 创建价格报警
-```/alert BTCUSDT above/below 50000```
+```/alert BTCUSDT close > 50000```
 ";
 
     public HelpCommandHandler(ILogger<HelpCommandHandler> logger, ITelegramBotClient botClient, IOptions<TelegramSettings> settings)

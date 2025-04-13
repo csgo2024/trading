@@ -47,7 +47,7 @@ public class Startup
         services.AddMediatR(cfg =>
         {
             cfg.RegisterServicesFromAssemblyContaining(typeof(CreateCredentialCommand));
-
+            cfg.RegisterServicesFromAssembly(typeof(Program).Assembly);
         });
         services.AddTradingServices();
         services.AddBinance(Configuration);
