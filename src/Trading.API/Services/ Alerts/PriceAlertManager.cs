@@ -49,16 +49,15 @@ public class PriceAlertManager : INotificationHandler<AlertStatusChangedEvent>
         var alerts = await _alertRepository.GetActiveAlertsAsync(ct);
         var symbols = alerts.Select(a => a.Symbol).Distinct().ToHashSet();
 
-        // 更新内存中的警告
-        foreach (var alert in alerts)
-        {
-            _activeAlerts.AddOrUpdate(alert.Id, alert, (_, _) => alert);
-        }
-
         // 如果需要重连或币种发生变化，重新订阅
         if (_streamManager.NeedsReconnection() || SymbolsChanged(symbols))
         {
             await _streamManager.SubscribeSymbols(symbols, ct);
+        }
+        // 更新内存中的警告
+        foreach (var alert in alerts)
+        {
+            _activeAlerts.AddOrUpdate(alert.Id, alert, (_, _) => alert);
         }
     }
     private static bool SymbolsChanged(HashSet<string> newSymbols)
@@ -144,6 +143,7 @@ public class PriceAlertManager : INotificationHandler<AlertStatusChangedEvent>
                 text: $"""
                 <pre>⚠️ {alert.Symbol} 警报触发 {trend}
                 条件: {alert.Condition}
+                收盘价格: {kline.ClosePrice}
                 {changeText}: {priceChange:F3} ({priceChangePercent:F3}%)</pre>
                 """,
                 parseMode: ParseMode.Html,
@@ -173,8 +173,9 @@ public class PriceAlertManager : INotificationHandler<AlertStatusChangedEvent>
         if (_activeAlerts.TryGetValue(notification.AlertId, out var alert))
         {
             alert.IsActive = notification.IsActive;
-            _logger.LogInformation("Alert {AlertId} status updated to {Status}",
-                notification.AlertId,
+            _logger.LogInformation("{Symbol} Alert {Condition} status updated to {Status}",
+                alert.Symbol,
+                alert.Condition,
                 notification.IsActive ? "active" : "inactive");
         }
         return Task.CompletedTask;
