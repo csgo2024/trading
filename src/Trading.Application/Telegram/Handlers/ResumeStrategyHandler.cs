@@ -29,4 +29,9 @@ public class ResumeStrategyHandler : ICommandHandler
             _logger.LogInformation("<pre>策略已成功恢复运行️</pre>");
         }
     }
+
+    public Task HandleCallbackAsync(string callbackData)
+    {
+        throw new NotImplementedException();
+    }
 }

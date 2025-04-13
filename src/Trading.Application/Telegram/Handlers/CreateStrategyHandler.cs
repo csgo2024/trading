@@ -39,4 +39,9 @@ public class CreateStrategyHandler : ICommandHandler
             _logger.LogError(ex, "<pre>Create strategy failed</pre>");
         }
     }
+
+    public Task HandleCallbackAsync(string callbackData)
+    {
+        throw new NotImplementedException();
+    }
 }

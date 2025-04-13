@@ -28,4 +28,9 @@ public class StopStrategyHandler : ICommandHandler
             _logger.LogInformation("<pre>策略已成功暂停 ⏸️</pre>");
         }
     }
+
+    public Task HandleCallbackAsync(string callbackData)
+    {
+        throw new NotImplementedException();
+    }
 }

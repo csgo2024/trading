@@ -22,13 +22,17 @@ public class HelpCommandHandler : ICommandHandler
 /resume - 恢复所有策略运行
 /stop - 暂停所有策略运行
 /delete - 删除指定的策略
+/alert - 设置价格警报
 ";
 
     private const string CreateStrategyText = @"
 创建策略
 ```/create {""Symbol"":""BTCUSDT"",""Amount"":1000,""PriceDropPercentage"":0.2,""Leverage"":5,""AccountType"":""Spot"",""StrategyType"":""BottomBuy""}```
 删除策略
-```/delete 12345```";
+```/delete 12345```
+创建价格报警
+```/alert BTCUSDT above/below 50000```
+";
 
     public HelpCommandHandler(ILogger<HelpCommandHandler> logger, ITelegramBotClient botClient, IOptions<TelegramSettings> settings)
     {
@@ -45,5 +49,10 @@ public class HelpCommandHandler : ICommandHandler
             text: CreateStrategyText,
             parseMode: ParseMode.MarkdownV2
         );
+    }
+
+    public Task HandleCallbackAsync(string callbackData)
+    {
+        throw new NotImplementedException();
     }
 }

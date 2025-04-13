@@ -8,6 +8,8 @@ namespace Trading.Application.Telegram.Handlers;
 public class StatusCommandHandler : ICommandHandler
 {
     private readonly IStrategyRepository _strategyRepository;
+    private readonly IPriceAlertRepository _priceAlertRepository;
+
     private readonly ILogger<StatusCommandHandler> _logger;
     private const string DateTimeFormat = "yyyy-MM-dd HH:mm:ss";
 
@@ -15,15 +17,18 @@ public class StatusCommandHandler : ICommandHandler
 
     public StatusCommandHandler(
         IStrategyRepository strategyRepository,
+        IPriceAlertRepository priceAlertRepository,
         ILogger<StatusCommandHandler> logger)
     {
         _strategyRepository = strategyRepository;
+        _priceAlertRepository = priceAlertRepository;
         _logger = logger;
     }
 
     public async Task HandleAsync(string parameters)
     {
         var strategies = await _strategyRepository.GetAllStrategies();
+        var alerts = await _priceAlertRepository.GetActiveAlertsAsync(default);
         var htmlBuilder = new StringBuilder();
 
         htmlBuilder.AppendLine("<pre>");
@@ -42,6 +47,13 @@ public class StatusCommandHandler : ICommandHandler
             }
             htmlBuilder.AppendLine("------------------------");
         }
+        foreach (var alert in alerts)
+        {
+            htmlBuilder.AppendLine($"Symbol: {alert.Symbol}");
+            htmlBuilder.AppendLine($"TargetPrice: {alert.TargetPrice}");
+            htmlBuilder.AppendLine($"Alert Type: {alert.Type}");
+            htmlBuilder.AppendLine("------------------------");
+        }
         htmlBuilder.AppendLine("</pre>");
 
         _logger.LogInformation(htmlBuilder.ToString());
@@ -53,4 +65,9 @@ public class StatusCommandHandler : ICommandHandler
         StateStatus.Paused => ("🔴", "已暂停"),
         _ => ("⚠️", "未知状态")
     };
+
+    public Task HandleCallbackAsync(string callbackData)
+    {
+        throw new NotImplementedException();
+    }
 }

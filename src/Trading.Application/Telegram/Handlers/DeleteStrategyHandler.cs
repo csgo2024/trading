@@ -32,4 +32,9 @@ public class DeleteStrategyHandler : ICommandHandler
         }
         _logger.LogInformation("<pre>策略[{StrategyId}]已删除 ✅</pre>", strategyId);
     }
+
+    public Task HandleCallbackAsync(string callbackData)
+    {
+        throw new NotImplementedException();
+    }
 }

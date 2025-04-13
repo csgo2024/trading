@@ -58,6 +58,7 @@ public static class ServiceCollectionExtensions
 
         services.AddSingleton<IStrategyRepository, StrategyRepository>();
         services.AddSingleton<ICredentialSettingRepository, CredentialSettingRepository>();
+        services.AddSingleton<IPriceAlertRepository, PriceAlertRepository>();
         MongoDbConfigration.Configure();
         return services;
     }

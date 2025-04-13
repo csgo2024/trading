@@ -56,6 +56,12 @@ public static class MongoDbConfigration
                 cm.SetIgnoreExtraElements(true);
             });
 
+            RegisterClassMap<PriceAlert>(cm =>
+            {
+                cm.AutoMap();
+                cm.SetIgnoreExtraElements(true);
+            });
+
             _initialized = true;
         }
     }

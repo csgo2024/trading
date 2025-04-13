@@ -18,6 +18,28 @@ namespace Trading.API.Extensions;
 
 public static class ServiceCollectionExtensions
 {
+    private static BinanceSettings GetBinanceSettings(IServiceProvider provider, IConfiguration configuration)
+    {
+        var privateKey = configuration.GetSection("PrivateKey")?.Value ?? string.Empty;
+        var query = provider.GetRequiredService<ICredentialQuery>();
+        var settings = query.GetCredential();
+        var apiKey = "your-api-key";
+        if (settings?.ApiKey != null)
+        {
+            apiKey = Encoding.UTF8.GetString(CreateCredentialCommandHandler.DecryptData(settings.ApiKey, privateKey));
+        }
+        var apiSecret = "your-secret";
+        if (settings?.ApiSecret != null)
+        {
+            apiSecret = Encoding.UTF8.GetString(CreateCredentialCommandHandler.DecryptData(settings.ApiSecret, privateKey));
+        }
+        return new BinanceSettings
+        {
+            ApiKey = apiKey,
+            ApiSecret = apiSecret
+        };
+    }
+
     public static IServiceCollection AddTradingServices(this IServiceCollection services)
     {
         services.AddSingleton<FeatureProcessor>();
@@ -28,6 +50,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<DCABuyExecutor>();
         services.AddSingleton<ExecutorFactory>();
         services.AddHostedService<TradingService>();
+        services.AddHostedService<PriceAlertService>();
         return services;
     }
 
@@ -45,6 +68,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<DeleteStrategyHandler>();
         services.AddSingleton<StopStrategyHandler>();
         services.AddSingleton<ResumeStrategyHandler>();
+        services.AddSingleton<PriceAlertCommandHandler>();
         services.AddSingleton<TelegramCommandHandlerFactory>();
         services.AddSingleton<ITelegramCommandHandler, TelegramCommandHandler>();
 
@@ -62,24 +86,23 @@ public static class ServiceCollectionExtensions
     }
     public static IServiceCollection AddBinance(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddSingleton(provider =>
+        services.AddSingleton(provider => GetBinanceSettings(provider, configuration));
+        services.AddSingleton<BinanceRestClient>(provider =>
         {
-            var privateKey = configuration.GetSection("PrivateKey")?.Value ?? string.Empty;
-            var query = provider.GetRequiredService<ICredentialQuery>();
-            var settings = query.GetCredential();
-            var apiKey = "your-api-key";
-            if (settings?.ApiKey != null)
-            {
-                apiKey = Encoding.UTF8.GetString(CreateCredentialCommandHandler.DecryptData(settings.ApiKey, privateKey));
-            }
-            var apiSecret = "your-secret";
-            if (settings?.ApiSecret != null)
-            {
-                apiSecret = Encoding.UTF8.GetString(CreateCredentialCommandHandler.DecryptData(settings.ApiSecret, privateKey));
-            }
+            var settings = provider.GetRequiredService<BinanceSettings>();
             var restClient = new BinanceRestClient(options =>
             {
-                options.ApiCredentials = new ApiCredentials(apiKey, apiSecret);
+                options.ApiCredentials = new ApiCredentials(settings.ApiKey, settings.ApiSecret);
+            });
+            return restClient;
+        });
+
+        services.AddSingleton<BinanceSocketClient>(provider =>
+        {
+            var settings = provider.GetRequiredService<BinanceSettings>();
+            var restClient = new BinanceSocketClient(options =>
+            {
+                options.ApiCredentials = new ApiCredentials(settings.ApiKey, settings.ApiSecret);
             });
             return restClient;
         });
