@@ -71,14 +71,22 @@ public class TradingApiFixture : WebApplicationFactory<Program>, IAsyncLifetime
                 return _client.GetDatabase("InMemoryDbForTesting");
             });
 
-            // Remove the BackgroundService registration.
-            var hostedServiceDescriptor = services.SingleOrDefault(
-            d => d.ServiceType == typeof(IHostedService) &&
-                 d.ImplementationType == typeof(TradingService));
-
-            if (hostedServiceDescriptor != null)
+            var hostedServices = new[]
             {
-                services.Remove(hostedServiceDescriptor);
+                typeof(TradingService),
+                typeof(PriceAlertService)
+            };
+            // Remove all hosted services that are not needed for testing.
+            foreach (var hostedService in hostedServices)
+            {
+                var hostedServiceDescriptor = services.SingleOrDefault(
+                    d => d.ServiceType == typeof(IHostedService) &&
+                         d.ImplementationType == hostedService);
+
+                if (hostedServiceDescriptor != null)
+                {
+                    services.Remove(hostedServiceDescriptor);
+                }
             }
 
             // Build the service provider.

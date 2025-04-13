@@ -61,14 +61,13 @@ public class PriceAlertService : BackgroundService, INotificationHandler<AlertSt
             try
             {
                 await LoadAndSubscribe(stoppingToken);
-                // 每分钟检查一次新的警告
-                await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Price alert service error");
-                await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken);
             }
+            // 每分钟检查一次新的警告
+            await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
         }
     }
     public override async Task StopAsync(CancellationToken cancellationToken)
