@@ -7,6 +7,7 @@ using Telegram.Bot;
 using Trading.Application.Telegram;
 using Trading.Application.Telegram.Handlers;
 using Trading.Common.Models;
+using Trading.Common.Tools;
 using Trading.Domain.IRepositories;
 
 namespace Trading.Application.Tests.Telegram;
@@ -36,6 +37,9 @@ public class TelegramCommandHandlerFactoryTests
         services.AddSingleton(Mock.Of<ICredentialSettingRepository>());
         services.AddSingleton(Mock.Of<IPriceAlertRepository>());
         services.AddSingleton(Mock.Of<ITelegramBotClient>()); // Add TelegramBotClient mock
+
+        var jsEvaluatorMock = new Mock<JavaScriptEvaluator>(Mock.Of<ILogger<JavaScriptEvaluator>>());
+        services.AddSingleton(jsEvaluatorMock.Object);
 
         services.AddTransient<HelpCommandHandler>();
         services.AddTransient<StatusCommandHandler>();

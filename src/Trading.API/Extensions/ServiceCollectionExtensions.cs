@@ -4,6 +4,7 @@ using CryptoExchange.Net.Authentication;
 using Microsoft.Extensions.Options;
 using Telegram.Bot;
 using Trading.API.HostServices;
+using Trading.API.Services.Alerts;
 using Trading.API.Services.Trading.Account;
 using Trading.API.Services.Trading.Executors;
 using Trading.Application.Commands;
@@ -13,6 +14,7 @@ using Trading.Application.Telegram;
 using Trading.Application.Telegram.Handlers;
 using Trading.Application.Telegram.HostServices;
 using Trading.Common.Models;
+using Trading.Common.Tools;
 
 namespace Trading.API.Extensions;
 
@@ -50,7 +52,11 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<DCABuyExecutor>();
         services.AddSingleton<ExecutorFactory>();
         services.AddHostedService<TradingService>();
+        services.AddSingleton<KlineStreamManager>();
+        services.AddSingleton<PriceAlertManager>();
         services.AddHostedService<PriceAlertService>();
+
+        services.AddSingleton<JavaScriptEvaluator>();
         return services;
     }
 
