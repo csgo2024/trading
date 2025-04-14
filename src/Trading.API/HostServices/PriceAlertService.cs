@@ -21,7 +21,7 @@ public class PriceAlertService : BackgroundService
         {
             try
             {
-                await _alertManager.LoadAlertsAsync(stoppingToken);
+                await _alertManager.LoadPriceAlertsAsync(stoppingToken);
             }
             catch (Exception ex)
             {

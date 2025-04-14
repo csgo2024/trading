@@ -3,10 +3,13 @@ using Microsoft.Extensions.Logging;
 
 namespace Trading.Common.Tools;
 
-public class JavaScriptEvaluator
+public class JavaScriptEvaluator : IDisposable
 {
     private readonly ILogger<JavaScriptEvaluator> _logger;
     private readonly Engine _jsEngine;
+    private readonly SemaphoreSlim _engineLock = new(1, 1);
+    private const int MaxRetries = 1;
+    private const int RetryDelayMs = 100;
 
     public JavaScriptEvaluator(ILogger<JavaScriptEvaluator> logger)
     {
@@ -40,17 +43,38 @@ public class JavaScriptEvaluator
                                   decimal high,
                                   decimal low)
     {
-        try
+        for (int attempt = 1; attempt <= MaxRetries; attempt++)
         {
-            SetPriceValues(open, close, high, low);
-            var result = _jsEngine.Evaluate(condition);
-            return result.AsBoolean();
+            try
+            {
+                _engineLock.Wait();
+                try
+                {
+                    SetPriceValues(open, close, high, low);
+                    var result = _jsEngine.Evaluate(condition);
+                    return result.AsBoolean();
+                }
+                finally
+                {
+                    _engineLock.Release();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "JavaScript evaluation error (attempt {Attempt}/{MaxRetries}) for condition: {Condition}",
+                    attempt, MaxRetries, condition);
+
+                if (attempt == MaxRetries)
+                {
+                    return false;
+                }
+
+                Thread.Sleep(RetryDelayMs * attempt); // Exponential backoff
+            }
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "JavaScript evaluation error for condition: {Condition}", condition);
-            return false;
-        }
+
+        return false;
     }
 
     private void SetDefaultValues()
@@ -63,9 +87,14 @@ public class JavaScriptEvaluator
 
     private void SetPriceValues(decimal open, decimal close, decimal high, decimal low)
     {
-        _jsEngine.SetValue("open", (double)open);
-        _jsEngine.SetValue("close", (double)close);
-        _jsEngine.SetValue("high", (double)high);
-        _jsEngine.SetValue("low", (double)low);
+        _jsEngine.SetValue("open", Convert.ToDouble(open));
+        _jsEngine.SetValue("close", Convert.ToDouble(close));
+        _jsEngine.SetValue("high", Convert.ToDouble(high));
+        _jsEngine.SetValue("low", Convert.ToDouble(low));
+    }
+
+    public void Dispose()
+    {
+        _engineLock?.Dispose();
     }
 }

@@ -35,7 +35,7 @@ public class KlineStreamManager : IDisposable
         {
             var result = await _socketClient.UsdFuturesApi.ExchangeData.SubscribeToKlineUpdatesAsync(
                 symbols.ToList(),
-                Binance.Net.Enums.KlineInterval.FourHour,
+                Binance.Net.Enums.KlineInterval.OneHour,
                 HandlePriceUpdate,
                 ct: ct);
 

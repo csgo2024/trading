@@ -57,6 +57,7 @@ public class PriceAlertCommandHandler : ICommandHandler
             };
 
             await _alertRepository.AddAsync(alert);
+            await _mediator.Publish(new PriceAlertCreatedEvent());
             _logger.LogInformation("<pre>已设置 {Symbol} 价格预警\n条件: {Condition}</pre>", symbol, condition);
         }
         catch (Exception ex)
@@ -85,8 +86,8 @@ public class PriceAlertCommandHandler : ICommandHandler
                 case "resume":
                     alert.IsActive = true;
                     alert.UpdatedAt = DateTime.UtcNow;
-                    await _mediator.Publish(new AlertStatusChangedEvent(alertId, true));
                     await _alertRepository.UpdateAsync(alertId, alert);
+                    await _mediator.Publish(new AlertStatusChangedEvent(alertId, true));
                     break;
             }
         }
