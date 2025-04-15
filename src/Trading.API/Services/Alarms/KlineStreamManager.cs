@@ -61,7 +61,7 @@ public class KlineStreamManager : IDisposable,
             _listenedSymbols.UnionWith(symbols);
             var result = await _socketClient.UsdFuturesApi.ExchangeData.SubscribeToKlineUpdatesAsync(
                 _listenedSymbols.ToArray(),
-                Binance.Net.Enums.KlineInterval.FifteenMinutes,
+                Binance.Net.Enums.KlineInterval.OneHour,
                 HandlePriceUpdate,
                 ct: ct);
 

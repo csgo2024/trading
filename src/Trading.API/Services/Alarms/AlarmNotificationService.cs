@@ -115,7 +115,7 @@ public class AlarmNotificationService :
                 }
                 else
                 {
-                    _logger.LogWarning("No kline data for symbol {Symbol}", alarm.Symbol);
+                    // _logger.LogWarning("No kline data for symbol {Symbol}", alarm.Symbol);
                 }
 
                 await Task.Delay(TimeSpan.FromSeconds(30), cancellationToken);

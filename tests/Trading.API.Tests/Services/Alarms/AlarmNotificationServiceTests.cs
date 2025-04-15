@@ -227,7 +227,7 @@ public class AlarmNotificationServiceTests
         // Assert
         _loggerMock.Verify(
             x => x.Log(
-                LogLevel.Warning,
+                LogLevel.Debug,
                 It.IsAny<EventId>(),
                 It.Is<It.IsAnyType>((v, t) => true),
                 It.IsAny<Exception>(),
