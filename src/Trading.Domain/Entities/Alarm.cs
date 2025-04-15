@@ -1,7 +1,7 @@
 
 namespace Trading.Domain.Entities;
 
-public class PriceAlert : BaseEntity
+public class Alarm : BaseEntity
 {
     public string Symbol { get; set; } = null!;
     public string Condition { get; set; } = null!; // JavaScript条件代码

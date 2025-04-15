@@ -35,7 +35,7 @@ public class TelegramCommandHandlerFactoryTests
         services.AddSingleton(Mock.Of<IMediator>());
         services.AddSingleton(Mock.Of<IStrategyRepository>());
         services.AddSingleton(Mock.Of<ICredentialSettingRepository>());
-        services.AddSingleton(Mock.Of<IPriceAlertRepository>());
+        services.AddSingleton(Mock.Of<IAlarmRepository>());
         services.AddSingleton(Mock.Of<ITelegramBotClient>()); // Add TelegramBotClient mock
 
         var jsEvaluatorMock = new Mock<JavaScriptEvaluator>(Mock.Of<ILogger<JavaScriptEvaluator>>());
@@ -47,7 +47,7 @@ public class TelegramCommandHandlerFactoryTests
         services.AddTransient<DeleteStrategyHandler>();
         services.AddTransient<StopStrategyHandler>();
         services.AddTransient<ResumeStrategyHandler>();
-        services.AddTransient<PriceAlertCommandHandler>();
+        services.AddTransient<AlarmCommandHandler>();
 
         _serviceProvider = services.BuildServiceProvider();
         _factory = new TelegramCommandHandlerFactory(_serviceProvider);
@@ -60,7 +60,7 @@ public class TelegramCommandHandlerFactoryTests
     [InlineData("/delete", typeof(DeleteStrategyHandler))]
     [InlineData("/stop", typeof(StopStrategyHandler))]
     [InlineData("/resume", typeof(ResumeStrategyHandler))]
-    [InlineData("/alert", typeof(PriceAlertCommandHandler))]
+    [InlineData("/alarm", typeof(AlarmCommandHandler))]
     public void GetHandler_ShouldReturnCorrectHandler(string command, Type expectedType)
     {
         // Act

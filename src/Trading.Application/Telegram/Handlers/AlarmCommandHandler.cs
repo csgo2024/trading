@@ -7,22 +7,22 @@ using Trading.Domain.IRepositories;
 
 namespace Trading.Application.Telegram.Handlers;
 
-public class PriceAlertCommandHandler : ICommandHandler
+public class AlarmCommandHandler : ICommandHandler
 {
-    private readonly ILogger<PriceAlertCommandHandler> _logger;
-    private readonly IPriceAlertRepository _alertRepository;
+    private readonly ILogger<AlarmCommandHandler> _logger;
+    private readonly IAlarmRepository _alarmRepository;
     private readonly IMediator _mediator;
     private readonly JavaScriptEvaluator _javaScriptEvaluator;
-    public static string Command => "/alert";
+    public static string Command => "/alarm";
 
-    public PriceAlertCommandHandler(
-        ILogger<PriceAlertCommandHandler> logger,
+    public AlarmCommandHandler(
+        ILogger<AlarmCommandHandler> logger,
         IMediator mediator,
         JavaScriptEvaluator javaScriptEvaluator,
-        IPriceAlertRepository alertRepository)
+        IAlarmRepository alarmRepository)
     {
         _logger = logger;
-        _alertRepository = alertRepository;
+        _alarmRepository = alarmRepository;
         _mediator = mediator;
         _javaScriptEvaluator = javaScriptEvaluator;
     }
@@ -34,7 +34,7 @@ public class PriceAlertCommandHandler : ICommandHandler
             var parts = parameters.Trim().Split([' '], 2);
             if (parts.Length != 2)
             {
-                _logger.LogError("<pre>格式错误! 正确格式:\n/alert BTCUSDT close > 50000</pre>");
+                _logger.LogError("<pre>格式错误! 正确格式:\n/alarm BTCUSDT close > 50000</pre>");
                 return;
             }
 
@@ -48,7 +48,7 @@ public class PriceAlertCommandHandler : ICommandHandler
                 return;
             }
 
-            var alert = new PriceAlert
+            var alarm = new Alarm
             {
                 Symbol = symbol,
                 Condition = condition,
@@ -56,13 +56,13 @@ public class PriceAlertCommandHandler : ICommandHandler
                 LastNotification = DateTime.UtcNow,
             };
 
-            await _alertRepository.AddAsync(alert);
-            await _mediator.Publish(new PriceAlertCreatedEvent());
+            await _alarmRepository.AddAsync(alarm);
+            await _mediator.Publish(new AlarmCreatedEvent(alarm));
             _logger.LogInformation("<pre>已设置 {Symbol} 价格预警\n条件: {Condition}</pre>", symbol, condition);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Create alert failed");
+            _logger.LogError(ex, "Create alarm failed");
         }
     }
 
@@ -72,22 +72,22 @@ public class PriceAlertCommandHandler : ICommandHandler
         {
             var parts = callbackData.Split('_');
             var action = parts[0];
-            var alertId = parts[1];
-            var alert = await _alertRepository.GetByIdAsync(alertId);
+            var alarmId = parts[1];
+            var alarm = await _alarmRepository.GetByIdAsync(alarmId);
             switch (action)
             {
                 case "pause":
-                    alert.IsActive = false;
-                    alert.UpdatedAt = DateTime.UtcNow;
-                    await _alertRepository.UpdateAsync(alertId, alert);
-                    await _mediator.Publish(new AlertStatusChangedEvent(alertId, false));
+                    alarm.IsActive = false;
+                    alarm.UpdatedAt = DateTime.UtcNow;
+                    await _alarmRepository.UpdateAsync(alarmId, alarm);
+                    await _mediator.Publish(new AlarmPausedEvent(alarmId));
                     break;
 
                 case "resume":
-                    alert.IsActive = true;
-                    alert.UpdatedAt = DateTime.UtcNow;
-                    await _alertRepository.UpdateAsync(alertId, alert);
-                    await _mediator.Publish(new AlertStatusChangedEvent(alertId, true));
+                    alarm.IsActive = true;
+                    alarm.UpdatedAt = DateTime.UtcNow;
+                    await _alarmRepository.UpdateAsync(alarmId, alarm);
+                    await _mediator.Publish(new AlarmResumedEvent(alarm));
                     break;
             }
         }

@@ -4,7 +4,7 @@ using CryptoExchange.Net.Authentication;
 using Microsoft.Extensions.Options;
 using Telegram.Bot;
 using Trading.API.HostServices;
-using Trading.API.Services.Alerts;
+using Trading.API.Services.Alarms;
 using Trading.API.Services.Trading.Account;
 using Trading.API.Services.Trading.Executors;
 using Trading.Application.Commands;
@@ -53,8 +53,9 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ExecutorFactory>();
         services.AddHostedService<TradingService>();
         services.AddSingleton<KlineStreamManager>();
-        services.AddSingleton<PriceAlertManager>();
-        services.AddHostedService<PriceAlertService>();
+        services.AddSingleton<AlarmNotificationService>();
+        services.AddSingleton<AlarmTaskManager>();
+        services.AddHostedService<AlarmHostService>();
 
         services.AddSingleton<JavaScriptEvaluator>();
         return services;
@@ -74,7 +75,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<DeleteStrategyHandler>();
         services.AddSingleton<StopStrategyHandler>();
         services.AddSingleton<ResumeStrategyHandler>();
-        services.AddSingleton<PriceAlertCommandHandler>();
+        services.AddSingleton<AlarmCommandHandler>();
         services.AddSingleton<TelegramCommandHandlerFactory>();
         services.AddSingleton<ITelegramCommandHandler, TelegramCommandHandler>();
 

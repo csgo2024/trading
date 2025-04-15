@@ -29,7 +29,7 @@ public class TelegramBotService : BackgroundService
         _serviceProvider = serviceProvider;
     }
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
         try
         {
@@ -37,7 +37,7 @@ public class TelegramBotService : BackgroundService
                 updateHandler: HandleUpdateAsync,
                 errorHandler: HandlePollingErrorAsync,
                 receiverOptions: new ReceiverOptions(),
-                cancellationToken: stoppingToken
+                cancellationToken: cancellationToken
             );
         }
         catch (Exception ex)
@@ -45,7 +45,7 @@ public class TelegramBotService : BackgroundService
             _logger.LogError(ex, "<pre>Failed to start bot service</pre>");
         }
 
-        await Task.Delay(-1, stoppingToken);
+        await Task.Delay(-1, cancellationToken);
     }
 
     private async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
@@ -57,8 +57,7 @@ public class TelegramBotService : BackgroundService
                 if (callbackQuery.Data?.StartsWith("pause_") == true ||
                     callbackQuery.Data?.StartsWith("resume_") == true)
                 {
-                    // 获取PriceAlertHandler实例并处理回调
-                    var handler = _serviceProvider.GetService<PriceAlertCommandHandler>();
+                    var handler = _serviceProvider.GetService<AlarmCommandHandler>();
                     if (handler != null)
                     {
                         await handler.HandleCallbackAsync(callbackQuery.Data);

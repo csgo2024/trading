@@ -18,7 +18,7 @@ public class TelegramCommandHandlerFactory
             {DeleteStrategyHandler.Command, typeof(DeleteStrategyHandler)},
             {StopStrategyHandler.Command, typeof(StopStrategyHandler)},
             {ResumeStrategyHandler.Command, typeof(ResumeStrategyHandler)},
-            {PriceAlertCommandHandler.Command, typeof(PriceAlertCommandHandler)},
+            {AlarmCommandHandler.Command, typeof(AlarmCommandHandler)},
         };
     }
 

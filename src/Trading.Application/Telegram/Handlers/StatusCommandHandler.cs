@@ -8,7 +8,7 @@ namespace Trading.Application.Telegram.Handlers;
 public class StatusCommandHandler : ICommandHandler
 {
     private readonly IStrategyRepository _strategyRepository;
-    private readonly IPriceAlertRepository _priceAlertRepository;
+    private readonly IAlarmRepository _pricealarmRepository;
 
     private readonly ILogger<StatusCommandHandler> _logger;
     private const string DateTimeFormat = "yyyy-MM-dd HH:mm:ss";
@@ -17,18 +17,18 @@ public class StatusCommandHandler : ICommandHandler
 
     public StatusCommandHandler(
         IStrategyRepository strategyRepository,
-        IPriceAlertRepository priceAlertRepository,
+        IAlarmRepository pricealarmRepository,
         ILogger<StatusCommandHandler> logger)
     {
         _strategyRepository = strategyRepository;
-        _priceAlertRepository = priceAlertRepository;
+        _pricealarmRepository = pricealarmRepository;
         _logger = logger;
     }
 
     public async Task HandleAsync(string parameters)
     {
         var strategies = await _strategyRepository.GetAllStrategies();
-        var alerts = await _priceAlertRepository.GetActiveAlertsAsync(default);
+        var Alarms = await _pricealarmRepository.GetActiveAlarmsAsync(default);
         var htmlBuilder = new StringBuilder();
 
         htmlBuilder.AppendLine("<pre>");
@@ -47,10 +47,10 @@ public class StatusCommandHandler : ICommandHandler
             }
             htmlBuilder.AppendLine("------------------------");
         }
-        foreach (var alert in alerts)
+        foreach (var alarm in Alarms)
         {
-            htmlBuilder.AppendLine($"Symbol: {alert.Symbol}");
-            var safeMessage = alert.Condition.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;");
+            htmlBuilder.AppendLine($"Symbol: {alarm.Symbol}");
+            var safeMessage = alarm.Condition.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;");
             htmlBuilder.AppendLine($"Condition: {safeMessage}");
             htmlBuilder.AppendLine("------------------------");
         }

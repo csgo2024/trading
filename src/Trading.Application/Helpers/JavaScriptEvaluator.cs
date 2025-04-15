@@ -21,7 +21,7 @@ public class JavaScriptEvaluator : IDisposable
         );
     }
 
-    public bool ValidateCondition(string condition, out string message)
+    public virtual bool ValidateCondition(string condition, out string message)
     {
         try
         {
@@ -37,7 +37,7 @@ public class JavaScriptEvaluator : IDisposable
         }
     }
 
-    public bool EvaluateCondition(string condition,
+    public virtual bool EvaluateCondition(string condition,
                                   decimal open,
                                   decimal close,
                                   decimal high,

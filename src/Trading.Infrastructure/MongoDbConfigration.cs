@@ -56,7 +56,7 @@ public static class MongoDbConfigration
                 cm.SetIgnoreExtraElements(true);
             });
 
-            RegisterClassMap<PriceAlert>(cm =>
+            RegisterClassMap<Alarm>(cm =>
             {
                 cm.AutoMap();
                 cm.SetIgnoreExtraElements(true);
