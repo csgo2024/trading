@@ -31,6 +31,14 @@ public class AlarmCommandHandler : ICommandHandler
     {
         try
         {
+            // 处理清空命令
+            if (parameters.Trim().Equals("empty", StringComparison.OrdinalIgnoreCase))
+            {
+                var count = await _alarmRepository.ClearAllAlarmsAsync(CancellationToken.None);
+                await _mediator.Publish(new AlarmEmptyEvent());
+                _logger.LogInformation("<pre>已清空所有价格警报，共删除 {Count} 个警报</pre>", count);
+                return;
+            }
             var parts = parameters.Trim().Split([' '], 2);
             if (parts.Length != 2)
             {
@@ -58,7 +66,7 @@ public class AlarmCommandHandler : ICommandHandler
 
             await _alarmRepository.AddAsync(alarm);
             await _mediator.Publish(new AlarmCreatedEvent(alarm));
-            _logger.LogInformation("<pre>已设置 {Symbol} 价格预警\n条件: {Condition}</pre>", symbol, condition);
+            _logger.LogInformation("<pre>已设置 {Symbol} 价格警报\n条件: {Condition}</pre>", symbol, condition);
         }
         catch (Exception ex)
         {
@@ -74,6 +82,11 @@ public class AlarmCommandHandler : ICommandHandler
             var action = parts[0];
             var alarmId = parts[1];
             var alarm = await _alarmRepository.GetByIdAsync(alarmId);
+            if (alarm == null)
+            {
+                _logger.LogError("<pre>未找到报警 ID: {AlarmId}</pre>", alarmId);
+                return;
+            }
             switch (action)
             {
                 case "pause":

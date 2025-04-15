@@ -25,4 +25,14 @@ public class AlarmRepository : BaseRepository<Alarm>, IAlarmRepository
         var result = await _collection.UpdateOneAsync(x => x.Id == alarmId, update, cancellationToken: cancellationToken);
         return result.ModifiedCount > 0;
     }
+
+    public async Task<int> ClearAllAlarmsAsync(CancellationToken cancellationToken)
+    {
+        var deleteResult = await _collection.DeleteManyAsync(
+            Builders<Alarm>.Filter.Empty,
+            cancellationToken);
+
+        return (int)deleteResult.DeletedCount;
+    }
+
 }

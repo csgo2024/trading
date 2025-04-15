@@ -18,7 +18,8 @@ public class AlarmNotificationService :
     INotificationHandler<KlineUpdateEvent>,
     INotificationHandler<AlarmCreatedEvent>,
     INotificationHandler<AlarmPausedEvent>,
-    INotificationHandler<AlarmResumedEvent>
+    INotificationHandler<AlarmResumedEvent>,
+    INotificationHandler<AlarmEmptyEvent>
 {
     private readonly ILogger<AlarmNotificationService> _logger;
     private readonly IAlarmRepository _alarmRepository;
@@ -74,6 +75,14 @@ public class AlarmNotificationService :
         _activeAlarms.AddOrUpdate(alarm.Id, alarm, (_, _) => alarm);
         await _alarmTaskManager.StartMonitor(alarm.Id, ct => ProcessAlarm(alarm, ct), cancellationToken);
     }
+    public async Task Handle(AlarmEmptyEvent notification, CancellationToken cancellationToken)
+    {
+        _activeAlarms.Clear();
+        _lastkLines.Clear();
+        _logger.LogDebug("Alarm list is empty, stopping all monitors.");
+        // Stop all monitors
+        await _alarmTaskManager.StopAllMonitor();
+    }
 
     public async Task InitWithAlarms(IEnumerable<Alarm> alarms, CancellationToken cancellationToken)
     {
@@ -110,7 +119,7 @@ public class AlarmNotificationService :
                             kline.HighPrice,
                             kline.LowPrice))
                     {
-                        SendNotification(alarm, kline);
+                        await SendNotification(alarm, kline);
                     }
                 }
                 else
@@ -118,7 +127,7 @@ public class AlarmNotificationService :
                     // _logger.LogWarning("No kline data for symbol {Symbol}", alarm.Symbol);
                 }
 
-                await Task.Delay(TimeSpan.FromSeconds(30), cancellationToken);
+                await Task.Delay(TimeSpan.FromSeconds(3), cancellationToken);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
@@ -132,7 +141,7 @@ public class AlarmNotificationService :
         }
     }
 
-    private async void SendNotification(Alarm alarm, IBinanceKline kline)
+    private async Task SendNotification(Alarm alarm, IBinanceKline kline)
     {
         try
         {
