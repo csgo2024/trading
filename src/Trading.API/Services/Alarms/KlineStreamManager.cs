@@ -1,5 +1,6 @@
 using Binance.Net.Clients;
 using Binance.Net.Interfaces;
+using CryptoExchange.Net.Objects;
 using CryptoExchange.Net.Objects.Sockets;
 using MediatR;
 using Trading.Domain.Events;
@@ -42,46 +43,40 @@ public class KlineStreamManager : IDisposable,
         _socketClient = socketClient;
     }
 
-    public async Task SubscribeSymbols(HashSet<string> symbols, CancellationToken ct)
+    public async Task<bool> SubscribeSymbols(HashSet<string> symbols, CancellationToken ct)
     {
         if (symbols.Count == 0)
         {
-            return;
+            return false;
         }
 
         if (symbols.IsSubsetOf(_listenedSymbols))
         {
-            return;
+            return true;
         }
 
         await CloseExistingSubscription();
 
-        try
+        _listenedSymbols.UnionWith(symbols);
+        var result = await _socketClient.UsdFuturesApi.ExchangeData.SubscribeToKlineUpdatesAsync(
+            _listenedSymbols.ToArray(),
+            Binance.Net.Enums.KlineInterval.FourHour,
+            HandlePriceUpdate,
+            ct: ct);
+
+        if (!result.Success)
         {
             _listenedSymbols.UnionWith(symbols);
-            var result = await _socketClient.UsdFuturesApi.ExchangeData.SubscribeToKlineUpdatesAsync(
-                _listenedSymbols.ToArray(),
-                Binance.Net.Enums.KlineInterval.FourHour,
-                HandlePriceUpdate,
-                ct: ct);
-
-            if (!result.Success)
-            {
-                _listenedSymbols.UnionWith(symbols);
-                _logger.LogError("Failed to subscribe: {@Error}", result.Error);
-                return;
-            }
-            _subscription = result.Data;
-            _lastConnectionTime = DateTime.UtcNow;
-
-            _logger.LogInformation("Subscribed to {Count} symbols: {@Symbols}",
-                _listenedSymbols.Count, _listenedSymbols);
+            _logger.LogError("Failed to subscribe: {@Error}", result.Error);
+            return false;
         }
-        catch (Exception ex)
-        {
-            _listenedSymbols.Clear();
-            _logger.LogError(ex, "Subscription failed");
-        }
+        _subscription = result.Data;
+        SubscribeToEvents(_subscription);
+        _lastConnectionTime = DateTime.UtcNow;
+
+        _logger.LogInformation("Subscribed to {Count} symbols: {@Symbols}",
+            _listenedSymbols.Count, _listenedSymbols);
+        return true;
     }
 
     private void HandlePriceUpdate(DataEvent<IBinanceStreamKlineData> data)
@@ -94,7 +89,66 @@ public class KlineStreamManager : IDisposable,
         Task.Run(() => _mediator.Publish(new KlineUpdateEvent(data.Data.Symbol, data.Data.Data)));
     }
 
-    public bool NeedsReconnection() => DateTime.UtcNow - _lastConnectionTime > _reconnectInterval;
+    private void OnConnectionLost()
+    {
+        _logger.LogWarning("WebSocket connection lost for symbols: {@Symbols}", _listenedSymbols);
+    }
+
+    private void OnConnectionRestored(TimeSpan timeSpan)
+    {
+        _logger.LogInformation("Connection restored after {Delay}ms for symbols: {@Symbols}",
+            timeSpan.TotalMilliseconds,
+            _listenedSymbols);
+    }
+
+    private void OnConnectionClosed()
+    {
+        _logger.LogInformation("Connection closed for symbols: {@Symbols}", _listenedSymbols);
+    }
+
+    private void OnResubscribingFailed(Error error)
+    {
+        _logger.LogError("Resubscribing failed for symbols: {@Symbols}, Error: {@Error}",
+            _listenedSymbols,
+            error);
+    }
+
+    private void OnActivityPaused()
+    {
+        _logger.LogWarning("Connection activity paused for symbols: {@Symbols}", _listenedSymbols);
+    }
+
+    private void OnActivityUnpaused()
+    {
+        _logger.LogInformation("Connection activity resumed for symbols: {@Symbols}", _listenedSymbols);
+    }
+
+    private void OnException(Exception exception)
+    {
+        _logger.LogError(exception, "Exception occurred for symbols: {@Symbols}", _listenedSymbols);
+    }
+
+    private void SubscribeToEvents(UpdateSubscription subscription)
+    {
+        subscription.ConnectionLost += OnConnectionLost;
+        subscription.ConnectionRestored += OnConnectionRestored;
+        subscription.ConnectionClosed += OnConnectionClosed;
+        subscription.ResubscribingFailed += OnResubscribingFailed;
+        subscription.ActivityPaused += OnActivityPaused;
+        subscription.ActivityUnpaused += OnActivityUnpaused;
+        subscription.Exception += OnException;
+    }
+
+    private void UnsubscribeEvents(UpdateSubscription subscription)
+    {
+        subscription.ConnectionLost -= OnConnectionLost;
+        subscription.ConnectionRestored -= OnConnectionRestored;
+        subscription.ConnectionClosed -= OnConnectionClosed;
+        subscription.ResubscribingFailed -= OnResubscribingFailed;
+        subscription.ActivityPaused -= OnActivityPaused;
+        subscription.ActivityUnpaused -= OnActivityUnpaused;
+        subscription.Exception -= OnException;
+    }
 
     private async Task CloseExistingSubscription()
     {
@@ -102,6 +156,7 @@ public class KlineStreamManager : IDisposable,
         {
             try
             {
+                UnsubscribeEvents(_subscription);
                 await _subscription.CloseAsync();
                 _subscription = null;
             }
@@ -111,6 +166,7 @@ public class KlineStreamManager : IDisposable,
             }
         }
     }
+    public bool NeedsReconnection() => DateTime.UtcNow - _lastConnectionTime > _reconnectInterval;
 
     public void Dispose()
     {

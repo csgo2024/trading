@@ -36,16 +36,18 @@ public class AlarmHostService : BackgroundService
                 await _sendAlarmService.InitWithAlarms(alarms, cancellationToken);
                 var needReconnect = _klineStreamManager.NeedsReconnection();
 
-                if (!isSubscribed || needReconnect)
+                if (!isSubscribed && symbols.Count > 0)
                 {
-                    await _klineStreamManager.SubscribeSymbols(symbols, cancellationToken);
-
-                    if (!isSubscribed)
+                    isSubscribed = await _klineStreamManager.SubscribeSymbols(symbols, cancellationToken);
+                    if (isSubscribed)
                     {
                         _logger.LogInformation("Initial subscription completed successfully");
-                        isSubscribed = true;
                     }
-                    else
+                }
+                if (needReconnect && symbols.Count > 0)
+                {
+                    isSubscribed = await _klineStreamManager.SubscribeSymbols(symbols, cancellationToken);
+                    if (isSubscribed)
                     {
                         _logger.LogInformation("Reconnection completed successfully");
                     }
