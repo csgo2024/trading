@@ -1,5 +1,6 @@
 using System.Text;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Telegram.Bot;
 using Telegram.Bot.Requests;
 using Telegram.Bot.Types.Enums;
@@ -10,20 +11,30 @@ namespace Trading.Application.Telegram.Logging;
 public class TelegramLogger : ILogger
 {
     private readonly ITelegramBotClient _botClient;
+
+    private readonly IOptions<TelegramLoggerOptions> _loggerOptions;
     private readonly string _categoryName;
     private readonly string _chatId;
 
-    public TelegramLogger(ITelegramBotClient botClient, TelegramSettings settings, string categoryName)
+    public TelegramLogger(ITelegramBotClient botClient,
+                          IOptions<TelegramLoggerOptions> loggerOptions,
+                          TelegramSettings settings,
+                          string categoryName)
     {
         _botClient = botClient;
+        _loggerOptions = loggerOptions;
         _categoryName = categoryName;
         _chatId = settings.ChatId ?? throw new ArgumentNullException(nameof(settings), "TelegramSettings is not valid.");
     }
 
     public IDisposable BeginScope<TState>(TState state) where TState : notnull => default!;
 
-    public bool IsEnabled(LogLevel logLevel) => logLevel != LogLevel.None;
-
+    public bool IsEnabled(LogLevel logLevel)
+    {
+        return logLevel != LogLevel.None
+            && logLevel >= _loggerOptions.Value.MinimumLevel
+            && !_loggerOptions.Value.ExcludeCategories.Contains(_categoryName);
+    }
     public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
     {
         if (!IsEnabled(logLevel))
@@ -44,6 +55,11 @@ public class TelegramLogger : ILogger
             var message = new StringBuilder();
             message.AppendLine($"{GetEmoji(logLevel)} [{logLevel.ToString()}]");
             message.AppendLine($"⏰ {DateTime.UtcNow.AddHours(8)}");
+
+            if (_loggerOptions.Value.IncludeCategory)
+            {
+                message.AppendLine($"📁 {_categoryName}");
+            }
             message.AppendLine($"{formatter(state, exception)}");
 
             if (exception != null)

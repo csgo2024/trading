@@ -85,7 +85,7 @@ public static class ServiceCollectionExtensions
             builder.ClearProviders();
             builder.AddConsole();
             builder.AddDebug();
-            builder.AddTelegramLogger();
+            builder.AddTelegramLogger(configuration);
             builder.SetMinimumLevel(LogLevel.Information);
         });
         services.AddHostedService<TelegramBotService>();

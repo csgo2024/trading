@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 using Telegram.Bot;
 using Telegram.Bot.Requests;
@@ -15,11 +16,19 @@ public class TelegramLoggerTests
     private readonly TelegramLogger _logger;
     private readonly string _testChatId = "456456481";
 
+    private readonly IOptions<TelegramLoggerOptions> _loggerOptions;
+
     public TelegramLoggerTests()
     {
         _mockBotClient = new Mock<ITelegramBotClient>();
         var settings = new TelegramSettings { ChatId = _testChatId };
-        _logger = new TelegramLogger(_mockBotClient.Object, settings, "TestCategory");
+        _loggerOptions = Options.Create(new TelegramLoggerOptions
+        {
+            MinimumLevel = LogLevel.Trace,
+            IncludeCategory = true,
+            ExcludeCategories = new List<string>()
+        });
+        _logger = new TelegramLogger(_mockBotClient.Object, _loggerOptions, settings, "TestCategory");
     }
 
     [Fact]

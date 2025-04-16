@@ -8,17 +8,22 @@ namespace Trading.Application.Telegram.Logging;
 public class TelegramLoggerProvider : ILoggerProvider
 {
     private readonly ITelegramBotClient _botClient;
+    private readonly IOptions<TelegramLoggerOptions> _loggerOptions;
+
     private readonly TelegramSettings _settings;
 
-    public TelegramLoggerProvider(ITelegramBotClient botClient, IOptions<TelegramSettings> settings)
+    public TelegramLoggerProvider(ITelegramBotClient botClient,
+                                  IOptions<TelegramLoggerOptions> loggerOptions,
+                                  IOptions<TelegramSettings> settings)
     {
         _botClient = botClient;
+        _loggerOptions = loggerOptions;
         _settings = settings.Value;
     }
 
     public ILogger CreateLogger(string categoryName)
     {
-        return new TelegramLogger(_botClient, _settings, categoryName);
+        return new TelegramLogger(_botClient, _loggerOptions, _settings, categoryName);
     }
 
     public void Dispose()
