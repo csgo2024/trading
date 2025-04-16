@@ -22,7 +22,7 @@ public class AlarmTaskManager : IAsyncDisposable
         }
 
         var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        var task = Task.Run(() => monitoringFunc(cts.Token), cts.Token);
+        var task = Task.Run(() => monitoringFunc(cts.Token), cancellationToken);
         _monitoringTasks.TryAdd(alarmId, (cts, task));
         return Task.CompletedTask;
     }
