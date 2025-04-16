@@ -1,10 +1,11 @@
 using Binance.Net.Enums;
-using Trading.API.Services.Trading.Account;
+using Microsoft.Extensions.Logging;
 using Trading.Application.Helpers;
+using Trading.Application.Services.Trading.Account;
 using Trading.Domain.Entities;
 using Trading.Domain.IRepositories;
 
-namespace Trading.API.Services.Trading.Executors;
+namespace Trading.Application.Services.Trading.Executors;
 
 public class BottomBuyExecutor : IExecutor
 {

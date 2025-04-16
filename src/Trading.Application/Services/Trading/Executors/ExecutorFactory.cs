@@ -1,6 +1,6 @@
 using Trading.Domain.Entities;
 
-namespace Trading.API.Services.Trading.Executors;
+namespace Trading.Application.Services.Trading.Executors;
 
 public class ExecutorFactory
 {

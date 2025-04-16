@@ -1,6 +1,6 @@
 using Trading.Domain.Entities;
 
-namespace Trading.API.Services.Trading.Account;
+namespace Trading.Application.Services.Trading.Account;
 
 public class AccountProcessorFactory
 {

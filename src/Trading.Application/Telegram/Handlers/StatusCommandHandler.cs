@@ -1,5 +1,6 @@
 using System.Text;
 using Microsoft.Extensions.Logging;
+using Trading.Application.Services.Alarms;
 using Trading.Domain.Entities;
 using Trading.Domain.IRepositories;
 
@@ -8,7 +9,8 @@ namespace Trading.Application.Telegram.Handlers;
 public class StatusCommandHandler : ICommandHandler
 {
     private readonly IStrategyRepository _strategyRepository;
-    private readonly IAlarmRepository _pricealarmRepository;
+
+    private readonly AlarmNotificationService _alarmNotificationService;
 
     private readonly ILogger<StatusCommandHandler> _logger;
     private const string DateTimeFormat = "yyyy-MM-dd HH:mm:ss";
@@ -17,26 +19,26 @@ public class StatusCommandHandler : ICommandHandler
 
     public StatusCommandHandler(
         IStrategyRepository strategyRepository,
-        IAlarmRepository pricealarmRepository,
+        AlarmNotificationService alarmNotificationService,
         ILogger<StatusCommandHandler> logger)
     {
         _strategyRepository = strategyRepository;
-        _pricealarmRepository = pricealarmRepository;
+        _alarmNotificationService = alarmNotificationService;
         _logger = logger;
     }
 
     public async Task HandleAsync(string parameters)
     {
         var strategies = await _strategyRepository.GetAllStrategies();
-        var Alarms = await _pricealarmRepository.GetActiveAlarmsAsync(default);
+        var alarms = _alarmNotificationService.GetActiveAlarms();
         var htmlBuilder = new StringBuilder();
 
         htmlBuilder.AppendLine("<pre>");
         foreach (var strategy in strategies)
         {
-            var statusInfo = GetStatusInfo(strategy);
+            var (emoji, status) = GetStatusInfo(strategy);
             htmlBuilder.AppendLine($"ID: {strategy.Id}");
-            htmlBuilder.AppendLine($"{statusInfo.emoji} [{strategy.AccountType}-{strategy.Symbol}]: {statusInfo.status}");
+            htmlBuilder.AppendLine($"{emoji} [{strategy.AccountType}-{strategy.Symbol}]: {status}");
             htmlBuilder.AppendLine($"跌幅: {strategy.PriceDropPercentage} / 目标价格: {strategy.TargetPrice} 💰");
             htmlBuilder.AppendLine($"金额: {strategy.Amount} / 数量: {strategy.Quantity}");
 
@@ -47,7 +49,7 @@ public class StatusCommandHandler : ICommandHandler
             }
             htmlBuilder.AppendLine("------------------------");
         }
-        foreach (var alarm in Alarms)
+        foreach (var alarm in alarms)
         {
             var safeMessage = alarm.Condition.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;");
             htmlBuilder.AppendLine($"{alarm.Symbol} {alarm.Interval} {safeMessage}");

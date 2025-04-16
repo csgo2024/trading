@@ -6,14 +6,14 @@ using Telegram.Bot;
 using Telegram.Bot.Requests;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
-using Trading.API.Services.Alarms;
+using Trading.Application.Helpers;
+using Trading.Application.Services.Alarms;
 using Trading.Common.Models;
-using Trading.Common.Tools;
 using Trading.Domain.Entities;
 using Trading.Domain.Events;
 using Trading.Domain.IRepositories;
 
-namespace Trading.API.Tests.Services.Alarms;
+namespace Trading.Application.Tests.Services.Alarms;
 
 public class AlarmNotificationServiceTests
 {

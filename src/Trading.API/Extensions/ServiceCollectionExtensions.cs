@@ -4,17 +4,17 @@ using CryptoExchange.Net.Authentication;
 using Microsoft.Extensions.Options;
 using Telegram.Bot;
 using Trading.API.HostServices;
-using Trading.API.Services.Alarms;
-using Trading.API.Services.Trading.Account;
-using Trading.API.Services.Trading.Executors;
 using Trading.Application.Commands;
+using Trading.Application.Helpers;
 using Trading.Application.Middlerwares;
 using Trading.Application.Queries;
+using Trading.Application.Services.Alarms;
+using Trading.Application.Services.Trading.Account;
+using Trading.Application.Services.Trading.Executors;
 using Trading.Application.Telegram;
 using Trading.Application.Telegram.Handlers;
 using Trading.Application.Telegram.HostServices;
 using Trading.Common.Models;
-using Trading.Common.Tools;
 
 namespace Trading.API.Extensions;
 

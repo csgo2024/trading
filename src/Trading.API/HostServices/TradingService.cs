@@ -1,5 +1,5 @@
-using Trading.API.Services.Trading.Account;
-using Trading.API.Services.Trading.Executors;
+using Trading.Application.Services.Trading.Account;
+using Trading.Application.Services.Trading.Executors;
 using Trading.Domain.Entities;
 using Trading.Domain.IRepositories;
 

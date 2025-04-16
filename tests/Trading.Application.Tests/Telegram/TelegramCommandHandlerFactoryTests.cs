@@ -4,10 +4,11 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using Telegram.Bot;
+using Trading.Application.Helpers;
+using Trading.Application.Services.Alarms;
 using Trading.Application.Telegram;
 using Trading.Application.Telegram.Handlers;
 using Trading.Common.Models;
-using Trading.Common.Tools;
 using Trading.Domain.IRepositories;
 
 namespace Trading.Application.Tests.Telegram;
@@ -31,15 +32,31 @@ public class TelegramCommandHandlerFactoryTests
         var telegramSettings = new TelegramSettings { ChatId = "test-chat-id" };
         services.AddSingleton(Options.Create(telegramSettings));
 
+        var settings = new TelegramSettings { ChatId = "456456481" };
+        var optionsMock = new Mock<IOptions<TelegramSettings>>();
+        optionsMock.Setup(x => x.Value).Returns(settings);
+
         // Add mock dependencies
         services.AddSingleton(Mock.Of<IMediator>());
         services.AddSingleton(Mock.Of<IStrategyRepository>());
         services.AddSingleton(Mock.Of<ICredentialSettingRepository>());
         services.AddSingleton(Mock.Of<IAlarmRepository>());
         services.AddSingleton(Mock.Of<ITelegramBotClient>()); // Add TelegramBotClient mock
+        var alarmTaskManagerMock = new Mock<AlarmTaskManager>(Mock.Of<ILogger<AlarmTaskManager>>());
+        services.AddSingleton(alarmTaskManagerMock.Object);
 
         var jsEvaluatorMock = new Mock<JavaScriptEvaluator>(Mock.Of<ILogger<JavaScriptEvaluator>>());
         services.AddSingleton(jsEvaluatorMock.Object);
+
+        var alarmNotificationMock = new Mock<AlarmNotificationService>(
+            Mock.Of<ILogger<AlarmNotificationService>>(),
+            Mock.Of<IAlarmRepository>(),
+            Mock.Of<ITelegramBotClient>(),
+            jsEvaluatorMock.Object,
+            alarmTaskManagerMock.Object,
+            optionsMock.Object
+        );
+        services.AddSingleton(alarmNotificationMock.Object);
 
         services.AddTransient<HelpCommandHandler>();
         services.AddTransient<StatusCommandHandler>();

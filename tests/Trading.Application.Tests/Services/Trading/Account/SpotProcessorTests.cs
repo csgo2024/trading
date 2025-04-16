@@ -5,10 +5,10 @@ using Binance.Net.Objects.Models;
 using Binance.Net.Objects.Models.Spot;
 using CryptoExchange.Net.Objects;
 using Moq;
-using Trading.API.Services.Trading.Account;
+using Trading.Application.Services.Trading.Account;
 using Trading.Domain.Entities;
 
-namespace Trading.API.Tests.Services.Trading.Account;
+namespace Trading.Application.Tests.Services.Trading.Account;
 
 public class SpotProcessorTests
 {

@@ -5,12 +5,12 @@ using Binance.Net.Objects.Models.Spot;
 using CryptoExchange.Net.Objects;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Trading.API.Services.Trading.Account;
-using Trading.API.Services.Trading.Executors;
+using Trading.Application.Services.Trading.Account;
+using Trading.Application.Services.Trading.Executors;
 using Trading.Domain.Entities;
 using Trading.Domain.IRepositories;
 
-namespace Trading.API.Tests.Services.Trading.Executors;
+namespace Trading.Application.Tests.Services.Trading.Executors;
 
 // Add extension method for logger verification
 public static class LoggerExtensions

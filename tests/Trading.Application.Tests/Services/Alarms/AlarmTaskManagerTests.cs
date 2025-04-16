@@ -1,8 +1,8 @@
 using Microsoft.Extensions.Logging;
 using Moq;
-using Trading.API.Services.Alarms;
+using Trading.Application.Services.Alarms;
 
-namespace Trading.Tests.Services.Alarms;
+namespace Trading.Application.Tests.Services.Alarms;
 
 public class AlarmTaskManagerTests
 {

@@ -5,8 +5,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using Trading.API.HostServices;
-using Trading.API.Services.Trading.Account;
-using Trading.API.Services.Trading.Executors;
+using Trading.Application.Services.Trading.Account;
+using Trading.Application.Services.Trading.Executors;
 using Trading.Domain.Entities;
 using Trading.Domain.IRepositories;
 

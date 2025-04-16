@@ -19,6 +19,12 @@ public class AlarmRepository : BaseRepository<Alarm>, IAlarmRepository
         return _collection.Find(x => x.IsActive && x.Symbol == symbol).ToList();
     }
 
+    public IEnumerable<Alarm> GetAlarmsById(string[] ids)
+    {
+        var filter = Builders<Alarm>.Filter.In(x => x.Id, ids);
+        return _collection.Find(filter).ToList();
+    }
+
     public async Task<bool> DeactivateAlarmAsync(string alarmId, CancellationToken cancellationToken)
     {
         var update = Builders<Alarm>.Update.Set(x => x.IsActive, false);

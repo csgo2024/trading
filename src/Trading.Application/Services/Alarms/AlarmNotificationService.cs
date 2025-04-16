@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using Binance.Net.Interfaces;
 using MediatR;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Telegram.Bot;
 using Telegram.Bot.Requests;
@@ -8,12 +9,11 @@ using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 using Trading.Application.Helpers;
 using Trading.Common.Models;
-using Trading.Common.Tools;
 using Trading.Domain.Entities;
 using Trading.Domain.Events;
 using Trading.Domain.IRepositories;
 
-namespace Trading.API.Services.Alarms;
+namespace Trading.Application.Services.Alarms;
 
 public class AlarmNotificationService :
     INotificationHandler<KlineUpdateEvent>,
@@ -28,7 +28,7 @@ public class AlarmNotificationService :
     private readonly string _chatId;
     private readonly JavaScriptEvaluator _javaScriptEvaluator;
     private static readonly ConcurrentDictionary<string, IBinanceKline> _lastkLines = new();
-    private readonly ConcurrentDictionary<string, Alarm> _activeAlarms = new();
+    private static readonly ConcurrentDictionary<string, Alarm> _activeAlarms = new();
 
     private readonly AlarmTaskManager _alarmTaskManager;
 
@@ -85,6 +85,13 @@ public class AlarmNotificationService :
         await _alarmTaskManager.StopAllMonitor();
     }
 
+    public IEnumerable<Alarm> GetActiveAlarms()
+    {
+        var alarmIds = _alarmTaskManager.GetMonitoringAlarmIds();
+        var result = _alarmRepository.GetAlarmsById(alarmIds);
+        return result;
+    }
+
     public async Task InitWithAlarms(IEnumerable<Alarm> alarms, CancellationToken cancellationToken)
     {
         try
@@ -102,9 +109,10 @@ public class AlarmNotificationService :
     }
     public async Task ProcessAlarm(Alarm alarm, CancellationToken cancellationToken)
     {
-        _logger.LogDebug("Starting monitoring for alarm {AlarmId} ({Symbol}, Condition: {Condition})",
+        _logger.LogDebug("Starting monitoring for alarm {AlarmId} ({Symbol}-{Interval}, Condition: {Condition})",
                          alarm.Id,
                          alarm.Symbol,
+                         alarm.Interval,
                          alarm.Condition);
         var key = $"{alarm.Symbol}-{CommonHelper.ConvertToKlineInterval(alarm.Interval)}";
         while (!cancellationToken.IsCancellationRequested)

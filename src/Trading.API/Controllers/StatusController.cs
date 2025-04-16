@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
-using Trading.API.Services.Trading.Account;
+using Trading.Application.Services.Trading.Account;
 using Trading.Common.Models;
 using Trading.Infrastructure;
 

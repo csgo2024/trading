@@ -1,4 +1,4 @@
-using Trading.API.Services.Alarms;
+using Trading.Application.Services.Alarms;
 using Trading.Domain.IRepositories;
 
 namespace Trading.API.HostServices;

@@ -1,10 +1,11 @@
 using System.Collections.Concurrent;
+using Microsoft.Extensions.Logging;
 
-namespace Trading.API.Services.Alarms;
+namespace Trading.Application.Services.Alarms;
 
 public class AlarmTaskManager : IAsyncDisposable
 {
-    private readonly ConcurrentDictionary<string, (CancellationTokenSource cts, Task task)> _monitoringTasks = new();
+    private static readonly ConcurrentDictionary<string, (CancellationTokenSource cts, Task task)> _monitoringTasks = new();
     private readonly SemaphoreSlim _taskLock = new(1, 1);
     private readonly ILogger<AlarmTaskManager> _logger;
 
@@ -21,7 +22,7 @@ public class AlarmTaskManager : IAsyncDisposable
         }
 
         var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        var task = Task.Run(() => monitoringFunc(cts.Token), cancellationToken);
+        var task = Task.Run(() => monitoringFunc(cts.Token), cts.Token);
         _monitoringTasks.TryAdd(alarmId, (cts, task));
         return Task.CompletedTask;
     }
@@ -77,4 +78,6 @@ public class AlarmTaskManager : IAsyncDisposable
         await StopAllMonitor();
         _taskLock.Dispose();
     }
+
+    public string[] GetMonitoringAlarmIds() => _monitoringTasks.Keys.ToArray();
 }

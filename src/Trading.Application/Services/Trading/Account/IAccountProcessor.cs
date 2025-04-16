@@ -5,7 +5,7 @@ using Binance.Net.Objects.Models.Spot;
 using CryptoExchange.Net.Objects;
 using Trading.Domain.Entities;
 
-namespace Trading.API.Services.Trading.Account;
+namespace Trading.Application.Services.Trading.Account;
 
 public interface IAccountProcessor
 {

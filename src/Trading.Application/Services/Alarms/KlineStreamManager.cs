@@ -3,10 +3,11 @@ using Binance.Net.Enums;
 using Binance.Net.Interfaces;
 using CryptoExchange.Net.Objects.Sockets;
 using MediatR;
+using Microsoft.Extensions.Logging;
 using Trading.Application.Helpers;
 using Trading.Domain.Events;
 
-namespace Trading.API.Services.Alarms;
+namespace Trading.Application.Services.Alarms;
 
 public class KlineUpdateEvent : INotification
 {
@@ -76,7 +77,7 @@ public class KlineStreamManager : IDisposable,
         _subscription = result.Data;
         _lastConnectionTime = DateTime.UtcNow;
 
-        _logger.LogDebug("Subscribed to {Count} symbols: {@Symbols} intervals: {@Intervals}",
+        _logger.LogInformation("Subscribed to {Count} symbols: {@Symbols} intervals: {@Intervals}",
             _listenedSymbols.Count, _listenedSymbols, _listenedIntervals);
         return true;
     }
