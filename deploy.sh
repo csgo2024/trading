@@ -24,7 +24,7 @@ fi
 # 拉取最新代码
 echo "拉取最新代码..."
 git fetch origin
-git pull origin "$current_branch"
+git pull origin "$current_branch" --rebase
 
 # 重启 Docker 服务
 echo "重启 Docker 服务..."
