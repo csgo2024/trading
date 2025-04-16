@@ -80,7 +80,7 @@ public class AlarmNotificationService :
     {
         _activeAlarms.Clear();
         _lastkLines.Clear();
-        _logger.LogDebug("Alarm list is empty, stopping all monitors.");
+        _logger.LogInformation("Alarm list is empty, stopping all monitors.");
         // Stop all monitors
         await _alarmTaskManager.StopAllMonitor();
     }

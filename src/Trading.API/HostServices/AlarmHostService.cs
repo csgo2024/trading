@@ -42,7 +42,7 @@ public class AlarmHostService : BackgroundService
                     isSubscribed = await _klineStreamManager.SubscribeSymbols(symbols, intervals, cancellationToken);
                     if (isSubscribed)
                     {
-                        _logger.LogInformation("Initial subscription completed successfully");
+                        _logger.LogDebug("Initial subscription completed successfully");
                     }
                 }
                 if (needReconnect && symbols.Count > 0)
@@ -50,7 +50,7 @@ public class AlarmHostService : BackgroundService
                     isSubscribed = await _klineStreamManager.SubscribeSymbols(symbols, intervals, cancellationToken);
                     if (isSubscribed)
                     {
-                        _logger.LogInformation("Reconnection completed successfully");
+                        _logger.LogDebug("Reconnection completed successfully");
                     }
                 }
             }
