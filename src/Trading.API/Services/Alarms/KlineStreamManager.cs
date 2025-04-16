@@ -1,8 +1,10 @@
 using Binance.Net.Clients;
+using Binance.Net.Enums;
 using Binance.Net.Interfaces;
 using CryptoExchange.Net.Objects;
 using CryptoExchange.Net.Objects.Sockets;
 using MediatR;
+using Trading.Application.Helpers;
 using Trading.Domain.Events;
 
 namespace Trading.API.Services.Alarms;
@@ -10,11 +12,13 @@ namespace Trading.API.Services.Alarms;
 public class KlineUpdateEvent : INotification
 {
     public string Symbol { get; }
+    public KlineInterval Interval { get; }
     public IBinanceKline Kline { get; }
 
-    public KlineUpdateEvent(string symbol, IBinanceKline kline)
+    public KlineUpdateEvent(string symbol, KlineInterval interval, IBinanceKline kline)
     {
         Symbol = symbol;
+        Interval = interval;
         Kline = kline;
     }
 }
@@ -32,6 +36,7 @@ public class KlineStreamManager : IDisposable,
     private readonly IMediator _mediator;
 
     private static readonly HashSet<string> _listenedSymbols = [];
+    private static readonly HashSet<string> _listenedIntervals = [];
 
     public KlineStreamManager(
         ILogger<KlineStreamManager> logger,
@@ -43,39 +48,43 @@ public class KlineStreamManager : IDisposable,
         _socketClient = socketClient;
     }
 
-    public async Task<bool> SubscribeSymbols(HashSet<string> symbols, CancellationToken ct)
+    public async Task<bool> SubscribeSymbols(HashSet<string> symbols, HashSet<string> intervals, CancellationToken ct)
     {
-        if (symbols.Count == 0)
+        if (symbols.Count == 0 || intervals.Count == 0)
         {
             return false;
         }
 
-        if (symbols.IsSubsetOf(_listenedSymbols))
+        if (symbols.IsSubsetOf(_listenedSymbols) && intervals.IsSubsetOf(_listenedIntervals))
         {
             return true;
         }
 
         await CloseExistingSubscription();
 
-        _listenedSymbols.UnionWith(symbols);
+        var mergedSymbols = new HashSet<string>(_listenedSymbols);
+        mergedSymbols.UnionWith(symbols);
+        var mergedIntervals = new HashSet<string>(_listenedIntervals);
+        mergedIntervals.UnionWith(intervals);
         var result = await _socketClient.UsdFuturesApi.ExchangeData.SubscribeToKlineUpdatesAsync(
-            _listenedSymbols.ToArray(),
-            Binance.Net.Enums.KlineInterval.FourHour,
+            mergedSymbols.ToArray(),
+            mergedIntervals.Select(CommonHelper.ConvertToKlineInterval).ToArray(),
             HandlePriceUpdate,
             ct: ct);
 
         if (!result.Success)
         {
-            _listenedSymbols.UnionWith(symbols);
             _logger.LogError("Failed to subscribe: {@Error}", result.Error);
             return false;
         }
+        _listenedSymbols.UnionWith(mergedSymbols);
+        _listenedIntervals.UnionWith(mergedIntervals);
         _subscription = result.Data;
         SubscribeToEvents(_subscription);
         _lastConnectionTime = DateTime.UtcNow;
 
-        _logger.LogInformation("Subscribed to {Count} symbols: {@Symbols}",
-            _listenedSymbols.Count, _listenedSymbols);
+        _logger.LogInformation("Subscribed to {Count} symbols: {@Symbols} intervals: {@Intervals}",
+            _listenedSymbols.Count, _listenedSymbols, _listenedIntervals);
         return true;
     }
 
@@ -86,7 +95,7 @@ public class KlineStreamManager : IDisposable,
             return;
         }
 
-        Task.Run(() => _mediator.Publish(new KlineUpdateEvent(data.Data.Symbol, data.Data.Data)));
+        Task.Run(() => _mediator.Publish(new KlineUpdateEvent(data.Data.Symbol, data.Data.Data.Interval, data.Data.Data)));
     }
 
     private void OnConnectionLost()
@@ -175,11 +184,11 @@ public class KlineStreamManager : IDisposable,
 
     public async Task Handle(AlarmResumedEvent notification, CancellationToken cancellationToken)
     {
-        await SubscribeSymbols([notification.Alarm.Symbol], cancellationToken);
+        await SubscribeSymbols([notification.Alarm.Symbol], [notification.Alarm.Interval], cancellationToken);
     }
 
     public async Task Handle(AlarmCreatedEvent notification, CancellationToken cancellationToken)
     {
-        await SubscribeSymbols([notification.Alarm.Symbol], cancellationToken);
+        await SubscribeSymbols([notification.Alarm.Symbol], [notification.Alarm.Interval], cancellationToken);
     }
 }

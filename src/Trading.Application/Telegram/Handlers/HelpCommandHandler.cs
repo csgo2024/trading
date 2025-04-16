@@ -30,8 +30,8 @@ public class HelpCommandHandler : ICommandHandler
 ```/create {""Symbol"":""BTCUSDT"",""Amount"":1000,""PriceDropPercentage"":0.2,""Leverage"":5,""AccountType"":""Spot"",""StrategyType"":""BottomBuy""}```
 删除策略
 ```/delete 12345```
-创建警报
-```/alarm BTCUSDT Math.abs((close - open) / open) >= 0.02 ```
+创建警报 5m,15m,1h,4h,1d
+```/alarm BTCUSDT 1h Math.abs((close - open) / open) >= 0.02 ```
 ```/alarm empty``` \- 清空警报
 ";
 

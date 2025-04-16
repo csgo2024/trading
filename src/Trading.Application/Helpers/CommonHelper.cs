@@ -1,9 +1,18 @@
+using Binance.Net.Enums;
 using Binance.Net.Objects.Models.Spot;
 
 namespace Trading.Application.Helpers;
 
 public static class CommonHelper
 {
+    public static Dictionary<string, KlineInterval> KlineIntervalDict = new()
+    {
+        {"5m", KlineInterval.FiveMinutes},
+        {"15m", KlineInterval.FifteenMinutes},
+        {"1h", KlineInterval.OneHour},
+        {"4h", KlineInterval.FourHour},
+        {"1d", KlineInterval.OneDay},
+    };
     public static decimal AdjustPriceByStepSize(decimal price, BinanceSymbolPriceFilter? filter)
     {
         ArgumentNullException.ThrowIfNull(filter);
@@ -36,5 +45,14 @@ public static class CommonHelper
     public static decimal TrimEndZero(decimal value)
     {
         return decimal.Parse(value.ToString("0.0##############").TrimEnd('0'));
+    }
+
+    public static KlineInterval ConvertToKlineInterval(string interval)
+    {
+        if (KlineIntervalDict.TryGetValue(interval, out var klineInterval))
+        {
+            return klineInterval;
+        }
+        throw new InvalidOperationException("Invalid interval");
     }
 }

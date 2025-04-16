@@ -49,9 +49,8 @@ public class StatusCommandHandler : ICommandHandler
         }
         foreach (var alarm in Alarms)
         {
-            htmlBuilder.AppendLine($"Symbol: {alarm.Symbol}");
             var safeMessage = alarm.Condition.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;");
-            htmlBuilder.AppendLine($"Condition: {safeMessage}");
+            htmlBuilder.AppendLine($"{alarm.Symbol} {alarm.Interval} {safeMessage}");
             htmlBuilder.AppendLine("------------------------");
         }
         htmlBuilder.AppendLine("</pre>");

@@ -59,8 +59,9 @@ public class AlarmNotificationServiceTests
     {
         // Arrange
         var symbol = "BTCUSDT";
+        var interval = Binance.Net.Enums.KlineInterval.OneHour;
         var kline = Mock.Of<IBinanceKline>();
-        var notification = new KlineUpdateEvent(symbol, kline);
+        var notification = new KlineUpdateEvent(symbol, interval, kline);
 
         // Act
         await _service.Handle(notification, _cts.Token);
@@ -123,6 +124,7 @@ public class AlarmNotificationServiceTests
             Id = "test-id",
             Symbol = "BTCUSDT",
             Condition = "close > open",
+            Interval = "1h",
             LastNotification = DateTime.UtcNow.AddMinutes(-2)
         };
 
@@ -133,7 +135,7 @@ public class AlarmNotificationServiceTests
             k.LowPrice == 39000m);
 
         // 首先发送一个 KlineUpdateEvent 来初始化 _lastkLines
-        await _service.Handle(new KlineUpdateEvent(alarm.Symbol, kline), CancellationToken.None);
+        await _service.Handle(new KlineUpdateEvent(alarm.Symbol, Binance.Net.Enums.KlineInterval.OneHour, kline), CancellationToken.None);
 
         _jsEvaluatorMock
             .Setup(x => x.EvaluateCondition(

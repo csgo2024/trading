@@ -33,12 +33,13 @@ public class AlarmHostService : BackgroundService
             {
                 var alarms = await _alarmRepository.GetActiveAlarmsAsync(cancellationToken);
                 var symbols = alarms.Select(x => x.Symbol).ToHashSet();
+                var intervals = alarms.Select(x => x.Interval).ToHashSet();
                 await _sendAlarmService.InitWithAlarms(alarms, cancellationToken);
                 var needReconnect = _klineStreamManager.NeedsReconnection();
 
                 if (!isSubscribed && symbols.Count > 0)
                 {
-                    isSubscribed = await _klineStreamManager.SubscribeSymbols(symbols, cancellationToken);
+                    isSubscribed = await _klineStreamManager.SubscribeSymbols(symbols, intervals, cancellationToken);
                     if (isSubscribed)
                     {
                         _logger.LogInformation("Initial subscription completed successfully");
@@ -46,7 +47,7 @@ public class AlarmHostService : BackgroundService
                 }
                 if (needReconnect && symbols.Count > 0)
                 {
-                    isSubscribed = await _klineStreamManager.SubscribeSymbols(symbols, cancellationToken);
+                    isSubscribed = await _klineStreamManager.SubscribeSymbols(symbols, intervals, cancellationToken);
                     if (isSubscribed)
                     {
                         _logger.LogInformation("Reconnection completed successfully");

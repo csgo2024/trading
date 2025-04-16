@@ -6,6 +6,7 @@ using Telegram.Bot;
 using Telegram.Bot.Requests;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
+using Trading.Application.Helpers;
 using Trading.Common.Models;
 using Trading.Common.Tools;
 using Trading.Domain.Entities;
@@ -49,9 +50,9 @@ public class AlarmNotificationService :
 
     public Task Handle(KlineUpdateEvent notification, CancellationToken cancellationToken)
     {
-        var symbol = notification.Symbol;
         var kline = notification.Kline;
-        _lastkLines.AddOrUpdate(symbol, kline, (_, _) => kline);
+        var key = $"{notification.Symbol}-{notification.Interval}";
+        _lastkLines.AddOrUpdate(key, kline, (_, _) => kline);
         _logger.LogDebug("LastkLines: {@LastKlines} after klineUpdate.", _lastkLines);
         return Task.CompletedTask;
     }
@@ -105,11 +106,12 @@ public class AlarmNotificationService :
                          alarm.Id,
                          alarm.Symbol,
                          alarm.Condition);
+        var key = $"{alarm.Symbol}-{CommonHelper.ConvertToKlineInterval(alarm.Interval)}";
         while (!cancellationToken.IsCancellationRequested)
         {
             try
             {
-                if (_lastkLines.TryGetValue(alarm.Symbol, out var kline))
+                if (_lastkLines.TryGetValue(key, out var kline))
                 {
                     if ((DateTime.UtcNow - alarm.LastNotification).TotalSeconds >= 60 &&
                         _javaScriptEvaluator.EvaluateCondition(
@@ -155,7 +157,7 @@ public class AlarmNotificationService :
                 ChatId = _chatId,
                 Text = $"""
                 ⏰ {DateTime.UtcNow.AddHours(8)}
-                <pre>⚠️ {alarm.Symbol} 警报触发
+                <pre>⚠️ {alarm.Symbol}-{alarm.Interval} 警报触发
                 条件: {alarm.Condition}
                 收盘价格: {kline.ClosePrice}
                 {changeText}: {priceChange:F3} ({priceChangePercent:F3}%)</pre>
