@@ -109,11 +109,11 @@ public class AlarmNotificationService :
     }
     public async Task ProcessAlarm(Alarm alarm, CancellationToken cancellationToken)
     {
-        _logger.LogDebug("Starting monitoring for alarm {AlarmId} ({Symbol}-{Interval}, Condition: {Condition})",
+        _logger.LogDebug("Starting monitoring for alarm {AlarmId} ({Symbol}-{Interval}, Expression: {Expression})",
                          alarm.Id,
                          alarm.Symbol,
                          alarm.Interval,
-                         alarm.Condition);
+                         alarm.Expression);
         var key = $"{alarm.Symbol}-{CommonHelper.ConvertToKlineInterval(alarm.Interval)}";
         while (!cancellationToken.IsCancellationRequested)
         {
@@ -122,8 +122,8 @@ public class AlarmNotificationService :
                 if (_lastkLines.TryGetValue(key, out var kline))
                 {
                     if ((DateTime.UtcNow - alarm.LastNotification).TotalSeconds >= 60 &&
-                        _javaScriptEvaluator.EvaluateCondition(
-                            alarm.Condition,
+                        _javaScriptEvaluator.EvaluateExpression(
+                            alarm.Expression,
                             kline.OpenPrice,
                             kline.ClosePrice,
                             kline.HighPrice,
@@ -166,7 +166,7 @@ public class AlarmNotificationService :
                 Text = $"""
                 ⏰ {DateTime.UtcNow.AddHours(8)}
                 <pre>⚠️ {alarm.Symbol}-{alarm.Interval} 警报触发
-                条件: {alarm.Condition}
+                条件: {alarm.Expression}
                 收盘价格: {kline.ClosePrice}
                 {changeText}: {priceChange:F3} ({priceChangePercent:F3}%)</pre>
                 """,

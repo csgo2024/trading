@@ -21,12 +21,12 @@ public class JavaScriptEvaluator : IDisposable
         );
     }
 
-    public virtual bool ValidateCondition(string condition, out string message)
+    public virtual bool ValidateExpression(string expression, out string message)
     {
         try
         {
             SetDefaultValues();
-            _jsEngine.Evaluate(condition);
+            _jsEngine.Evaluate(expression);
             message = string.Empty;
             return true;
         }
@@ -37,7 +37,7 @@ public class JavaScriptEvaluator : IDisposable
         }
     }
 
-    public virtual bool EvaluateCondition(string condition,
+    public virtual bool EvaluateExpression(string expression,
                                   decimal open,
                                   decimal close,
                                   decimal high,
@@ -51,7 +51,7 @@ public class JavaScriptEvaluator : IDisposable
                 try
                 {
                     SetPriceValues(open, close, high, low);
-                    var result = _jsEngine.Evaluate(condition);
+                    var result = _jsEngine.Evaluate(expression);
                     return result.AsBoolean();
                 }
                 finally
@@ -62,8 +62,8 @@ public class JavaScriptEvaluator : IDisposable
             catch (Exception ex)
             {
                 _logger.LogError(ex,
-                    "JavaScript evaluation error (attempt {Attempt}/{MaxRetries}) for condition: {Condition}",
-                    attempt, MaxRetries, condition);
+                    "JavaScript evaluation error (attempt {Attempt}/{MaxRetries}) for expression: {Expression}",
+                    attempt, MaxRetries, expression);
 
                 if (attempt == MaxRetries)
                 {

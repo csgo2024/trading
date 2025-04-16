@@ -116,14 +116,14 @@ public class AlarmNotificationServiceTests
     }
 
     [Fact]
-    public async Task ProcessAlarm_WhenConditionMet_ShouldSendNotification()
+    public async Task ProcessAlarm_WhenExpressionMet_ShouldSendNotification()
     {
         // Arrange
         var alarm = new Alarm
         {
             Id = "test-id",
             Symbol = "BTCUSDT",
-            Condition = "close > open",
+            Expression = "close > open",
             Interval = "1h",
             LastNotification = DateTime.UtcNow.AddMinutes(-2)
         };
@@ -138,7 +138,7 @@ public class AlarmNotificationServiceTests
         await _service.Handle(new KlineUpdateEvent(alarm.Symbol, Binance.Net.Enums.KlineInterval.OneHour, kline), CancellationToken.None);
 
         _jsEvaluatorMock
-            .Setup(x => x.EvaluateCondition(
+            .Setup(x => x.EvaluateExpression(
                 It.IsAny<string>(),
                 It.IsAny<decimal>(),
                 It.IsAny<decimal>(),
@@ -216,7 +216,7 @@ public class AlarmNotificationServiceTests
         {
             Id = "test-id",
             Symbol = "BTCUSDT",
-            Condition = "close > open"
+            Expression = "close > open"
         };
 
         // Act

@@ -48,10 +48,10 @@ public class AlarmCommandHandler : ICommandHandler
 
             var symbol = parts[0].ToUpper();
             var interval = parts[1];
-            var condition = parts[2];
+            var expression = parts[2];
 
-            // Validate JavaScript condition
-            if (!_javaScriptEvaluator.ValidateCondition(condition, out var message))
+            // Validate JavaScript expression
+            if (!_javaScriptEvaluator.ValidateExpression(expression, out var message))
             {
                 _logger.LogError("<pre>条件语法错误: {Message}</pre>", message);
                 return;
@@ -61,14 +61,14 @@ public class AlarmCommandHandler : ICommandHandler
             {
                 Symbol = symbol,
                 Interval = interval,
-                Condition = condition,
+                Expression = expression,
                 IsActive = true,
                 LastNotification = DateTime.UtcNow,
             };
 
             await _alarmRepository.AddAsync(alarm);
             await _mediator.Publish(new AlarmCreatedEvent(alarm));
-            _logger.LogInformation("<pre>已设置 {Symbol} 价格警报\n表达式: {Condition}</pre>", symbol, condition);
+            _logger.LogInformation("<pre>已设置 {Symbol} 价格警报\n表达式: {Expression}</pre>", symbol, expression);
         }
         catch (Exception ex)
         {
