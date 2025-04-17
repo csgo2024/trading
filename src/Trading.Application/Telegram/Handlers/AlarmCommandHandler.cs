@@ -50,6 +50,7 @@ public class AlarmCommandHandler : ICommandHandler
             var interval = parts[1];
             var expression = parts[2];
 
+            CommonHelper.ConvertToKlineInterval(interval);
             // Validate JavaScript expression
             if (!_javaScriptEvaluator.ValidateExpression(expression, out var message))
             {
