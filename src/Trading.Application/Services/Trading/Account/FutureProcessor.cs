@@ -1,38 +1,25 @@
 using Binance.Net.Enums;
 using Binance.Net.Interfaces;
-using Binance.Net.Interfaces.Clients.UsdFuturesApi;
 using Binance.Net.Objects.Models;
 using Binance.Net.Objects.Models.Spot;
 using CryptoExchange.Net.Objects;
 using Trading.Domain.Entities;
+using Trading.Exchange.Binance.Wrappers.Clients;
 
 namespace Trading.Application.Services.Trading.Account;
 
-public class BinanceFeatureRestClientWrapper
+public class FutureProcessor : IAccountProcessor
 {
-    public readonly IBinanceRestClientUsdFuturesApiTrading Trading;
-    public readonly IBinanceRestClientUsdFuturesApiExchangeData ExchangeData;
-    public BinanceFeatureRestClientWrapper(IBinanceRestClientUsdFuturesApiTrading trading,
-        IBinanceRestClientUsdFuturesApiExchangeData exchangeData
-    )
-    {
-        Trading = trading;
-        ExchangeData = exchangeData;
-    }
-}
+    private readonly BinanceRestClientUsdFuturesApiWrapper _usdFutureRestClient;
 
-public class FeatureProcessor : IAccountProcessor
-{
-    private readonly BinanceFeatureRestClientWrapper _binanceClient;
-
-    public FeatureProcessor(BinanceFeatureRestClientWrapper binanceClient)
+    public FutureProcessor(BinanceRestClientUsdFuturesApiWrapper usdFutureRestClient)
     {
-        _binanceClient = binanceClient;
+        _usdFutureRestClient = usdFutureRestClient;
     }
 
     public async Task<WebCallResult<BinanceOrderBase>> GetOrder(string symbol, long? orderId, CancellationToken ct)
     {
-        var webCallResult = await _binanceClient.Trading.GetOrderAsync(
+        var webCallResult = await _usdFutureRestClient.Trading.GetOrderAsync(
             symbol: symbol,
             orderId: orderId,
             ct: ct);
@@ -69,7 +56,7 @@ public class FeatureProcessor : IAccountProcessor
         int? limit = null,
         CancellationToken ct = default(CancellationToken))
     {
-        return await _binanceClient.ExchangeData.GetKlinesAsync(symbol, interval, startTime, endTime, limit, ct);
+        return await _usdFutureRestClient.ExchangeData.GetKlinesAsync(symbol, interval, startTime, endTime, limit, ct);
     }
 
     public async Task<WebCallResult<BinanceOrderBase>> PlaceOrder(string symbol,
@@ -78,7 +65,7 @@ public class FeatureProcessor : IAccountProcessor
         TimeInForce timeInForce,
         CancellationToken ct)
     {
-        var webCallResult = await _binanceClient.Trading.PlaceOrderAsync(
+        var webCallResult = await _usdFutureRestClient.Trading.PlaceOrderAsync(
             symbol: symbol,
             side: OrderSide.Buy,
             type: FuturesOrderType.Limit,
@@ -115,7 +102,7 @@ public class FeatureProcessor : IAccountProcessor
 
     public async Task<WebCallResult<BinanceOrderBase>> CancelOrder(string symbol, long orderId, CancellationToken ct)
     {
-        var webCallResult = await _binanceClient.Trading.CancelOrderAsync(
+        var webCallResult = await _usdFutureRestClient.Trading.CancelOrderAsync(
             symbol: symbol,
             orderId: orderId,
             ct: ct);
@@ -147,7 +134,7 @@ public class FeatureProcessor : IAccountProcessor
 
     public async Task<(BinanceSymbolPriceFilter?, BinanceSymbolLotSizeFilter?)> GetSymbolFilterData(Strategy strategy, CancellationToken ct = default)
     {
-        var exchangeInfo = await _binanceClient.ExchangeData.GetExchangeInfoAsync(ct: ct);
+        var exchangeInfo = await _usdFutureRestClient.ExchangeData.GetExchangeInfoAsync(ct: ct);
         if (!exchangeInfo.Success)
         {
             throw new InvalidOperationException($"[{strategy.AccountType}-{strategy.Symbol}] Failed to get symbol filterData info.");

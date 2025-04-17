@@ -33,9 +33,9 @@ public class StrategyRepository : BaseRepository<Strategy>, IStrategyRepository
         return strategies;
     }
 
-    public async Task<Dictionary<string, Strategy>?> InitializeFeatureStrategies()
+    public async Task<Dictionary<string, Strategy>?> InitializeFutureStrategies()
     {
-        var data = await _collection.Find(x => x.AccountType == AccountType.Feature && x.Status == StateStatus.Running).ToListAsync();
+        var data = await _collection.Find(x => x.AccountType == AccountType.Future && x.Status == StateStatus.Running).ToListAsync();
         return data.ToDictionary(config => config.Symbol, config => config);
     }
 

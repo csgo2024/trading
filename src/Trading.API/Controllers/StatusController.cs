@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
-using Trading.Application.Services.Trading.Account;
 using Trading.Common.Models;
+using Trading.Exchange.Binance.Wrappers.Clients;
 using Trading.Infrastructure;
 
 namespace Trading.API.Controllers;
@@ -12,17 +12,17 @@ public class StatusController : ControllerBase
 {
     private readonly IMongoDbContext _mongoDbContext;
     private readonly MongoDbSettings _settings;
-    private readonly BinanceFeatureRestClientWrapper _binanceFeatureRestClientWrapper;
-    private readonly BinanceSpotRestClientWrapper _binanceSpotRestClientWrapper;
+    private readonly BinanceRestClientUsdFuturesApiWrapper _binanceFutureRestClientWrapper;
+    private readonly BinanceRestClientSpotApiWrapper _binanceSpotRestClientWrapper;
 
     public StatusController(IMongoDbContext mongoDbContext,
-        BinanceFeatureRestClientWrapper featureRestClientWrapper,
-        BinanceSpotRestClientWrapper spotRestClientWrapper,
+        BinanceRestClientUsdFuturesApiWrapper futureRestClientWrapper,
+        BinanceRestClientSpotApiWrapper spotRestClientWrapper,
         IOptions<MongoDbSettings> settings)
     {
         _mongoDbContext = mongoDbContext;
         _settings = settings.Value;
-        _binanceFeatureRestClientWrapper = featureRestClientWrapper;
+        _binanceFutureRestClientWrapper = futureRestClientWrapper;
         _binanceSpotRestClientWrapper = spotRestClientWrapper;
     }
 
@@ -35,9 +35,9 @@ public class StatusController : ControllerBase
             throw new InvalidOperationException("Binance Spots not found");
         }
 
-        if (_binanceFeatureRestClientWrapper == null)
+        if (_binanceFutureRestClientWrapper == null)
         {
-            throw new InvalidOperationException("Binance Features not found");
+            throw new InvalidOperationException("Binance Futures not found");
         }
         return Ok(_settings);
     }

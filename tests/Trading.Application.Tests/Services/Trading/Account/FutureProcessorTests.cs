@@ -7,23 +7,26 @@ using CryptoExchange.Net.Objects;
 using Moq;
 using Trading.Application.Services.Trading.Account;
 using Trading.Domain.Entities;
+using Trading.Exchange.Binance.Wrappers.Clients;
 
 namespace Trading.Application.Tests.Services.Trading.Account;
 
-public class FeatureProcessorTests
+public class FutureProcessorTests
 {
-    private readonly BinanceFeatureRestClientWrapper _binanceClient;
+    private readonly BinanceRestClientUsdFuturesApiWrapper _binanceClient;
+    private readonly Mock<IBinanceRestClientUsdFuturesApiAccount> _mockAccount;
     private readonly Mock<IBinanceRestClientUsdFuturesApiTrading> _mockTrading;
     private readonly Mock<IBinanceRestClientUsdFuturesApiExchangeData> _mockExchangeData;
-    private readonly FeatureProcessor _processor;
+    private readonly FutureProcessor _processor;
 
-    public FeatureProcessorTests()
+    public FutureProcessorTests()
     {
+        _mockAccount = new Mock<IBinanceRestClientUsdFuturesApiAccount>();
         _mockTrading = new Mock<IBinanceRestClientUsdFuturesApiTrading>();
         _mockExchangeData = new Mock<IBinanceRestClientUsdFuturesApiExchangeData>();
 
-        _binanceClient = new BinanceFeatureRestClientWrapper(_mockTrading.Object, _mockExchangeData.Object);
-        _processor = new FeatureProcessor(_binanceClient);
+        _binanceClient = new BinanceRestClientUsdFuturesApiWrapper(_mockAccount.Object, _mockExchangeData.Object, _mockTrading.Object);
+        _processor = new FutureProcessor(_binanceClient);
     }
 
     [Fact]
@@ -219,7 +222,7 @@ public class FeatureProcessorTests
     public async Task GetSymbolFilterData_WhenSuccessful_ShouldReturnFilters()
     {
         // Arrange
-        var strategy = new Strategy { Symbol = "BTCUSDT", AccountType = Domain.Entities.AccountType.Feature };
+        var strategy = new Strategy { Symbol = "BTCUSDT", AccountType = Domain.Entities.AccountType.Future };
         var expectedPriceFilter = new BinanceSymbolPriceFilter
         {
             TickSize = 0.01m,
@@ -269,7 +272,7 @@ public class FeatureProcessorTests
     public async Task GetSymbolFilterData_WhenSymbolNotFound_ShouldThrowException()
     {
         // Arrange
-        var strategy = new Strategy { Symbol = "UNKNOWN", AccountType = Domain.Entities.AccountType.Feature };
+        var strategy = new Strategy { Symbol = "UNKNOWN", AccountType = Domain.Entities.AccountType.Future };
         var exchangeInfo = new BinanceFuturesUsdtExchangeInfo
         {
             Symbols = Array.Empty<BinanceFuturesUsdtSymbol>()

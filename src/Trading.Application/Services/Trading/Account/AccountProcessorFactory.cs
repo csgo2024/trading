@@ -13,7 +13,7 @@ public class AccountProcessorFactory
         _handlers = new Dictionary<AccountType, Type>
         {
             {AccountType.Spot, typeof(SpotProcessor)},
-            {AccountType.Feature, typeof(FeatureProcessor)},
+            {AccountType.Future, typeof(FutureProcessor)},
         };
     }
 

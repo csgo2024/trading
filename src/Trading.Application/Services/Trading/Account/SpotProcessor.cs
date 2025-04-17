@@ -1,38 +1,25 @@
 using Binance.Net.Enums;
 using Binance.Net.Interfaces;
-using Binance.Net.Interfaces.Clients.SpotApi;
 using Binance.Net.Objects.Models;
 using Binance.Net.Objects.Models.Spot;
 using CryptoExchange.Net.Objects;
 using Trading.Domain.Entities;
+using Trading.Exchange.Binance.Wrappers.Clients;
 
 namespace Trading.Application.Services.Trading.Account;
 
-public class BinanceSpotRestClientWrapper
-{
-    public readonly IBinanceRestClientSpotApiTrading Trading;
-    public readonly IBinanceRestClientSpotApiExchangeData ExchangeData;
-    public BinanceSpotRestClientWrapper(IBinanceRestClientSpotApiTrading trading,
-        IBinanceRestClientSpotApiExchangeData exchangeData
-    )
-    {
-        Trading = trading;
-        ExchangeData = exchangeData;
-    }
-}
-
 public class SpotProcessor : IAccountProcessor
 {
-    private readonly BinanceSpotRestClientWrapper _myBinanceClient;
+    private readonly BinanceRestClientSpotApiWrapper _spotApiClient;
 
-    public SpotProcessor(BinanceSpotRestClientWrapper binanceClient)
+    public SpotProcessor(BinanceRestClientSpotApiWrapper spotApiClient)
     {
-        _myBinanceClient = binanceClient;
+        _spotApiClient = spotApiClient;
     }
 
     public async Task<WebCallResult<BinanceOrderBase>> GetOrder(string symbol, long? orderId, CancellationToken ct)
     {
-        var webCallResult = await _myBinanceClient.Trading.GetOrderAsync(
+        var webCallResult = await _spotApiClient.Trading.GetOrderAsync(
             symbol: symbol,
             orderId: orderId,
             ct: ct);
@@ -69,7 +56,7 @@ public class SpotProcessor : IAccountProcessor
         int? limit = null,
         CancellationToken ct = default(CancellationToken))
     {
-        return await _myBinanceClient.ExchangeData.GetKlinesAsync(symbol, interval, startTime, endTime, limit, ct);
+        return await _spotApiClient.ExchangeData.GetKlinesAsync(symbol, interval, startTime, endTime, limit, ct);
     }
 
     public async Task<WebCallResult<BinanceOrderBase>> PlaceOrder(string symbol,
@@ -78,7 +65,7 @@ public class SpotProcessor : IAccountProcessor
         TimeInForce timeInForce,
         CancellationToken ct)
     {
-        var webCallResult = await _myBinanceClient.Trading.PlaceOrderAsync(
+        var webCallResult = await _spotApiClient.Trading.PlaceOrderAsync(
             symbol,
             OrderSide.Buy,
             SpotOrderType.Limit,
@@ -113,7 +100,7 @@ public class SpotProcessor : IAccountProcessor
 
     public async Task<WebCallResult<BinanceOrderBase>> CancelOrder(string symbol, long orderId, CancellationToken ct)
     {
-        var webCallResult = await _myBinanceClient.Trading.CancelOrderAsync(
+        var webCallResult = await _spotApiClient.Trading.CancelOrderAsync(
             symbol: symbol,
             orderId: orderId,
             ct: ct);
@@ -145,7 +132,7 @@ public class SpotProcessor : IAccountProcessor
 
     public async Task<(BinanceSymbolPriceFilter?, BinanceSymbolLotSizeFilter?)> GetSymbolFilterData(Strategy strategy, CancellationToken ct = default)
     {
-        var exchangeInfo = await _myBinanceClient.ExchangeData.GetExchangeInfoAsync(returnPermissionSets: null, symbolStatus: null, ct);
+        var exchangeInfo = await _spotApiClient.ExchangeData.GetExchangeInfoAsync(returnPermissionSets: null, symbolStatus: null, ct);
         if (!exchangeInfo.Success)
         {
             throw new InvalidOperationException($"[{strategy.AccountType}-{strategy.Symbol}] Failed to get symbol filterData info.");

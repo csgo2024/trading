@@ -160,16 +160,17 @@ public class AlarmNotificationService :
             var priceChangePercent = priceChange / kline.OpenPrice * 100;
             var changeText = priceChange >= 0 ? "🟢 上涨" : "🔴 下跌";
 
-            await _botClient.SendRequest(new SendMessageRequest
-            {
-                ChatId = _chatId,
-                Text = $"""
+            var text = $"""
                 ⏰ {DateTime.UtcNow.AddHours(8)}
                 <pre>⚠️ {alarm.Symbol}-{alarm.Interval} 警报触发
                 条件: {alarm.Expression}
                 收盘价格: {kline.ClosePrice}
                 {changeText}: {priceChange:F3} ({priceChangePercent:F3}%)</pre>
-                """,
+            """;
+            await _botClient.SendRequest(new SendMessageRequest
+            {
+                ChatId = _chatId,
+                Text = text,
                 ParseMode = ParseMode.Html,
                 ReplyMarkup = new InlineKeyboardMarkup(
                 [
@@ -179,7 +180,7 @@ public class AlarmNotificationService :
                     ]
                 ])
             }, CancellationToken.None);
-
+            _logger.LogDebug(text);
             alarm.LastNotification = DateTime.UtcNow;
             alarm.UpdatedAt = DateTime.UtcNow;
             await _alarmRepository.UpdateAsync(alarm.Id, alarm);

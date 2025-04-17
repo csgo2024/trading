@@ -10,7 +10,7 @@ public interface IStrategyRepository : IRepository<Strategy>
     Task<bool> UpdateStatusAsync(StateStatus newStatus);
 
     Task<Dictionary<string, Strategy>?> InitializeSpotStrategies();
-    Task<Dictionary<string, Strategy>?> InitializeFeatureStrategies();
+    Task<Dictionary<string, Strategy>?> InitializeFutureStrategies();
 
     Task<Dictionary<string, Strategy>> InitializeActiveStrategies();
 

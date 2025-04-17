@@ -9,8 +9,8 @@ public enum AccountType
     [Description("Spot")]
     Spot,
 
-    [Description("Feature")]
-    Feature,
+    [Description("Future")]
+    Future,
 }
 [JsonConverter(typeof(JsonStringEnumConverter))]
 public enum StateStatus

@@ -1,4 +1,3 @@
-using Binance.Net.Clients;
 using Binance.Net.Enums;
 using Binance.Net.Interfaces;
 using CryptoExchange.Net.Objects.Sockets;
@@ -6,6 +5,7 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using Trading.Application.Helpers;
 using Trading.Domain.Events;
+using Trading.Exchange.Binance.Wrappers.Clients;
 
 namespace Trading.Application.Services.Alarms;
 
@@ -28,24 +28,22 @@ public class KlineStreamManager : IDisposable,
     INotificationHandler<AlarmCreatedEvent>
 {
     private readonly ILogger<KlineStreamManager> _logger;
-    private readonly BinanceSocketClient _socketClient;
+    private readonly BinanceSocketClientUsdFuturesApiWrapper _usdFutureSocketClient;
+    private readonly IMediator _mediator;
+    private static readonly HashSet<string> _listenedSymbols = [];
+    private static readonly HashSet<string> _listenedIntervals = [];
     private readonly TimeSpan _reconnectInterval = TimeSpan.FromMinutes(12 * 60);
     private DateTime _lastConnectionTime = DateTime.UtcNow;
     private UpdateSubscription? _subscription;
 
-    private readonly IMediator _mediator;
-
-    private static readonly HashSet<string> _listenedSymbols = [];
-    private static readonly HashSet<string> _listenedIntervals = [];
-
     public KlineStreamManager(
         ILogger<KlineStreamManager> logger,
         IMediator mediator,
-        BinanceSocketClient socketClient)
+        BinanceSocketClientUsdFuturesApiWrapper usdFutureSocketClient)
     {
         _logger = logger;
         _mediator = mediator;
-        _socketClient = socketClient;
+        _usdFutureSocketClient = usdFutureSocketClient;
     }
 
     public async Task<bool> SubscribeSymbols(HashSet<string> symbols, HashSet<string> intervals, CancellationToken ct)
@@ -61,9 +59,9 @@ public class KlineStreamManager : IDisposable,
         mergedSymbols.UnionWith(symbols);
         var mergedIntervals = new HashSet<string>(_listenedIntervals);
         mergedIntervals.UnionWith(intervals);
-        var result = await _socketClient.UsdFuturesApi.ExchangeData.SubscribeToKlineUpdatesAsync(
-            mergedSymbols.ToArray(),
-            mergedIntervals.Select(CommonHelper.ConvertToKlineInterval).ToArray(),
+        var result = await _usdFutureSocketClient.ExchangeData.SubscribeToKlineUpdatesAsync(
+            mergedSymbols,
+            mergedIntervals.Select(CommonHelper.ConvertToKlineInterval),
             HandlePriceUpdate,
             ct: ct);
 

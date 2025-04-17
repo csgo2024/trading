@@ -7,23 +7,26 @@ using CryptoExchange.Net.Objects;
 using Moq;
 using Trading.Application.Services.Trading.Account;
 using Trading.Domain.Entities;
+using Trading.Exchange.Binance.Wrappers.Clients;
 
 namespace Trading.Application.Tests.Services.Trading.Account;
 
 public class SpotProcessorTests
 {
-    private readonly BinanceSpotRestClientWrapper _binanceClient;
+    private readonly BinanceRestClientSpotApiWrapper _spotApiRestClient;
+    private readonly Mock<IBinanceRestClientSpotApiAccount> _mockAccount;
     private readonly Mock<IBinanceRestClientSpotApiTrading> _mockTrading;
     private readonly Mock<IBinanceRestClientSpotApiExchangeData> _mockExchangeData;
     private readonly SpotProcessor _processor;
 
     public SpotProcessorTests()
     {
+        _mockAccount = new Mock<IBinanceRestClientSpotApiAccount>();
         _mockTrading = new Mock<IBinanceRestClientSpotApiTrading>();
         _mockExchangeData = new Mock<IBinanceRestClientSpotApiExchangeData>();
 
-        _binanceClient = new BinanceSpotRestClientWrapper(_mockTrading.Object, _mockExchangeData.Object);
-        _processor = new SpotProcessor(_binanceClient);
+        _spotApiRestClient = new BinanceRestClientSpotApiWrapper(_mockAccount.Object, _mockExchangeData.Object, _mockTrading.Object);
+        _processor = new SpotProcessor(_spotApiRestClient);
     }
 
     [Fact]

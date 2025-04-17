@@ -44,7 +44,7 @@ public static class ServiceCollectionExtensions
 
     public static IServiceCollection AddTradingServices(this IServiceCollection services)
     {
-        services.AddSingleton<FeatureProcessor>();
+        services.AddSingleton<FutureProcessor>();
         services.AddSingleton<SpotProcessor>();
         services.AddSingleton<AccountProcessorFactory>();
 
@@ -94,7 +94,7 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddBinance(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddSingleton(provider => GetBinanceSettings(provider, configuration));
-        services.AddSingleton<BinanceRestClient>(provider =>
+        services.AddSingleton(provider =>
         {
             var settings = provider.GetRequiredService<BinanceSettings>();
             var restClient = new BinanceRestClient(options =>
@@ -104,7 +104,7 @@ public static class ServiceCollectionExtensions
             return restClient;
         });
 
-        services.AddSingleton<BinanceSocketClient>(provider =>
+        services.AddSingleton(provider =>
         {
             var settings = provider.GetRequiredService<BinanceSettings>();
             var restClient = new BinanceSocketClient(options =>
@@ -114,18 +114,6 @@ public static class ServiceCollectionExtensions
             return restClient;
         });
 
-        services.AddSingleton<BinanceSpotRestClientWrapper>(provider =>
-        {
-            var binanceRestClient = provider.GetRequiredService<BinanceRestClient>();
-            return new BinanceSpotRestClientWrapper(binanceRestClient.SpotApi.Trading,
-                                                    binanceRestClient.SpotApi.ExchangeData);
-        });
-        services.AddSingleton<BinanceFeatureRestClientWrapper>(provider =>
-        {
-            var binanceRestClient = provider.GetRequiredService<BinanceRestClient>();
-            return new BinanceFeatureRestClientWrapper(binanceRestClient.UsdFuturesApi.Trading,
-                                                       binanceRestClient.UsdFuturesApi.ExchangeData);
-        });
         return services;
     }
 }

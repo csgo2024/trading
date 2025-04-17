@@ -3,6 +3,7 @@ using Trading.Application.Commands;
 using Trading.Application.Middlerwares;
 using Trading.Application.Queries;
 using Trading.Domain.Entities;
+using Trading.Exchange.Binance;
 using Trading.Infrastructure;
 
 namespace Trading.API;
@@ -51,6 +52,7 @@ public class Startup
         });
         services.AddTradingServices();
         services.AddBinance(Configuration);
+        services.AddBinanceWrapper(Configuration);
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

@@ -46,7 +46,7 @@ public class StrategyRepositoryTests : IClassFixture<MongoDbFixture>
         var strategy = new Strategy
         {
             Symbol = "ETHUSDT",
-            AccountType = AccountType.Feature,
+            AccountType = AccountType.Future,
             Amount = 100,
             Status = StateStatus.Running
         };
@@ -55,7 +55,7 @@ public class StrategyRepositoryTests : IClassFixture<MongoDbFixture>
         var duplicateStrategy = new Strategy
         {
             Symbol = "ETHUSDT",
-            AccountType = AccountType.Feature,
+            AccountType = AccountType.Future,
             Amount = 200,
             Status = StateStatus.Running
         };
@@ -74,7 +74,7 @@ public class StrategyRepositoryTests : IClassFixture<MongoDbFixture>
         var strategies = new List<Strategy>
         {
             new() { Symbol = "BTC1", AccountType = AccountType.Spot },
-            new() { Symbol = "BTC2", AccountType = AccountType.Feature }
+            new() { Symbol = "BTC2", AccountType = AccountType.Future }
         };
 
         foreach (var strategy in strategies)
@@ -92,14 +92,14 @@ public class StrategyRepositoryTests : IClassFixture<MongoDbFixture>
     }
 
     [Fact]
-    public async Task InitializeFeatureStrategies_ShouldReturnOnlyRunningFeatureStrategies()
+    public async Task InitializeFutureStrategies_ShouldReturnOnlyRunningFutureStrategies()
     {
         // Arrange
         await _repository.EmptyAsync();
         var strategies = new List<Strategy>
         {
-            new() { Symbol = "F1", AccountType = AccountType.Feature, Status = StateStatus.Running },
-            new() { Symbol = "F2", AccountType = AccountType.Feature, Status = StateStatus.Paused },
+            new() { Symbol = "F1", AccountType = AccountType.Future, Status = StateStatus.Running },
+            new() { Symbol = "F2", AccountType = AccountType.Future, Status = StateStatus.Paused },
             new() { Symbol = "S1", AccountType = AccountType.Spot, Status = StateStatus.Running }
         };
 
@@ -109,7 +109,7 @@ public class StrategyRepositoryTests : IClassFixture<MongoDbFixture>
         }
 
         // Act
-        var result = await _repository.InitializeFeatureStrategies();
+        var result = await _repository.InitializeFutureStrategies();
 
         // Assert
         Assert.NotNull(result);
@@ -126,7 +126,7 @@ public class StrategyRepositoryTests : IClassFixture<MongoDbFixture>
         {
             new() { Symbol = "S1", AccountType = AccountType.Spot, Status = StateStatus.Running },
             new() { Symbol = "S2", AccountType = AccountType.Spot, Status = StateStatus.Paused },
-            new() { Symbol = "F1", AccountType = AccountType.Feature, Status = StateStatus.Running }
+            new() { Symbol = "F1", AccountType = AccountType.Future, Status = StateStatus.Running }
         };
 
         foreach (var strategy in strategies)
