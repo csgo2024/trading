@@ -71,10 +71,7 @@ public static class ServiceCollectionExtensions
         });
         services.AddSingleton<HelpCommandHandler>();
         services.AddSingleton<StatusCommandHandler>();
-        services.AddSingleton<CreateStrategyHandler>();
-        services.AddSingleton<DeleteStrategyHandler>();
-        services.AddSingleton<StopStrategyHandler>();
-        services.AddSingleton<ResumeStrategyHandler>();
+        services.AddSingleton<StrategyCommandHandler>();
         services.AddSingleton<AlarmCommandHandler>();
         services.AddSingleton<TelegramCommandHandlerFactory>();
         services.AddSingleton<ITelegramCommandHandler, TelegramCommandHandler>();

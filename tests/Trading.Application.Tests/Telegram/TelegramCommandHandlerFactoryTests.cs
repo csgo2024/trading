@@ -60,10 +60,7 @@ public class TelegramCommandHandlerFactoryTests
 
         services.AddTransient<HelpCommandHandler>();
         services.AddTransient<StatusCommandHandler>();
-        services.AddTransient<CreateStrategyHandler>();
-        services.AddTransient<DeleteStrategyHandler>();
-        services.AddTransient<StopStrategyHandler>();
-        services.AddTransient<ResumeStrategyHandler>();
+        services.AddTransient<StrategyCommandHandler>();
         services.AddTransient<AlarmCommandHandler>();
 
         _serviceProvider = services.BuildServiceProvider();
@@ -73,11 +70,8 @@ public class TelegramCommandHandlerFactoryTests
     [Theory]
     [InlineData("/help", typeof(HelpCommandHandler))]
     [InlineData("/status", typeof(StatusCommandHandler))]
-    [InlineData("/create", typeof(CreateStrategyHandler))]
-    [InlineData("/delete", typeof(DeleteStrategyHandler))]
-    [InlineData("/stop", typeof(StopStrategyHandler))]
-    [InlineData("/resume", typeof(ResumeStrategyHandler))]
     [InlineData("/alarm", typeof(AlarmCommandHandler))]
+    [InlineData("/strategy", typeof(StrategyCommandHandler))]
     public void GetHandler_ShouldReturnCorrectHandler(string command, Type expectedType)
     {
         // Act

@@ -12,13 +12,10 @@ public class TelegramCommandHandlerFactory
         _serviceProvider = serviceProvider;
         _handlers = new Dictionary<string, Type>
         {
+            {AlarmCommandHandler.Command, typeof(AlarmCommandHandler)},
             {HelpCommandHandler.Command, typeof(HelpCommandHandler)},
             {StatusCommandHandler.Command, typeof(StatusCommandHandler)},
-            {CreateStrategyHandler.Command, typeof(CreateStrategyHandler)},
-            {DeleteStrategyHandler.Command, typeof(DeleteStrategyHandler)},
-            {StopStrategyHandler.Command, typeof(StopStrategyHandler)},
-            {ResumeStrategyHandler.Command, typeof(ResumeStrategyHandler)},
-            {AlarmCommandHandler.Command, typeof(AlarmCommandHandler)},
+            {StrategyCommandHandler.Command, typeof(StrategyCommandHandler)},
         };
     }
 
