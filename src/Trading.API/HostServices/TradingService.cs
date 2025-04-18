@@ -19,10 +19,10 @@ namespace Trading.API.HostServices;
 */
 public class TradingService : BackgroundService
 {
-    private readonly ILogger<TradingService> _logger;
     private Dictionary<string, Strategy>? _strategies;
     private readonly AccountProcessorFactory _accountProcessorFactory;
     private readonly ExecutorFactory _executorFactory;
+    private readonly ILogger<TradingService> _logger;
     private readonly IStrategyRepository _strategyRepository;
 
     public TradingService(

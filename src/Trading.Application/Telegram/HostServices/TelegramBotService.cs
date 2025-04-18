@@ -10,11 +10,10 @@ namespace Trading.Application.Telegram.HostServices;
 
 public class TelegramBotService : BackgroundService
 {
+    private readonly ILogger<TelegramBotService> _logger;
+    private readonly IServiceProvider _serviceProvider;
     private readonly ITelegramBotClient _botClient;
     private readonly ITelegramCommandHandler _commandHandler;
-    private readonly ILogger<TelegramBotService> _logger;
-
-    private readonly IServiceProvider _serviceProvider;
 
     public TelegramBotService(
         ITelegramBotClient botClient,

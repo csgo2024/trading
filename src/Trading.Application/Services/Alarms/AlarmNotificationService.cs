@@ -22,16 +22,14 @@ public class AlarmNotificationService :
     INotificationHandler<AlarmResumedEvent>,
     INotificationHandler<AlarmEmptyEvent>
 {
-    private readonly ILogger<AlarmNotificationService> _logger;
-    private readonly IAlarmRepository _alarmRepository;
-    private readonly ITelegramBotClient _botClient;
-    private readonly string _chatId;
-    private readonly JavaScriptEvaluator _javaScriptEvaluator;
-    private static readonly ConcurrentDictionary<string, IBinanceKline> _lastkLines = new();
-    private static readonly ConcurrentDictionary<string, Alarm> _activeAlarms = new();
-
     private readonly AlarmTaskManager _alarmTaskManager;
-
+    private readonly IAlarmRepository _alarmRepository;
+    private readonly ILogger<AlarmNotificationService> _logger;
+    private readonly ITelegramBotClient _botClient;
+    private readonly JavaScriptEvaluator _javaScriptEvaluator;
+    private readonly string _chatId;
+    private static readonly ConcurrentDictionary<string, Alarm> _activeAlarms = new();
+    private static readonly ConcurrentDictionary<string, IBinanceKline> _lastkLines = new();
     public AlarmNotificationService(
         ILogger<AlarmNotificationService> logger,
         IAlarmRepository alarmRepository,

@@ -9,10 +9,9 @@ namespace Trading.Application.Telegram.Handlers;
 
 public class StrategyCommandHandler : ICommandHandler
 {
-    private readonly IMediator _mediator;
     private readonly ILogger<StrategyCommandHandler> _logger;
+    private readonly IMediator _mediator;
     private readonly IStrategyRepository _strategyRepository;
-
     public static string Command => "/strategy";
 
     public StrategyCommandHandler(

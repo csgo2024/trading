@@ -5,9 +5,9 @@ namespace Trading.Application.Services.Alarms;
 
 public class AlarmTaskManager : IAsyncDisposable
 {
-    private static readonly ConcurrentDictionary<string, (CancellationTokenSource cts, Task task)> _monitoringTasks = new();
-    private readonly SemaphoreSlim _taskLock = new(1, 1);
     private readonly ILogger<AlarmTaskManager> _logger;
+    private readonly SemaphoreSlim _taskLock = new(1, 1);
+    private static readonly ConcurrentDictionary<string, (CancellationTokenSource cts, Task task)> _monitoringTasks = new();
 
     public AlarmTaskManager(ILogger<AlarmTaskManager> logger)
     {

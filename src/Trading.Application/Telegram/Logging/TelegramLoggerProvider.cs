@@ -7,11 +7,10 @@ namespace Trading.Application.Telegram.Logging;
 
 public class TelegramLoggerProvider : ILoggerProvider
 {
-    private readonly ITelegramBotClient _botClient;
     private readonly IOptions<TelegramLoggerOptions> _loggerOptions;
-
+    private readonly ITelegramBotClient _botClient;
     private readonly TelegramSettings _settings;
-
+    
     public TelegramLoggerProvider(ITelegramBotClient botClient,
                                   IOptions<TelegramLoggerOptions> loggerOptions,
                                   IOptions<TelegramSettings> settings)

@@ -9,8 +9,8 @@ namespace Trading.Application.Telegram.Handlers;
 
 public class AlarmCommandHandler : ICommandHandler
 {
-    private readonly ILogger<AlarmCommandHandler> _logger;
     private readonly IAlarmRepository _alarmRepository;
+    private readonly ILogger<AlarmCommandHandler> _logger;
     private readonly IMediator _mediator;
     private readonly JavaScriptEvaluator _javaScriptEvaluator;
     public static string Command => "/alarm";

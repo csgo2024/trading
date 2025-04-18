@@ -5,11 +5,11 @@ namespace Trading.Application.Helpers;
 
 public class JavaScriptEvaluator : IDisposable
 {
-    private readonly ILogger<JavaScriptEvaluator> _logger;
-    private readonly Engine _jsEngine;
-    private readonly SemaphoreSlim _engineLock = new(1, 1);
     private const int MaxRetries = 1;
     private const int RetryDelayMs = 100;
+    private readonly Engine _jsEngine;
+    private readonly ILogger<JavaScriptEvaluator> _logger;
+    private readonly SemaphoreSlim _engineLock = new(1, 1);
 
     public JavaScriptEvaluator(ILogger<JavaScriptEvaluator> logger)
     {

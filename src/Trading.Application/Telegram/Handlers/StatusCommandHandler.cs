@@ -8,13 +8,10 @@ namespace Trading.Application.Telegram.Handlers;
 
 public class StatusCommandHandler : ICommandHandler
 {
-    private readonly IStrategyRepository _strategyRepository;
-
-    private readonly AlarmNotificationService _alarmNotificationService;
-
-    private readonly ILogger<StatusCommandHandler> _logger;
     private const string DateTimeFormat = "yyyy-MM-dd HH:mm:ss";
-
+    private readonly AlarmNotificationService _alarmNotificationService;
+    private readonly ILogger<StatusCommandHandler> _logger;
+    private readonly IStrategyRepository _strategyRepository;
     public static string Command => "/status";
 
     public StatusCommandHandler(

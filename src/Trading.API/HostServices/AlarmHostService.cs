@@ -5,11 +5,10 @@ namespace Trading.API.HostServices;
 
 public class AlarmHostService : BackgroundService
 {
-    private readonly ILogger<AlarmHostService> _logger;
-    private readonly IAlarmRepository _alarmRepository;
-    private readonly KlineStreamManager _klineStreamManager;
-
     private readonly AlarmNotificationService _sendAlarmService;
+    private readonly IAlarmRepository _alarmRepository;
+    private readonly ILogger<AlarmHostService> _logger;
+    private readonly KlineStreamManager _klineStreamManager;
 
     public AlarmHostService(
         ILogger<AlarmHostService> logger,
