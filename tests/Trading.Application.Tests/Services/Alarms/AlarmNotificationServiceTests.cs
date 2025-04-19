@@ -8,6 +8,7 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Trading.Application.Helpers;
 using Trading.Application.Services.Alarms;
+using Trading.Application.Services.Common;
 using Trading.Common.Models;
 using Trading.Domain.Entities;
 using Trading.Domain.Events;
@@ -19,11 +20,11 @@ public class AlarmNotificationServiceTests
 {
     private readonly Mock<ILogger<AlarmNotificationService>> _loggerMock;
     private readonly Mock<ILogger<JavaScriptEvaluator>> _jsLoggerMock;
-    private readonly Mock<ILogger<AlarmTaskManager>> _alarmLoggerMock;
+    private readonly Mock<ILogger<BackgroundTaskManager>> _alarmLoggerMock;
     private readonly Mock<IAlarmRepository> _alarmRepositoryMock;
     private readonly Mock<ITelegramBotClient> _botClientMock;
     private readonly Mock<JavaScriptEvaluator> _jsEvaluatorMock;
-    private readonly Mock<AlarmTaskManager> _alarmTaskManagerMock;
+    private readonly Mock<BackgroundTaskManager> _taskManagerMock;
     private readonly CancellationTokenSource _cts;
     private readonly AlarmNotificationService _service;
 
@@ -31,12 +32,12 @@ public class AlarmNotificationServiceTests
     {
         _loggerMock = new Mock<ILogger<AlarmNotificationService>>();
         _jsLoggerMock = new Mock<ILogger<JavaScriptEvaluator>>();
-        _alarmLoggerMock = new Mock<ILogger<AlarmTaskManager>>();
+        _alarmLoggerMock = new Mock<ILogger<BackgroundTaskManager>>();
 
         _alarmRepositoryMock = new Mock<IAlarmRepository>();
         _botClientMock = new Mock<ITelegramBotClient>();
         _jsEvaluatorMock = new Mock<JavaScriptEvaluator>(_jsLoggerMock.Object);
-        _alarmTaskManagerMock = new Mock<AlarmTaskManager>(_alarmLoggerMock.Object);
+        _taskManagerMock = new Mock<BackgroundTaskManager>(_alarmLoggerMock.Object);
 
         _cts = new CancellationTokenSource();
 
@@ -49,13 +50,13 @@ public class AlarmNotificationServiceTests
             _alarmRepositoryMock.Object,
             _botClientMock.Object,
             _jsEvaluatorMock.Object,
-            _alarmTaskManagerMock.Object,
+            _taskManagerMock.Object,
             optionsMock.Object
         );
     }
 
     [Fact]
-    public async Task Handle_KlineUpdateEvent_ShouldUpdateLastKlines()
+    public async Task Handle_KlineUpdateEvent_ShouldUpdateLastKLines()
     {
         // Arrange
         var symbol = "BTCUSDT";
@@ -67,7 +68,7 @@ public class AlarmNotificationServiceTests
         await _service.Handle(notification, _cts.Token);
 
         // Assert
-        // Note: Since _lastKlines is private static, we can verify through the behavior
+        // Note: Since _lastKLines is private static, we can verify through the behavior
         // of ProcessAlarm when it's called later
     }
 
@@ -78,8 +79,9 @@ public class AlarmNotificationServiceTests
         var alarm = new Alarm { Id = "test-id", Symbol = "BTCUSDT" };
         var notification = new AlarmCreatedEvent(alarm);
 
-        _alarmTaskManagerMock
-            .Setup(x => x.Start(
+        _taskManagerMock
+            .Setup(x => x.StartAsync(
+                It.Is<string>(category => category == TaskCategories.Alarm),
                 It.IsAny<string>(),
                 It.IsAny<Func<CancellationToken, Task>>(),
                 It.IsAny<CancellationToken>()))
@@ -89,8 +91,9 @@ public class AlarmNotificationServiceTests
         await _service.Handle(notification, _cts.Token);
 
         // Assert
-        _alarmTaskManagerMock.Verify(
-            x => x.Start(
+        _taskManagerMock.Verify(
+            x => x.StartAsync(
+                It.Is<string>(category => category == TaskCategories.Alarm),
                 alarm.Id,
                 It.IsAny<Func<CancellationToken, Task>>(),
                 It.IsAny<CancellationToken>()),
@@ -104,15 +107,17 @@ public class AlarmNotificationServiceTests
         var alarmId = "test-id";
         var notification = new AlarmPausedEvent(alarmId);
 
-        _alarmTaskManagerMock
-            .Setup(x => x.Stop(It.IsAny<string>()))
+        _taskManagerMock
+            .Setup(x => x.StopAsync(
+                It.Is<string>(category => category == TaskCategories.Alarm),
+                It.IsAny<string>()))
             .Returns(Task.CompletedTask);
 
         // Act
         await _service.Handle(notification, _cts.Token);
 
         // Assert
-        _alarmTaskManagerMock.Verify(x => x.Stop(alarmId), Times.Once);
+        _taskManagerMock.Verify(x => x.StopAsync(TaskCategories.Alarm, alarmId), Times.Once);
     }
 
     [Fact]
@@ -134,7 +139,6 @@ public class AlarmNotificationServiceTests
             k.HighPrice == 42000m &&
             k.LowPrice == 39000m);
 
-        // 首先发送一个 KlineUpdateEvent 来初始化 _lastkLines
         await _service.Handle(new KlineUpdateEvent(alarm.Symbol, Binance.Net.Enums.KlineInterval.OneHour, kline), CancellationToken.None);
 
         _jsEvaluatorMock
@@ -146,7 +150,6 @@ public class AlarmNotificationServiceTests
                 It.IsAny<decimal>()))
             .Returns(true);
 
-        // Setup bot client mock
         _botClientMock
             .Setup(x => x.SendRequest(
                 It.Is<SendMessageRequest>(r =>
@@ -189,8 +192,9 @@ public class AlarmNotificationServiceTests
             new Alarm { Id = "test-2", Symbol = "ETHUSDT" }
         };
 
-        _alarmTaskManagerMock
-            .Setup(x => x.Start(
+        _taskManagerMock
+            .Setup(x => x.StartAsync(
+                It.Is<string>(category => category == TaskCategories.Alarm),
                 It.IsAny<string>(),
                 It.IsAny<Func<CancellationToken, Task>>(),
                 It.IsAny<CancellationToken>()))
@@ -200,8 +204,9 @@ public class AlarmNotificationServiceTests
         await _service.InitWithAlarms(alarms, _cts.Token);
 
         // Assert
-        _alarmTaskManagerMock.Verify(
-            x => x.Start(
+        _taskManagerMock.Verify(
+            x => x.StartAsync(
+                It.Is<string>(category => category == TaskCategories.Alarm),
                 It.IsAny<string>(),
                 It.IsAny<Func<CancellationToken, Task>>(),
                 It.IsAny<CancellationToken>()),

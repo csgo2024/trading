@@ -42,7 +42,10 @@ public class AlarmCommandHandler : ICommandHandler
             var parts = parameters.Trim().Split([' '], 3);
             if (parts.Length != 3)
             {
-                _logger.LogError("<pre>格式错误! 正确格式:\n/alarm BTCUSDT 1h close > 50000</pre>");
+                _logger.LogError("""
+                <pre>Invalid command format. Use: /alarm [empty|pause|resume] [parameters]
+                Create new alarm: /alarm BTCUSDT 1h close > 50000</pre> 
+                """);
                 return;
             }
 

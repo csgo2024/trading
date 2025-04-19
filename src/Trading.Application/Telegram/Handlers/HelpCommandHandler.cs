@@ -18,8 +18,8 @@ public class HelpCommandHandler : ICommandHandler
 *基础命令:*
 /help \- 显示此帮助信息
 /status \- 查看所有策略状态
-/strategy \- [create\|delete\|stop\|resume] 策略管理
-/alarm \- 警报相关
+/strategy \- [create\|delete\|pause\|resume] 策略管理
+/alarm \- [empty\|pause\|resume] 警报相关
 
 1\. *策略管理:*
 

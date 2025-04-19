@@ -6,6 +6,7 @@ using Moq;
 using Telegram.Bot;
 using Trading.Application.Helpers;
 using Trading.Application.Services.Alarms;
+using Trading.Application.Services.Common;
 using Trading.Application.Telegram;
 using Trading.Application.Telegram.Handlers;
 using Trading.Common.Models;
@@ -42,8 +43,8 @@ public class TelegramCommandHandlerFactoryTests
         services.AddSingleton(Mock.Of<ICredentialSettingRepository>());
         services.AddSingleton(Mock.Of<IAlarmRepository>());
         services.AddSingleton(Mock.Of<ITelegramBotClient>()); // Add TelegramBotClient mock
-        var alarmTaskManagerMock = new Mock<AlarmTaskManager>(Mock.Of<ILogger<AlarmTaskManager>>());
-        services.AddSingleton(alarmTaskManagerMock.Object);
+        var taskManagerMock = new Mock<BackgroundTaskManager>(Mock.Of<ILogger<BackgroundTaskManager>>());
+        services.AddSingleton(taskManagerMock.Object);
 
         var jsEvaluatorMock = new Mock<JavaScriptEvaluator>(Mock.Of<ILogger<JavaScriptEvaluator>>());
         services.AddSingleton(jsEvaluatorMock.Object);
@@ -53,7 +54,7 @@ public class TelegramCommandHandlerFactoryTests
             Mock.Of<IAlarmRepository>(),
             Mock.Of<ITelegramBotClient>(),
             jsEvaluatorMock.Object,
-            alarmTaskManagerMock.Object,
+            taskManagerMock.Object,
             optionsMock.Object
         );
         services.AddSingleton(alarmNotificationMock.Object);

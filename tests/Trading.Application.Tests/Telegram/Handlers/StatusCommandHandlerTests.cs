@@ -5,6 +5,7 @@ using Telegram.Bot;
 using Telegram.Bot.Types;
 using Trading.Application.Helpers;
 using Trading.Application.Services.Alarms;
+using Trading.Application.Services.Common;
 using Trading.Application.Telegram.Handlers;
 using Trading.Common.Models;
 using Trading.Domain.Entities;
@@ -15,50 +16,40 @@ namespace Trading.Application.Tests.Telegram.Handlers;
 public class StatusCommandHandlerTests
 {
     private readonly Mock<IStrategyRepository> _mockStrategyRepository;
-    private readonly Mock<ILogger<StatusCommandHandler>> _mockLogger;
-    private readonly Mock<ILogger<AlarmNotificationService>> _alarmLoggerMock;
-    private readonly Mock<IAlarmRepository> _alarmRepositoryMock;
-    private readonly Mock<ITelegramBotClient> _mockBotClient;
-    private readonly Mock<AlarmTaskManager> _taskManagerMock;
-    private readonly AlarmNotificationService _alarmService;
     private readonly StatusCommandHandler _handler;
-    private readonly Mock<ILogger<JavaScriptEvaluator>> _jsLoggerMock;
-    private readonly Mock<JavaScriptEvaluator> _jsEvaluatorMock;
-    private readonly Mock<ILogger<AlarmTaskManager>> _alarmTaskLoggerMock;
-    private readonly Mock<AlarmTaskManager> _alarmTaskManagerMock;
+
     public StatusCommandHandlerTests()
     {
         // Initialize all mocks
         _mockStrategyRepository = new Mock<IStrategyRepository>();
-        _mockLogger = new Mock<ILogger<StatusCommandHandler>>();
-        _alarmLoggerMock = new Mock<ILogger<AlarmNotificationService>>();
-        _alarmRepositoryMock = new Mock<IAlarmRepository>();
-        _mockBotClient = new Mock<ITelegramBotClient>();
-        _taskManagerMock = new Mock<AlarmTaskManager>();
+        var mockLogger = new Mock<ILogger<StatusCommandHandler>>();
+        var alarmLoggerMock = new Mock<ILogger<AlarmNotificationService>>();
+        var alarmRepositoryMock = new Mock<IAlarmRepository>();
+        var mockBotClient = new Mock<ITelegramBotClient>();
 
         // Create TelegramSettings
         var telegramSettings = new TelegramSettings { ChatId = "test-chat-id" };
         var options = Options.Create(telegramSettings);
 
-        _jsLoggerMock = new Mock<ILogger<JavaScriptEvaluator>>();
-        _alarmTaskLoggerMock = new Mock<ILogger<AlarmTaskManager>>();
-        _jsEvaluatorMock = new Mock<JavaScriptEvaluator>(_jsLoggerMock.Object);
-        _alarmTaskManagerMock = new Mock<AlarmTaskManager>(_alarmTaskLoggerMock.Object);
+        var jsLoggerMock = new Mock<ILogger<JavaScriptEvaluator>>();
+        var taskLoggerMock = new Mock<ILogger<BackgroundTaskManager>>();
+        var jsEvaluatorMock = new Mock<JavaScriptEvaluator>(jsLoggerMock.Object);
+        var taskManagerMock = new Mock<BackgroundTaskManager>(taskLoggerMock.Object);
         // Create real AlarmNotificationService instance
-        _alarmService = new AlarmNotificationService(
-            _alarmLoggerMock.Object,
-            _alarmRepositoryMock.Object,
-            _mockBotClient.Object,
-            _jsEvaluatorMock.Object,
-            _alarmTaskManagerMock.Object,
+        var alarmService = new AlarmNotificationService(
+            alarmLoggerMock.Object,
+            alarmRepositoryMock.Object,
+            mockBotClient.Object,
+            jsEvaluatorMock.Object,
+            taskManagerMock.Object,
             options
         );
 
         // Create StatusCommandHandler
         _handler = new StatusCommandHandler(
             _mockStrategyRepository.Object,
-            _alarmService,
-            _mockLogger.Object
+            alarmService,
+            mockLogger.Object
         );
     }
 
@@ -68,10 +59,7 @@ public class StatusCommandHandlerTests
         // Arrange
         var message = new Message { Chat = new Chat { Id = 123 } };
         _mockStrategyRepository.Setup(x => x.GetAllStrategies())
-            .ReturnsAsync(new List<Strategy>
-            {
-                new Strategy { Symbol = "BTCUSDT", Status = StateStatus.Running }
-            });
+            .ReturnsAsync([new Strategy { Symbol = "BTCUSDT", Status = StateStatus.Running }]);
 
         // Act
         await _handler.HandleAsync("");

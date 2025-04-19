@@ -29,7 +29,7 @@ public class StrategyCommandHandler : ICommandHandler
     {
         if (string.IsNullOrWhiteSpace(parameters))
         {
-            _logger.LogError("<pre>Invalid command format. Use: /strategy [create|delete|stop|resume] [parameters]</pre>");
+            _logger.LogError("<pre>Invalid command format. Use: /strategy [create|delete|pause|resume] [parameters]</pre>");
             return;
         }
 
@@ -47,14 +47,14 @@ public class StrategyCommandHandler : ICommandHandler
                 case "delete":
                     await HandleDelete(subParameters);
                     break;
-                case "stop":
-                    await HandleStop(subParameters);
+                case "pause":
+                    await HandlPause(subParameters);
                     break;
                 case "resume":
                     await HandleResume(subParameters);
                     break;
                 default:
-                    _logger.LogError("<pre>Unknown command. Use: create, delete, stop, or resume</pre>");
+                    _logger.LogError("<pre>Unknown command. Use: create, delete, pause, or resume</pre>");
                     break;
             }
         }
@@ -91,7 +91,7 @@ public class StrategyCommandHandler : ICommandHandler
         }
     }
 
-    private async Task HandleStop(string id)
+    private async Task HandlPause(string id)
     {
         _ = await _strategyRepository.UpdateStatusAsync(StateStatus.Paused);
         await _mediator.Publish(new StrategyPausedEvent(id.Trim()));

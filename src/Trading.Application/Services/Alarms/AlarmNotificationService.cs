@@ -8,6 +8,7 @@ using Telegram.Bot.Requests;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 using Trading.Application.Helpers;
+using Trading.Application.Services.Common;
 using Trading.Common.Models;
 using Trading.Domain.Entities;
 using Trading.Domain.Events;
@@ -22,7 +23,7 @@ public class AlarmNotificationService :
     INotificationHandler<AlarmResumedEvent>,
     INotificationHandler<AlarmEmptyEvent>
 {
-    private readonly AlarmTaskManager _alarmTaskManager;
+    private readonly BackgroundTaskManager _backgroundTaskManager;
     private readonly IAlarmRepository _alarmRepository;
     private readonly ILogger<AlarmNotificationService> _logger;
     private readonly ITelegramBotClient _botClient;
@@ -35,7 +36,7 @@ public class AlarmNotificationService :
         IAlarmRepository alarmRepository,
         ITelegramBotClient botClient,
         JavaScriptEvaluator javaScriptEvaluator,
-        AlarmTaskManager alarmTaskManager,
+        BackgroundTaskManager backgroundTaskManager,
         IOptions<TelegramSettings> settings)
     {
         _logger = logger;
@@ -43,7 +44,7 @@ public class AlarmNotificationService :
         _botClient = botClient;
         _chatId = settings.Value.ChatId ?? throw new ArgumentNullException(nameof(settings));
         _javaScriptEvaluator = javaScriptEvaluator;
-        _alarmTaskManager = alarmTaskManager;
+        _backgroundTaskManager = backgroundTaskManager;
     }
 
     public Task Handle(KlineUpdateEvent notification, CancellationToken cancellationToken)
@@ -59,20 +60,26 @@ public class AlarmNotificationService :
     {
         var alarm = notification.Alarm;
         _activeAlarms.AddOrUpdate(alarm.Id, alarm, (_, _) => alarm);
-        await _alarmTaskManager.Start(alarm.Id, ct => ProcessAlarm(alarm, ct), cancellationToken);
+        await _backgroundTaskManager.StartAsync(TaskCategories.Alarm,
+                                                alarm.Id,
+                                                ct => ProcessAlarm(alarm, ct),
+                                                cancellationToken);
     }
 
     public async Task Handle(AlarmPausedEvent notification, CancellationToken cancellationToken)
     {
         _activeAlarms.TryRemove(notification.AlarmId, out _);
-        await _alarmTaskManager.Stop(notification.AlarmId);
+        await _backgroundTaskManager.StopAsync(TaskCategories.Alarm, notification.AlarmId);
     }
 
     public async Task Handle(AlarmResumedEvent notification, CancellationToken cancellationToken)
     {
         var alarm = notification.Alarm;
         _activeAlarms.AddOrUpdate(alarm.Id, alarm, (_, _) => alarm);
-        await _alarmTaskManager.Start(alarm.Id, ct => ProcessAlarm(alarm, ct), cancellationToken);
+        await _backgroundTaskManager.StartAsync(TaskCategories.Alarm,
+                                                alarm.Id,
+                                                ct => ProcessAlarm(alarm, ct),
+                                                cancellationToken);
     }
     public async Task Handle(AlarmEmptyEvent notification, CancellationToken cancellationToken)
     {
@@ -80,12 +87,12 @@ public class AlarmNotificationService :
         _lastkLines.Clear();
         _logger.LogInformation("Alarm list is empty, stopping all monitors.");
         // Stop all monitors
-        await _alarmTaskManager.Stop();
+        await _backgroundTaskManager.StopAsync(TaskCategories.Alarm);
     }
 
     public IEnumerable<Alarm> GetActiveAlarms()
     {
-        var alarmIds = _alarmTaskManager.GetMonitoringAlarmIds();
+        var alarmIds = _backgroundTaskManager.GetActiveTaskIds(TaskCategories.Alarm);
         var result = _alarmRepository.GetAlarmsById(alarmIds);
         return result;
     }
@@ -97,7 +104,10 @@ public class AlarmNotificationService :
             foreach (var alarm in alarms)
             {
                 _activeAlarms.AddOrUpdate(alarm.Id, alarm, (_, _) => alarm);
-                await _alarmTaskManager.Start(alarm.Id, ct => ProcessAlarm(alarm, ct), cancellationToken);
+                await _backgroundTaskManager.StartAsync(TaskCategories.Alarm,
+                                                        alarm.Id,
+                                                        ct => ProcessAlarm(alarm, ct),
+                                                        cancellationToken);
             }
         }
         catch (Exception ex)

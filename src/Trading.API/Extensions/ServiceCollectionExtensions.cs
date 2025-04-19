@@ -9,6 +9,7 @@ using Trading.Application.Helpers;
 using Trading.Application.Middlerwares;
 using Trading.Application.Queries;
 using Trading.Application.Services.Alarms;
+using Trading.Application.Services.Common;
 using Trading.Application.Services.Trading;
 using Trading.Application.Services.Trading.Account;
 using Trading.Application.Services.Trading.Executors;
@@ -55,8 +56,7 @@ public static class ServiceCollectionExtensions
         services.AddHostedService<TradingHostService>();
         services.AddSingleton<KlineStreamManager>();
         services.AddSingleton<AlarmNotificationService>();
-        services.AddSingleton<AlarmTaskManager>();
-        services.AddSingleton<StrategyTaskManager>();
+        services.AddSingleton<BackgroundTaskManager>();
         services.AddHostedService<AlarmHostService>();
         services.AddSingleton<StrategyExecutionService>();
 

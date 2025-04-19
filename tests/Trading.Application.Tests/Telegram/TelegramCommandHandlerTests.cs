@@ -46,7 +46,7 @@ public class TelegramCommandHandlerTests
     [InlineData("/status", "", "/status")]
     [InlineData("/create BTCUSDT", "BTCUSDT", "/create")]
     [InlineData("/delete 123", "123", "/delete")]
-    [InlineData("/stop strategy1", "strategy1", "/stop")]
+    [InlineData("/pause strategy1", "strategy1", "/pause")]
     [InlineData("/resume strategy2", "strategy2", "/resume")]
     public async Task HandleCommand_WithValidCommand_ShouldProcessCorrectly(
         string input, string expectedParams, string expectedCommand)

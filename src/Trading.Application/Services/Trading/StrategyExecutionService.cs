@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
+using Trading.Application.Services.Common;
 using Trading.Application.Services.Trading.Account;
 using Trading.Application.Services.Trading.Executors;
 using Trading.Domain.Entities;
@@ -18,19 +19,19 @@ public class StrategyExecutionService :
     private readonly ExecutorFactory _executorFactory;
     private readonly ILogger<StrategyExecutionService> _logger;
     private readonly IStrategyRepository _strategyRepository;
-    private readonly StrategyTaskManager _strategyTaskManager;
+    private readonly BackgroundTaskManager _backgroundTaskManager;
 
     public StrategyExecutionService(
         ILogger<StrategyExecutionService> logger,
         AccountProcessorFactory accountProcessorFactory,
         ExecutorFactory executorFactory,
-        StrategyTaskManager strategyTaskManager,
+        BackgroundTaskManager backgroundTaskManager,
         IStrategyRepository strategyRepository)
     {
         _logger = logger;
         _accountProcessorFactory = accountProcessorFactory;
         _executorFactory = executorFactory;
-        _strategyTaskManager = strategyTaskManager;
+        _backgroundTaskManager = backgroundTaskManager;
         _strategyRepository = strategyRepository;
     }
 
@@ -42,12 +43,12 @@ public class StrategyExecutionService :
 
     public async Task Handle(StrategyDeletedEvent notification, CancellationToken cancellationToken)
     {
-        await _strategyTaskManager.Stop(notification.Id);
+        await _backgroundTaskManager.StopAsync(TaskCategories.Strategy, notification.Id);
     }
 
     public async Task Handle(StrategyPausedEvent notification, CancellationToken cancellationToken)
     {
-        await _strategyTaskManager.Stop(notification.Id);
+        await _backgroundTaskManager.StopAsync(TaskCategories.Strategy, notification.Id);
     }
 
     public async Task Handle(StrategyResumedEvent notification, CancellationToken cancellationToken)
@@ -82,7 +83,8 @@ public class StrategyExecutionService :
             return;
         }
 
-        await _strategyTaskManager.Start(
+        await _backgroundTaskManager.StartAsync(
+            TaskCategories.Strategy,
             strategy.Id,
             async (ct) => await ExecuteStrategyLoop(executor, accountProcessor, strategy, ct),
             cancellationToken);
