@@ -9,7 +9,16 @@ public static class TaskCategories
     public const string Strategy = "Strategy";
 }
 
-public class BackgroundTaskManager : IAsyncDisposable
+public interface IBackgroundTaskManager : IAsyncDisposable
+{
+    Task StartAsync(string category, string taskId, Func<CancellationToken, Task> executionFunc, CancellationToken cancellationToken);
+    Task StopAsync(string category, string taskId);
+    Task StopAsync(string category);
+    Task StopAsync();
+    string[] GetActiveTaskIds(string category);
+}
+
+public class BackgroundTaskManager : IBackgroundTaskManager
 {
     private readonly ILogger<BackgroundTaskManager> _logger;
     private readonly SemaphoreSlim _taskLock = new(1, 1);

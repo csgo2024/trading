@@ -23,9 +23,15 @@ public class KlineUpdateEvent : INotification
     }
 }
 
-public class KlineStreamManager : IDisposable,
+public interface IKlineStreamManager : IDisposable,
     INotificationHandler<AlarmResumedEvent>,
     INotificationHandler<AlarmCreatedEvent>
+{
+    Task<bool> SubscribeSymbols(HashSet<string> symbols, HashSet<string> intervals, CancellationToken ct);
+    bool NeedsReconnection();
+}
+
+public class KlineStreamManager : IKlineStreamManager
 {
     private DateTime _lastConnectionTime = DateTime.UtcNow;
     private UpdateSubscription? _subscription;

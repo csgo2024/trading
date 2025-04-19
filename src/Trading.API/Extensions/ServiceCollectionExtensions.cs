@@ -48,15 +48,15 @@ public static class ServiceCollectionExtensions
     {
         services.AddSingleton<FutureProcessor>();
         services.AddSingleton<SpotProcessor>();
-        services.AddSingleton<AccountProcessorFactory>();
+        services.AddSingleton<IAccountProcessorFactory, AccountProcessorFactory>();
 
         services.AddSingleton<BottomBuyExecutor>();
         services.AddSingleton<DCABuyExecutor>();
-        services.AddSingleton<ExecutorFactory>();
+        services.AddSingleton<IExecutorFactory, ExecutorFactory>();
         services.AddHostedService<TradingHostService>();
-        services.AddSingleton<KlineStreamManager>();
+        services.AddSingleton<IKlineStreamManager, KlineStreamManager>();
         services.AddSingleton<AlarmNotificationService>();
-        services.AddSingleton<BackgroundTaskManager>();
+        services.AddSingleton<IBackgroundTaskManager, BackgroundTaskManager>();
         services.AddHostedService<AlarmHostService>();
         services.AddSingleton<StrategyExecutionService>();
 

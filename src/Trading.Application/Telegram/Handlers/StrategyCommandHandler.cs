@@ -37,30 +37,23 @@ public class StrategyCommandHandler : ICommandHandler
         var subCommand = parts[0].ToLower();
         var subParameters = parts.Length > 1 ? parts[1] : string.Empty;
 
-        try
+        switch (subCommand)
         {
-            switch (subCommand)
-            {
-                case "create":
-                    await HandleCreate(subParameters);
-                    break;
-                case "delete":
-                    await HandleDelete(subParameters);
-                    break;
-                case "pause":
-                    await HandlPause(subParameters);
-                    break;
-                case "resume":
-                    await HandleResume(subParameters);
-                    break;
-                default:
-                    _logger.LogError("<pre>Unknown command. Use: create, delete, pause, or resume</pre>");
-                    break;
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "<pre>Strategy command execution failed</pre>");
+            case "create":
+                await HandleCreate(subParameters);
+                break;
+            case "delete":
+                await HandleDelete(subParameters);
+                break;
+            case "pause":
+                await HandlPause(subParameters);
+                break;
+            case "resume":
+                await HandleResume(subParameters);
+                break;
+            default:
+                _logger.LogError("<pre>Unknown command. Use: create, delete, pause, or resume</pre>");
+                break;
         }
     }
 

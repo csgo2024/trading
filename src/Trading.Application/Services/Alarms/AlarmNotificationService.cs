@@ -23,7 +23,7 @@ public class AlarmNotificationService :
     INotificationHandler<AlarmResumedEvent>,
     INotificationHandler<AlarmEmptyEvent>
 {
-    private readonly BackgroundTaskManager _backgroundTaskManager;
+    private readonly IBackgroundTaskManager _backgroundTaskManager;
     private readonly IAlarmRepository _alarmRepository;
     private readonly ILogger<AlarmNotificationService> _logger;
     private readonly ITelegramBotClient _botClient;
@@ -36,7 +36,7 @@ public class AlarmNotificationService :
         IAlarmRepository alarmRepository,
         ITelegramBotClient botClient,
         JavaScriptEvaluator javaScriptEvaluator,
-        BackgroundTaskManager backgroundTaskManager,
+        IBackgroundTaskManager backgroundTaskManager,
         IOptions<TelegramSettings> settings)
     {
         _logger = logger;

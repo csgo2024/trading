@@ -15,17 +15,17 @@ public class StrategyExecutionService :
     INotificationHandler<StrategyPausedEvent>,
     INotificationHandler<StrategyResumedEvent>
 {
-    private readonly AccountProcessorFactory _accountProcessorFactory;
-    private readonly ExecutorFactory _executorFactory;
+    private readonly IAccountProcessorFactory _accountProcessorFactory;
+    private readonly IExecutorFactory _executorFactory;
     private readonly ILogger<StrategyExecutionService> _logger;
     private readonly IStrategyRepository _strategyRepository;
-    private readonly BackgroundTaskManager _backgroundTaskManager;
+    private readonly IBackgroundTaskManager _backgroundTaskManager;
 
     public StrategyExecutionService(
         ILogger<StrategyExecutionService> logger,
-        AccountProcessorFactory accountProcessorFactory,
-        ExecutorFactory executorFactory,
-        BackgroundTaskManager backgroundTaskManager,
+        IAccountProcessorFactory accountProcessorFactory,
+        IExecutorFactory executorFactory,
+        IBackgroundTaskManager backgroundTaskManager,
         IStrategyRepository strategyRepository)
     {
         _logger = logger;
@@ -56,7 +56,7 @@ public class StrategyExecutionService :
         await StartStrategyExecution(notification.Strategy, cancellationToken);
     }
 
-    public async Task ExecuteAsync(CancellationToken cancellationToken)
+    public virtual async Task ExecuteAsync(CancellationToken cancellationToken)
     {
         try
         {

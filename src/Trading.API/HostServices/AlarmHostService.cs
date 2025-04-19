@@ -8,11 +8,11 @@ public class AlarmHostService : BackgroundService
     private readonly AlarmNotificationService _sendAlarmService;
     private readonly IAlarmRepository _alarmRepository;
     private readonly ILogger<AlarmHostService> _logger;
-    private readonly KlineStreamManager _klineStreamManager;
+    private readonly IKlineStreamManager _klineStreamManager;
 
     public AlarmHostService(
         ILogger<AlarmHostService> logger,
-        KlineStreamManager klineStreamManager,
+        IKlineStreamManager klineStreamManager,
         AlarmNotificationService sendAlarmService,
         IAlarmRepository alarmRepository)
     {

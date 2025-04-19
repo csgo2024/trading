@@ -2,7 +2,12 @@ using Trading.Domain.Entities;
 
 namespace Trading.Application.Services.Trading.Executors;
 
-public class ExecutorFactory
+public interface IExecutorFactory
+{
+    IExecutor? GetExecutor(StrategyType strategyType);
+}
+
+public class ExecutorFactory : IExecutorFactory
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly Dictionary<StrategyType, Type> _handlers;
@@ -17,7 +22,7 @@ public class ExecutorFactory
         };
     }
 
-    public virtual IExecutor? GetExecutor(StrategyType strategyType)
+    public IExecutor? GetExecutor(StrategyType strategyType)
     {
         return _handlers.TryGetValue(strategyType, out var handlerType)
             ? _serviceProvider.GetService(handlerType) as IExecutor

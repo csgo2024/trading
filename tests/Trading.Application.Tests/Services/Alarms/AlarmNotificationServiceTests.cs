@@ -20,11 +20,10 @@ public class AlarmNotificationServiceTests
 {
     private readonly Mock<ILogger<AlarmNotificationService>> _loggerMock;
     private readonly Mock<ILogger<JavaScriptEvaluator>> _jsLoggerMock;
-    private readonly Mock<ILogger<BackgroundTaskManager>> _alarmLoggerMock;
     private readonly Mock<IAlarmRepository> _alarmRepositoryMock;
     private readonly Mock<ITelegramBotClient> _botClientMock;
     private readonly Mock<JavaScriptEvaluator> _jsEvaluatorMock;
-    private readonly Mock<BackgroundTaskManager> _taskManagerMock;
+    private readonly Mock<IBackgroundTaskManager> _taskManagerMock;
     private readonly CancellationTokenSource _cts;
     private readonly AlarmNotificationService _service;
 
@@ -32,12 +31,11 @@ public class AlarmNotificationServiceTests
     {
         _loggerMock = new Mock<ILogger<AlarmNotificationService>>();
         _jsLoggerMock = new Mock<ILogger<JavaScriptEvaluator>>();
-        _alarmLoggerMock = new Mock<ILogger<BackgroundTaskManager>>();
 
         _alarmRepositoryMock = new Mock<IAlarmRepository>();
         _botClientMock = new Mock<ITelegramBotClient>();
         _jsEvaluatorMock = new Mock<JavaScriptEvaluator>(_jsLoggerMock.Object);
-        _taskManagerMock = new Mock<BackgroundTaskManager>(_alarmLoggerMock.Object);
+        _taskManagerMock = new Mock<IBackgroundTaskManager>();
 
         _cts = new CancellationTokenSource();
 

@@ -2,7 +2,12 @@ using Trading.Domain.Entities;
 
 namespace Trading.Application.Services.Trading.Account;
 
-public class AccountProcessorFactory
+public interface IAccountProcessorFactory
+{
+    IAccountProcessor? GetAccountProcessor(AccountType type);
+}
+
+public class AccountProcessorFactory : IAccountProcessorFactory
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly Dictionary<AccountType, Type> _handlers;
@@ -17,7 +22,7 @@ public class AccountProcessorFactory
         };
     }
 
-    public virtual IAccountProcessor? GetAccountProcessor(AccountType type)
+    public IAccountProcessor? GetAccountProcessor(AccountType type)
     {
         return _handlers.TryGetValue(type, out var handlerType)
             ? _serviceProvider.GetService(handlerType) as IAccountProcessor
