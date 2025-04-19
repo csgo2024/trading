@@ -6,7 +6,8 @@ namespace Trading.Application.Commands;
 
 public class CreateStrategyCommand : IRequest<Strategy>
 {
-    public string Symbol { get; set; } = string.Empty;
+    [Required(ErrorMessage = "Symbol cannot be empty")]
+    public string Symbol { get; set; } = "";
 
     [Range(10, int.MaxValue, ErrorMessage = "Amount must be greater than 10")]
     public int Amount { get; set; }

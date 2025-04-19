@@ -20,6 +20,7 @@ public class CreateStrategyCommandHandler : IRequestHandler<CreateStrategyComman
 
     public async Task<Strategy> Handle(CreateStrategyCommand request, CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(request);
         // Validate the command
         var validationContext = new ValidationContext(request);
         var validationResults = new List<ValidationResult>();
