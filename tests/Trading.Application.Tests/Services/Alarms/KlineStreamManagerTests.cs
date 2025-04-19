@@ -46,7 +46,7 @@ public class KlineStreamManagerTests
             _usdFutureSocketClient);
     }
 
-    // [Fact]
+    [Fact]
     public async Task SubscribeSymbols_WithValidInput_ShouldSubscribeSuccessfully()
     {
         // Arrange
@@ -55,8 +55,8 @@ public class KlineStreamManagerTests
 
         _mockExchangeData
             .Setup(x => x.SubscribeToKlineUpdatesAsync(
-                It.IsAny<string[]>(),
-                It.IsAny<KlineInterval[]>(),
+                It.IsAny<IEnumerable<string>>(),
+                It.IsAny<IEnumerable<KlineInterval>>(),
                 It.IsAny<Action<DataEvent<IBinanceStreamKlineData>>>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new CallResult<UpdateSubscription>(null, null, null));
@@ -68,8 +68,8 @@ public class KlineStreamManagerTests
         Assert.True(result);
         _mockExchangeData.Verify(
             x => x.SubscribeToKlineUpdatesAsync(
-                It.Is<string[]>(s => s.Contains("BTCUSDT")),
-                It.Is<KlineInterval[]>(i => i.Contains(KlineInterval.FiveMinutes)),
+                It.Is<IEnumerable<string>>(s => s.Contains("BTCUSDT")),
+                It.Is<IEnumerable<KlineInterval>>(i => i.Contains(KlineInterval.FiveMinutes)),
                 It.IsAny<Action<DataEvent<IBinanceStreamKlineData>>>(),
                 It.IsAny<CancellationToken>()),
             Times.Once);
@@ -89,14 +89,14 @@ public class KlineStreamManagerTests
         Assert.False(result);
         _mockExchangeData.Verify(
             x => x.SubscribeToKlineUpdatesAsync(
-                It.IsAny<string[]>(),
-                It.IsAny<KlineInterval[]>(),
+                It.IsAny<IEnumerable<string>>(),
+                It.IsAny<IEnumerable<KlineInterval>>(),
                 It.IsAny<Action<DataEvent<IBinanceStreamKlineData>>>(),
                 It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
-    // [Fact]
+    [Fact]
     public async Task SubscribeSymbols_WhenSubscriptionFails_ShouldReturnFalse()
     {
         // Arrange
@@ -105,8 +105,8 @@ public class KlineStreamManagerTests
 
         _mockExchangeData
             .Setup(x => x.SubscribeToKlineUpdatesAsync(
-                It.IsAny<string[]>(),
-                It.IsAny<KlineInterval[]>(),
+                It.IsAny<IEnumerable<string>>(),
+                It.IsAny<IEnumerable<KlineInterval>>(),
                 It.IsAny<Action<DataEvent<IBinanceStreamKlineData>>>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new CallResult<UpdateSubscription>(null, null, new CantConnectError()));
@@ -126,7 +126,7 @@ public class KlineStreamManagerTests
             Times.Once);
     }
 
-    // [Fact]
+    [Fact]
     public async Task Handle_AlarmCreatedEvent_ShouldUpdateSubscriptions()
     {
         // Arrange
@@ -135,8 +135,8 @@ public class KlineStreamManagerTests
 
         _mockExchangeData
             .Setup(x => x.SubscribeToKlineUpdatesAsync(
-                It.IsAny<string[]>(),
-                It.IsAny<KlineInterval[]>(),
+                It.IsAny<IEnumerable<string>>(),
+                It.IsAny<IEnumerable<KlineInterval>>(),
                 It.IsAny<Action<DataEvent<IBinanceStreamKlineData>>>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new CallResult<UpdateSubscription>(null, null, null));
@@ -147,14 +147,14 @@ public class KlineStreamManagerTests
         // Assert
         _mockExchangeData.Verify(
             x => x.SubscribeToKlineUpdatesAsync(
-                It.Is<string[]>(s => s.Contains("ETHUSDT")),
-                It.Is<KlineInterval[]>(i => i.Contains(KlineInterval.OneHour)),
+                It.Is<IEnumerable<string>>(s => s.Contains("ETHUSDT")),
+                It.Is<IEnumerable<KlineInterval>>(i => i.Contains(KlineInterval.OneHour)),
                 It.IsAny<Action<DataEvent<IBinanceStreamKlineData>>>(),
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
-    // [Fact]
+    [Fact]
     public async Task Handle_AlarmResumedEvent_ShouldUpdateSubscriptions()
     {
         // Arrange
@@ -163,8 +163,8 @@ public class KlineStreamManagerTests
 
         _mockExchangeData
             .Setup(x => x.SubscribeToKlineUpdatesAsync(
-                It.IsAny<string[]>(),
-                It.IsAny<KlineInterval[]>(),
+                It.IsAny<IEnumerable<string>>(),
+                It.IsAny<IEnumerable<KlineInterval>>(),
                 It.IsAny<Action<DataEvent<IBinanceStreamKlineData>>>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new CallResult<UpdateSubscription>(null, null, null));
@@ -175,8 +175,8 @@ public class KlineStreamManagerTests
         // Assert
         _mockExchangeData.Verify(
             x => x.SubscribeToKlineUpdatesAsync(
-                It.Is<string[]>(s => s.Contains("ETHUSDT")),
-                It.Is<KlineInterval[]>(i => i.Contains(KlineInterval.OneHour)),
+                It.Is<IEnumerable<string>>(s => s.Contains("ETHUSDT")),
+                It.Is<IEnumerable<KlineInterval>>(i => i.Contains(KlineInterval.OneHour)),
                 It.IsAny<Action<DataEvent<IBinanceStreamKlineData>>>(),
                 It.IsAny<CancellationToken>()),
             Times.Once);

@@ -221,8 +221,4 @@ public class StrategyExecutionServiceTests
             Times.Once);
     }
 
-    public void Dispose()
-    {
-        _cts.Dispose();
-    }
 }
