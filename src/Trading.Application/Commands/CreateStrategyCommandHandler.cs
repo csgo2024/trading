@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using MediatR;
 using Trading.Domain.Entities;
+using Trading.Domain.Events;
 using Trading.Domain.IRepositories;
 
 namespace Trading.Application.Commands;
@@ -8,9 +9,12 @@ namespace Trading.Application.Commands;
 public class CreateStrategyCommandHandler : IRequestHandler<CreateStrategyCommand, Strategy>
 {
     private readonly IStrategyRepository _strategyRepository;
+    private readonly IMediator _mediator;
 
-    public CreateStrategyCommandHandler(IStrategyRepository strategyRepository)
+    public CreateStrategyCommandHandler(IStrategyRepository strategyRepository,
+                                        IMediator mediator)
     {
+        _mediator = mediator;
         _strategyRepository = strategyRepository;
     }
 
@@ -38,6 +42,7 @@ public class CreateStrategyCommandHandler : IRequestHandler<CreateStrategyComman
         };
 
         await _strategyRepository.Add(entity, cancellationToken);
+        await _mediator.Publish(new StrategyCreatedEvent(entity), cancellationToken);
         return entity;
     }
 }

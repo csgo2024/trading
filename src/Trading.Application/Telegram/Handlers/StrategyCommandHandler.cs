@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Trading.Application.Commands;
 using Trading.Domain.Entities;
+using Trading.Domain.Events;
 using Trading.Domain.IRepositories;
 
 namespace Trading.Application.Telegram.Handlers;
@@ -47,10 +48,10 @@ public class StrategyCommandHandler : ICommandHandler
                     await HandleDelete(subParameters);
                     break;
                 case "stop":
-                    await HandleStop();
+                    await HandleStop(subParameters);
                     break;
                 case "resume":
-                    await HandleResume();
+                    await HandleResume(subParameters);
                     break;
                 default:
                     _logger.LogError("<pre>Unknown command. Use: create, delete, stop, or resume</pre>");
@@ -70,16 +71,15 @@ public class StrategyCommandHandler : ICommandHandler
             throw new ArgumentNullException(nameof(json));
         }
 
-        var command = JsonConvert.DeserializeObject<CreateStrategyCommand>(json) ?? throw new InvalidOperationException("<pre>Failed to parse strategy parameters</pre>");
+        var command = JsonConvert.DeserializeObject<CreateStrategyCommand>(json) ?? throw new InvalidOperationException("Failed to parse strategy parameters");
         await _mediator.Send(command);
-        _logger.LogInformation("<pre>策略创建成功 ✅</pre>");
     }
 
     private async Task HandleDelete(string id)
     {
         if (string.IsNullOrEmpty(id))
         {
-            throw new ArgumentNullException(nameof(id), "<pre>Strategy ID cannot be null or empty</pre>");
+            throw new ArgumentNullException(nameof(id), "Strategy ID cannot be null or empty");
         }
 
         var command = new DeleteStrategyCommand { Id = id.Trim() };
@@ -87,28 +87,21 @@ public class StrategyCommandHandler : ICommandHandler
 
         if (!result)
         {
-            throw new InvalidOperationException($"<pre>Failed to delete strategy {id}</pre>");
-        }
-
-        _logger.LogInformation("<pre>策略[{StrategyId}]已删除 ✅</pre>", id);
-    }
-
-    private async Task HandleStop(string id = "")
-    {
-        var result = await _strategyRepository.UpdateStatusAsync(StateStatus.Paused);
-        if (result)
-        {
-            _logger.LogInformation("<pre>策略已成功暂停 ⏸️</pre>");
+            throw new InvalidOperationException($"Failed to delete strategy {id}");
         }
     }
 
-    private async Task HandleResume(string id = "")
+    private async Task HandleStop(string id)
     {
-        var result = await _strategyRepository.UpdateStatusAsync(StateStatus.Running);
-        if (result)
-        {
-            _logger.LogInformation("<pre>策略已成功恢复运行️</pre>");
-        }
+        _ = await _strategyRepository.UpdateStatusAsync(StateStatus.Paused);
+        await _mediator.Publish(new StrategyPausedEvent(id.Trim()));
+    }
+
+    private async Task HandleResume(string id)
+    {
+        _ = await _strategyRepository.UpdateStatusAsync(StateStatus.Running);
+        var strategy = await _strategyRepository.GetByIdAsync(id.Trim());
+        await _mediator.Publish(new StrategyResumedEvent(strategy));
     }
 
     public Task HandleCallbackAsync(string callbackData)

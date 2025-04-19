@@ -71,9 +71,8 @@ public class AlarmHostService : BackgroundService
         await base.StopAsync(cancellationToken);
     }
 
-    // 新增的模拟延迟方法
     public virtual Task SimulateDelay(TimeSpan delay, CancellationToken cancellationToken)
     {
-        return Task.Delay(delay, cancellationToken);  // 默认行为使用 Task.Delay
+        return Task.Delay(delay, cancellationToken);
     }
 }

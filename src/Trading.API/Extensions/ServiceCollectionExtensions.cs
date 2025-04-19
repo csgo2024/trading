@@ -9,6 +9,7 @@ using Trading.Application.Helpers;
 using Trading.Application.Middlerwares;
 using Trading.Application.Queries;
 using Trading.Application.Services.Alarms;
+using Trading.Application.Services.Trading;
 using Trading.Application.Services.Trading.Account;
 using Trading.Application.Services.Trading.Executors;
 using Trading.Application.Telegram;
@@ -51,11 +52,13 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<BottomBuyExecutor>();
         services.AddSingleton<DCABuyExecutor>();
         services.AddSingleton<ExecutorFactory>();
-        services.AddHostedService<TradingService>();
+        services.AddHostedService<TradingHostService>();
         services.AddSingleton<KlineStreamManager>();
         services.AddSingleton<AlarmNotificationService>();
         services.AddSingleton<AlarmTaskManager>();
+        services.AddSingleton<StrategyTaskManager>();
         services.AddHostedService<AlarmHostService>();
+        services.AddSingleton<StrategyExecutionService>();
 
         services.AddSingleton<JavaScriptEvaluator>();
         return services;

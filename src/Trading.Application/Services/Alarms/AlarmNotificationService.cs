@@ -59,20 +59,20 @@ public class AlarmNotificationService :
     {
         var alarm = notification.Alarm;
         _activeAlarms.AddOrUpdate(alarm.Id, alarm, (_, _) => alarm);
-        await _alarmTaskManager.StartMonitor(alarm.Id, ct => ProcessAlarm(alarm, ct), cancellationToken);
+        await _alarmTaskManager.Start(alarm.Id, ct => ProcessAlarm(alarm, ct), cancellationToken);
     }
 
     public async Task Handle(AlarmPausedEvent notification, CancellationToken cancellationToken)
     {
         _activeAlarms.TryRemove(notification.AlarmId, out _);
-        await _alarmTaskManager.StopMonitor(notification.AlarmId);
+        await _alarmTaskManager.Stop(notification.AlarmId);
     }
 
     public async Task Handle(AlarmResumedEvent notification, CancellationToken cancellationToken)
     {
         var alarm = notification.Alarm;
         _activeAlarms.AddOrUpdate(alarm.Id, alarm, (_, _) => alarm);
-        await _alarmTaskManager.StartMonitor(alarm.Id, ct => ProcessAlarm(alarm, ct), cancellationToken);
+        await _alarmTaskManager.Start(alarm.Id, ct => ProcessAlarm(alarm, ct), cancellationToken);
     }
     public async Task Handle(AlarmEmptyEvent notification, CancellationToken cancellationToken)
     {
@@ -80,7 +80,7 @@ public class AlarmNotificationService :
         _lastkLines.Clear();
         _logger.LogInformation("Alarm list is empty, stopping all monitors.");
         // Stop all monitors
-        await _alarmTaskManager.StopAllMonitor();
+        await _alarmTaskManager.Stop();
     }
 
     public IEnumerable<Alarm> GetActiveAlarms()
@@ -97,7 +97,7 @@ public class AlarmNotificationService :
             foreach (var alarm in alarms)
             {
                 _activeAlarms.AddOrUpdate(alarm.Id, alarm, (_, _) => alarm);
-                await _alarmTaskManager.StartMonitor(alarm.Id, ct => ProcessAlarm(alarm, ct), cancellationToken);
+                await _alarmTaskManager.Start(alarm.Id, ct => ProcessAlarm(alarm, ct), cancellationToken);
             }
         }
         catch (Exception ex)

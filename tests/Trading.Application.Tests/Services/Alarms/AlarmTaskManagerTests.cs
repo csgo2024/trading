@@ -31,9 +31,9 @@ public class AlarmTaskManagerTests
         }
 
         // Act
-        await _taskManager.StartMonitor(alarmId, MonitoringFunc, _cts.Token);
+        await _taskManager.Start(alarmId, MonitoringFunc, _cts.Token);
         Thread.Sleep(1000);
-        await _taskManager.StartMonitor(alarmId, MonitoringFunc, _cts.Token);
+        await _taskManager.Start(alarmId, MonitoringFunc, _cts.Token);
 
         // Assert
         Assert.Equal(1, callCount);
@@ -59,8 +59,8 @@ public class AlarmTaskManagerTests
         }
 
         // Act
-        await _taskManager.StartMonitor(alarmId, MonitoringFunc, _cts.Token);
-        await _taskManager.StopMonitor(alarmId);
+        await _taskManager.Start(alarmId, MonitoringFunc, _cts.Token);
+        await _taskManager.Stop(alarmId);
 
         // Assert
         Assert.True(taskCompleted);
@@ -88,9 +88,9 @@ public class AlarmTaskManagerTests
         // Act
         for (var i = 0; i < totalTasks; i++)
         {
-            await _taskManager.StartMonitor($"test-alarm-{i}", MonitoringFunc, _cts.Token);
+            await _taskManager.Start($"test-alarm-{i}", MonitoringFunc, _cts.Token);
         }
-        await _taskManager.StopAllMonitor();
+        await _taskManager.Stop();
 
         // Assert
         Assert.Equal(totalTasks, completedTasks);
@@ -115,7 +115,7 @@ public class AlarmTaskManagerTests
         }
 
         // Act
-        await _taskManager.StartMonitor("test-alarm", MonitoringFunc, _cts.Token);
+        await _taskManager.Start("test-alarm", MonitoringFunc, _cts.Token);
         await _taskManager.DisposeAsync();
 
         // Assert

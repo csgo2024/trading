@@ -22,44 +22,35 @@ public class BottomBuyExecutor : IExecutor
 
     public async Task Execute(IAccountProcessor accountProcessor, Strategy strategy, CancellationToken ct)
     {
-        try
+        var currentDate = DateTime.UtcNow.Date;
+        if (strategy.LastTradeDate?.Date != currentDate)
         {
-            var currentDate = DateTime.UtcNow.Date;
-            if (strategy.LastTradeDate?.Date != currentDate)
+            if (strategy.HasOpenOrder && strategy.OrderPlacedTime.HasValue)
             {
-                if (strategy.HasOpenOrder && strategy.OrderPlacedTime.HasValue)
-                {
-                    _logger.LogInformation("[{AccountType}-{Symbol}] Previous day's order not filled, cancelling order before reset.",
-                        strategy.AccountType, strategy.Symbol);
-                    await CancelExistingOrder(accountProcessor, strategy, ct);
-                }
-                await ResetDailyStrategy(accountProcessor, strategy, currentDate, ct);
+                _logger.LogInformation("[{AccountType}-{Symbol}] Previous day's order not filled, cancelling order before reset.",
+                    strategy.AccountType, strategy.Symbol);
+                await CancelExistingOrder(accountProcessor, strategy, ct);
             }
+            await ResetDailyStrategy(accountProcessor, strategy, currentDate, ct);
+        }
 
-            if (!strategy.IsTradedToday)
+        if (!strategy.IsTradedToday)
+        {
+            if (strategy.HasOpenOrder)
             {
-                if (strategy.HasOpenOrder)
-                {
-                    await CheckOrderStatus(accountProcessor, strategy, ct);
-                }
-                else
-                {
-                    await TryPlaceOrder(accountProcessor, strategy, ct);
-                }
+                await CheckOrderStatus(accountProcessor, strategy, ct);
             }
-
-            strategy.UpdatedAt = DateTime.Now;
-            var success = await _strategyRepository.UpdateAsync(strategy.Id, strategy, ct);
-            if (!success)
+            else
             {
-                throw new InvalidOperationException("Failed to update strategy order.");
+                await TryPlaceOrder(accountProcessor, strategy, ct);
             }
         }
-        catch (Exception ex)
+
+        strategy.UpdatedAt = DateTime.Now;
+        var success = await _strategyRepository.UpdateAsync(strategy.Id, strategy, ct);
+        if (!success)
         {
-            _logger.LogError(ex, "[{AccountType}-{Symbol}] Error processing.",
-                strategy.AccountType, strategy.Symbol);
-            throw;
+            throw new InvalidOperationException("Failed to update strategy order.");
         }
     }
 
@@ -119,27 +110,19 @@ public class BottomBuyExecutor : IExecutor
             return;
         }
 
-        try
+        var cancelResult = await accountProcessor.CancelOrder(strategy.Symbol, strategy.OrderId.Value, ct);
+        if (cancelResult.Success)
         {
-            var cancelResult = await accountProcessor.CancelOrder(strategy.Symbol, strategy.OrderId.Value, ct);
-            if (cancelResult.Success)
-            {
-                _logger.LogInformation("[{AccountType}-{Symbol}] Successfully cancelled order, OrderId: {OrderId}",
-                    strategy.AccountType, strategy.Symbol, strategy.OrderId);
-                strategy.HasOpenOrder = false;
-                strategy.OrderId = null;
-                strategy.OrderPlacedTime = null;
-            }
-            else
-            {
-                _logger.LogError("[{AccountType}-{Symbol}] Failed to cancel order. Error: {ErrorMessage}",
-                    strategy.AccountType, strategy.Symbol, cancelResult.Error?.Message);
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "[{AccountType}-{Symbol}] Error while cancelling order {OrderId}.",
+            _logger.LogInformation("[{AccountType}-{Symbol}] Successfully cancelled order, OrderId: {OrderId}",
                 strategy.AccountType, strategy.Symbol, strategy.OrderId);
+            strategy.HasOpenOrder = false;
+            strategy.OrderId = null;
+            strategy.OrderPlacedTime = null;
+        }
+        else
+        {
+            _logger.LogError("[{AccountType}-{Symbol}] Failed to cancel order. Error: {ErrorMessage}",
+                strategy.AccountType, strategy.Symbol, cancelResult.Error?.Message);
         }
     }
 
@@ -188,8 +171,12 @@ public class BottomBuyExecutor : IExecutor
         }
         else
         {
-            _logger.LogError("[{AccountType}-{Symbol}] Failed to place order. Error: {ErrorMessage}, TargetPrice:{Price}, Quantity: {Quantity}.",
-                strategy.AccountType, strategy.Symbol, orderResult.Error?.Message, price, quantity);
+            _logger.LogError("""
+                            [{AccountType}-{Symbol}] Failed to place order.
+                            StrategyId: <pre>{StrategyId}</pre>,
+                            Error: {ErrorMessage} 
+                            TargetPrice:{Price}, Quantity: {Quantity}.
+                            """, strategy.AccountType, strategy.Symbol, strategy.Id, orderResult.Error?.Message, price, quantity);
         }
     }
 }

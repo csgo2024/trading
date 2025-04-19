@@ -1,52 +1,48 @@
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 
-namespace Trading.Application.Services.Alarms;
+namespace Trading.Application.Services.Trading;
 
-public class AlarmTaskManager : IAsyncDisposable
+public class StrategyTaskManager : IAsyncDisposable
 {
-    private readonly ILogger<AlarmTaskManager> _logger;
+    private readonly ILogger<StrategyTaskManager> _logger;
     private readonly SemaphoreSlim _taskLock = new(1, 1);
     private static readonly ConcurrentDictionary<string, (CancellationTokenSource cts, Task task)> _monitoringTasks = new();
 
-    public AlarmTaskManager(ILogger<AlarmTaskManager> logger)
+    public StrategyTaskManager(ILogger<StrategyTaskManager> logger)
     {
         _logger = logger;
     }
 
-    public virtual Task Start(string alarmId, Func<CancellationToken, Task> monitoringFunc, CancellationToken cancellationToken)
+    public virtual Task Start(string key, Func<CancellationToken, Task> executionFunc, CancellationToken cancellationToken)
     {
-        if (_monitoringTasks.ContainsKey(alarmId))
+        if (_monitoringTasks.ContainsKey(key))
         {
             return Task.CompletedTask;
         }
 
         var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        var task = Task.Run(() => monitoringFunc(cts.Token), cancellationToken);
-        _monitoringTasks.TryAdd(alarmId, (cts, task));
+        var task = Task.Run(() => executionFunc(cts.Token), cancellationToken);
+        _monitoringTasks.TryAdd(key, (cts, task));
         return Task.CompletedTask;
     }
 
-    public virtual async Task Stop(string alarmId)
+    public virtual async Task Stop(string key)
     {
         await _taskLock.WaitAsync();
         try
         {
-            if (_monitoringTasks.TryRemove(alarmId, out var taskInfo))
+            if (_monitoringTasks.TryRemove(key, out var taskInfo))
             {
                 await taskInfo.cts.CancelAsync();
                 await taskInfo.task;
                 taskInfo.cts.Dispose();
-                _logger.LogInformation("Alarm task for {AlarmId} removed successfully.", alarmId);
-            }
-            else
-            {
-                _logger.LogError("Alarm task {AlarmId} not found.", alarmId);
+                _logger.LogInformation("Task for {Key} removed successfully.", key);
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error stopping monitoring for alarm {AlarmId}", alarmId);
+            _logger.LogError(ex, "Error stopping task for {Key}", key);
         }
         finally
         {
@@ -54,7 +50,7 @@ public class AlarmTaskManager : IAsyncDisposable
         }
     }
 
-    public virtual async Task Stop()
+    public virtual async Task StopAll()
     {
         await _taskLock.WaitAsync();
         try
@@ -75,9 +71,9 @@ public class AlarmTaskManager : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
-        await Stop();
+        await StopAll();
         _taskLock.Dispose();
     }
 
-    public string[] GetMonitoringAlarmIds() => _monitoringTasks.Keys.ToArray();
+    public string[] GetExecutingKey() => _monitoringTasks.Keys.ToArray();
 }

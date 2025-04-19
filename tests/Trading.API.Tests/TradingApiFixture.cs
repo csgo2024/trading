@@ -73,7 +73,7 @@ public class TradingApiFixture : WebApplicationFactory<Program>, IAsyncLifetime
 
             var hostedServices = new[]
             {
-                typeof(TradingService),
+                typeof(TradingHostService),
                 typeof(AlarmHostService)
             };
             // Remove all hosted services that are not needed for testing.

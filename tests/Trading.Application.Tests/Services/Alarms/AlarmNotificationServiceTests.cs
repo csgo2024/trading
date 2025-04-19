@@ -79,7 +79,7 @@ public class AlarmNotificationServiceTests
         var notification = new AlarmCreatedEvent(alarm);
 
         _alarmTaskManagerMock
-            .Setup(x => x.StartMonitor(
+            .Setup(x => x.Start(
                 It.IsAny<string>(),
                 It.IsAny<Func<CancellationToken, Task>>(),
                 It.IsAny<CancellationToken>()))
@@ -90,7 +90,7 @@ public class AlarmNotificationServiceTests
 
         // Assert
         _alarmTaskManagerMock.Verify(
-            x => x.StartMonitor(
+            x => x.Start(
                 alarm.Id,
                 It.IsAny<Func<CancellationToken, Task>>(),
                 It.IsAny<CancellationToken>()),
@@ -105,14 +105,14 @@ public class AlarmNotificationServiceTests
         var notification = new AlarmPausedEvent(alarmId);
 
         _alarmTaskManagerMock
-            .Setup(x => x.StopMonitor(It.IsAny<string>()))
+            .Setup(x => x.Stop(It.IsAny<string>()))
             .Returns(Task.CompletedTask);
 
         // Act
         await _service.Handle(notification, _cts.Token);
 
         // Assert
-        _alarmTaskManagerMock.Verify(x => x.StopMonitor(alarmId), Times.Once);
+        _alarmTaskManagerMock.Verify(x => x.Stop(alarmId), Times.Once);
     }
 
     [Fact]
@@ -190,7 +190,7 @@ public class AlarmNotificationServiceTests
         };
 
         _alarmTaskManagerMock
-            .Setup(x => x.StartMonitor(
+            .Setup(x => x.Start(
                 It.IsAny<string>(),
                 It.IsAny<Func<CancellationToken, Task>>(),
                 It.IsAny<CancellationToken>()))
@@ -201,7 +201,7 @@ public class AlarmNotificationServiceTests
 
         // Assert
         _alarmTaskManagerMock.Verify(
-            x => x.StartMonitor(
+            x => x.Start(
                 It.IsAny<string>(),
                 It.IsAny<Func<CancellationToken, Task>>(),
                 It.IsAny<CancellationToken>()),
