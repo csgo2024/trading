@@ -1,138 +1,128 @@
-using MediatR;
-using Microsoft.AspNetCore.Mvc;
-using Moq;
-using Trading.API.Controllers;
+using System.Net;
+using System.Net.Http.Json;
+using System.Text;
+using System.Text.Json;
 using Trading.Application.Commands;
-using Trading.Application.Queries;
 using Trading.Common.Models;
 using Trading.Domain.Entities;
 
 namespace Trading.API.Tests.Controllers;
 
-public class StrategyControllerTests
+public class StrategyControllerTests : IClassFixture<TradingApiFixture>
 {
-    private readonly Mock<IStrategyQuery> _mockStrategyQuery;
-    private readonly Mock<IMediator> _mockMediator;
-    private readonly StrategyController _controller;
+    private readonly HttpClient Client;
+    protected readonly TradingApiFixture Fixture;
 
-    public StrategyControllerTests()
+    public StrategyControllerTests(TradingApiFixture fixture)
     {
-        _mockStrategyQuery = new Mock<IStrategyQuery>();
-        _mockMediator = new Mock<IMediator>();
-        _controller = new StrategyController(_mockStrategyQuery.Object, _mockMediator.Object);
+        Client = fixture.CreateClient();
+        Fixture = fixture;
     }
 
     [Fact]
-    public async Task GetStrategyList_WithValidRequest_ShouldReturnPagedResult()
+    public async Task GetStrategyList_ReturnsSuccessResponse()
     {
         // Arrange
+        await Fixture.TestDataInitializer!.ResetTestData();
         var request = new PagedRequest { PageIndex = 1, PageSize = 10 };
-        var expectedResult = new PagedResult<Strategy>(new List<Strategy> { new() { Id = "1", Symbol = "BTCUSDT" } }, 1, 1, 10);
-
-        _mockStrategyQuery
-            .Setup(x => x.GetStrategyListAsync(request, CancellationToken.None))
-            .ReturnsAsync(expectedResult);
+        var queryString = $"?pageIndex={request.PageIndex}&pageSize={request.PageSize}";
 
         // Act
-        var actionResult = await _controller.GetStrategyList(request);
+        var response = await Client.GetAsync($"/api/v1/strategy{queryString}");
 
         // Assert
-        var okResult = Assert.IsType<OkObjectResult>(actionResult);
-        var apiResponse = Assert.IsType<ApiResponse<PagedResult<Strategy>>>(okResult.Value);
-        Assert.True(apiResponse.Success);
-        Assert.NotNull(apiResponse.Data);
-        Assert.Equal(expectedResult.TotalCount, apiResponse.Data.TotalCount);
-        Assert.Equal(expectedResult.Items.First().Symbol, apiResponse.Data.Items.First().Symbol);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var result = await response.Content.ReadFromJsonAsync<ApiResponse<PagedResult<Strategy>>>();
+
+        Assert.NotNull(result);
+        Assert.True(result.Success);
+        Assert.NotNull(result.Data);
+        Assert.NotNull(result.Data.Items);
+        Assert.Equal(2, result.Data.TotalCount);
+        Assert.Contains(result.Data.Items, s => s.Symbol == "BTCUSDT");
+        Assert.Contains(result.Data.Items, s => s.Symbol == "ETHUSDT");
     }
 
     [Fact]
-    public async Task AddStrategy_WithValidCommand_ShouldReturnSuccess()
+    public async Task GetStrategyById_WithValidId_ReturnsStrategy()
     {
         // Arrange
+        await Fixture.TestDataInitializer!.ResetTestData();
+        var strategyId = "test-strategy-1";
+
+        // Act
+        var response = await Client.GetAsync($"/api/v1/strategy/{strategyId}");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var result = await response.Content.ReadFromJsonAsync<ApiResponse<Strategy>>();
+
+        Assert.NotNull(result);
+        Assert.True(result.Success);
+        Assert.NotNull(result.Data);
+        Assert.Equal(strategyId, result.Data.Id);
+        Assert.Equal("BTCUSDT", result.Data.Symbol);
+    }
+
+    [Fact]
+    public async Task AddStrategy_WithValidCommand_ReturnsCreatedStrategy()
+    {
+        // Arrange
+        await Fixture.TestDataInitializer!.ResetTestData();
         var command = new CreateStrategyCommand
         {
-            Symbol = "BTCUSDT",
-            Amount = 100,
-            PriceDropPercentage = 0.1m,
-            AccountType = AccountType.Spot
+            Symbol = "SOLUSDT",
+            Amount = 300,
+            PriceDropPercentage = 0.15m,
+            AccountType = AccountType.Spot,
+            StrategyType = StrategyType.BottomBuy,
+            Leverage = 1
         };
 
-        _mockMediator
-            .Setup(x => x.Send(It.IsAny<CreateStrategyCommand>(), default))
-            .ReturnsAsync(new Strategy());
+        var content = new StringContent(
+            JsonSerializer.Serialize(command),
+            Encoding.UTF8,
+            "application/json");
 
         // Act
-        var actionResult = await _controller.AddStrategy(command);
+        var response = await Client.PostAsync("/api/v1/strategy", content);
 
         // Assert
-        var okResult = Assert.IsType<OkObjectResult>(actionResult);
-        var apiResponse = Assert.IsType<ApiResponse<Strategy>>(okResult.Value);
-        Assert.True(apiResponse.Success);
-        _mockMediator.Verify(x => x.Send(command, default), Times.Once);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var result = await response.Content.ReadFromJsonAsync<ApiResponse<Strategy>>();
+
+        Assert.NotNull(result);
+        Assert.True(result.Success);
+        Assert.NotNull(result.Data);
+        Assert.Equal(command.Symbol, result.Data.Symbol);
+        Assert.Equal(command.Amount, result.Data.Amount);
+        Assert.Equal(command.PriceDropPercentage, result.Data.PriceDropPercentage);
+
+        // Verify created strategy can be retrieved
+        var getResponse = await Client.GetAsync($"/api/v1/strategy/{result.Data.Id}");
+        Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
     }
 
     [Fact]
-    public async Task DeleteStrategy_WithValidId_ShouldReturnSuccess()
+    public async Task DeleteStrategy_WithValidId_ReturnsSuccess()
     {
         // Arrange
-        var id = "test-id";
-        _mockMediator
-            .Setup(x => x.Send(It.Is<DeleteStrategyCommand>(c => c.Id == id), default))
-            .ReturnsAsync(true);
+        await Fixture.TestDataInitializer!.ResetTestData();
+        var strategyId = "test-strategy-1";
 
         // Act
-        var actionResult = await _controller.DeleteStrategy(id);
+        var response = await Client.DeleteAsync($"/api/v1/strategy/{strategyId}");
 
         // Assert
-        var okResult = Assert.IsType<OkObjectResult>(actionResult);
-        var apiResponse = Assert.IsType<ApiResponse<bool>>(okResult.Value);
-        Assert.True(apiResponse.Success);
-        _mockMediator.Verify(
-            x => x.Send(It.Is<DeleteStrategyCommand>(c => c.Id == id), default),
-            Times.Once);
-    }
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var result = await response.Content.ReadFromJsonAsync<ApiResponse<bool>>();
 
-    [Fact]
-    public async Task GetStrategyById_WithExistingId_ShouldReturnStrategy()
-    {
-        // Arrange
-        var id = "test-id";
-        var expectedStrategy = new Strategy
-        {
-            Id = id,
-            Symbol = "BTCUSDT",
-            AccountType = AccountType.Spot
-        };
+        Assert.NotNull(result);
+        Assert.True(result.Success);
+        Assert.True(result.Data);
 
-        _mockStrategyQuery
-            .Setup(x => x.GetStrategyByIdAsync(id, CancellationToken.None))
-            .ReturnsAsync(expectedStrategy);
-
-        // Act
-        var actionResult = await _controller.GetStrategyById(id);
-
-        // Assert
-        var okResult = Assert.IsType<OkObjectResult>(actionResult);
-        var apiResponse = Assert.IsType<ApiResponse<Strategy>>(okResult.Value);
-        Assert.True(apiResponse.Success);
-        Assert.NotNull(apiResponse.Data);
-        Assert.Equal(expectedStrategy.Id, apiResponse.Data.Id);
-        Assert.Equal(expectedStrategy.Symbol, apiResponse.Data.Symbol);
-    }
-
-    [Fact]
-    public async Task GetStrategyById_WithNonExistingId_ShouldReturnNotFound()
-    {
-        // Arrange
-        var id = "non-existing-id";
-        _mockStrategyQuery
-            .Setup(x => x.GetStrategyByIdAsync(id, CancellationToken.None))
-            .ReturnsAsync(value: null);
-
-        // Act
-        var actionResult = await _controller.GetStrategyById(id);
-
-        // Assert
-        Assert.IsType<NotFoundResult>(actionResult);
+        // Verify strategy is actually deleted
+        var getResponse = await Client.GetAsync($"/api/v1/strategy/{strategyId}");
+        Assert.Equal(HttpStatusCode.NotFound, getResponse.StatusCode);
     }
 }

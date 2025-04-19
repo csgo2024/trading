@@ -7,12 +7,14 @@ using Microsoft.Extensions.Hosting;
 using MongoDB.Driver;
 using Testcontainers.MongoDb;
 using Trading.API.HostServices;
+using Trading.Application.Services.Common;
 
 namespace Trading.API.Tests;
 
 public class TradingApiFixture : WebApplicationFactory<Program>, IAsyncLifetime
 {
     public IMongoDatabase? Database { get; private set; }
+    public TestDataInitializer? TestDataInitializer { get; private set; }
     private MongoClient? _client;
 
     private readonly MongoDbContainer _mongoDbContainer;
@@ -52,7 +54,7 @@ public class TradingApiFixture : WebApplicationFactory<Program>, IAsyncLifetime
             ]);
         });
 
-        builder.ConfigureServices(services =>
+        builder.ConfigureServices(async services =>
         {
             // Remove the app's MongoDB registration.
             var descriptor = services.SingleOrDefault(
@@ -97,12 +99,21 @@ public class TradingApiFixture : WebApplicationFactory<Program>, IAsyncLifetime
             {
                 var scopedServices = scope.ServiceProvider;
                 Database = scopedServices.GetRequiredService<IMongoDatabase>();
+                TestDataInitializer = new TestDataInitializer(Database);
             }
         });
     }
 
     public new async Task DisposeAsync()
     {
+        using (var scope = Services.CreateScope())
+        {
+            var taskManager = scope.ServiceProvider.GetService<IBackgroundTaskManager>();
+            if (taskManager != null)
+            {
+                await taskManager.StopAsync();
+            }
+        }
         // Clean up the database after tests
         _client?.DropDatabase("InMemoryDbForTesting");
         await _mongoDbContainer.DisposeAsync();

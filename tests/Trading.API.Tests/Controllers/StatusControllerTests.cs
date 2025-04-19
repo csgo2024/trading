@@ -2,13 +2,13 @@ using System.Net;
 using System.Net.Http.Json;
 using Trading.Common.Models;
 
-namespace Trading.API.Tests;
+namespace Trading.API.Tests.Controllers;
 
-public class TradingApiTests : IClassFixture<TradingApiFixture>
+public class StatusControllerTests : IClassFixture<TradingApiFixture>
 {
     private readonly HttpClient _client;
 
-    public TradingApiTests(TradingApiFixture fixture)
+    public StatusControllerTests(TradingApiFixture fixture)
     {
         _client = fixture.CreateClient();
     }
