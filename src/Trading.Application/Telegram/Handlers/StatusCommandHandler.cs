@@ -46,7 +46,7 @@ public class StatusCommandHandler : ICommandHandler
             var text = $"""
             📊 <b>策略状态报告</b> ({DateTime.UtcNow.AddHours(8):yyyy-MM-dd HH:mm:ss})
             ------------------------
-            • {strategy.Id}
+            <blockquote>{strategy.Id}</blockquote>
             • {emoji} [{strategy.AccountType}-{strategy.Symbol}]: {status}
             • 跌幅: {strategy.PriceDropPercentage} / 目标价格: {strategy.TargetPrice} 💰
             • 金额: {strategy.Amount} / 数量: {strategy.Quantity}
@@ -75,9 +75,9 @@ public class StatusCommandHandler : ICommandHandler
             var text = $"""
             ⏰ <b>警报</b> ({DateTime.UtcNow.AddHours(8):yyyy-MM-dd HH:mm:ss})
             ------------------------
-            • 交易对: <code>{alarm.Symbol}</code>
-            • 时间周期: <code>{alarm.Interval}</code>
-            • 触发条件: <code>{safeExpression}</code>
+            <blockquote>{alarm.Id}</blockquote>
+            <blockquote>{safeExpression}</blockquote>
+            <blockquote>{alarm.Symbol} - {alarm.Interval}</blockquote>
             ------------------------
             """;
             await _botClient.SendRequest(new SendMessageRequest
