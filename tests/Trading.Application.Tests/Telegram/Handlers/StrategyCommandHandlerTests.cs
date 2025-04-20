@@ -200,14 +200,6 @@ public class StrategyCommandHandlerTests
             Times.Once);
     }
 
-    [Fact]
-    public async Task HandleCallbackAsync_ShouldThrowNotImplementedException()
-    {
-        // Act & Assert
-        await Assert.ThrowsAsync<NotImplementedException>(
-            () => _handler.HandleCallbackAsync("any-data"));
-    }
-
     private void VerifyLogError(string expectedMessage)
     {
         _loggerMock.Verify(
