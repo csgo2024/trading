@@ -1,5 +1,6 @@
 using Binance.Net.Enums;
 using Binance.Net.Interfaces;
+using CryptoExchange.Net.Objects;
 using CryptoExchange.Net.Objects.Sockets;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -81,6 +82,7 @@ public class KlineStreamManager : IKlineStreamManager
         _subscription = result.Data;
         _lastConnectionTime = DateTime.UtcNow;
 
+        SubscribeToEvents(_subscription);
         _logger.LogInformation("Subscribed to {Count} symbols: {@Symbols} intervals: {@Intervals}",
             _listenedSymbols.Count, _listenedSymbols, _listenedIntervals);
         return true;
@@ -96,12 +98,73 @@ public class KlineStreamManager : IKlineStreamManager
         Task.Run(() => _mediator.Publish(new KlineUpdateEvent(data.Data.Symbol, data.Data.Data.Interval, data.Data.Data)));
     }
 
+    private void OnConnectionLost()
+    {
+        _logger.LogDebug("WebSocket connection lost for symbols: {@Symbols}", _listenedSymbols);
+    }
+
+    private void OnConnectionRestored(TimeSpan timeSpan)
+    {
+        _logger.LogDebug("Connection restored after {Delay}ms for symbols: {@Symbols}",
+            timeSpan.TotalMilliseconds,
+            _listenedSymbols);
+    }
+
+    private void OnConnectionClosed()
+    {
+        _logger.LogDebug("Connection closed for symbols: {@Symbols}", _listenedSymbols);
+    }
+
+    private void OnResubscribingFailed(Error error)
+    {
+        _logger.LogDebug("Resubscribing failed for symbols: {@Symbols}, Error: {@Error}",
+            _listenedSymbols,
+            error);
+    }
+
+    private void OnActivityPaused()
+    {
+        _logger.LogDebug("Connection activity paused for symbols: {@Symbols}", _listenedSymbols);
+    }
+
+    private void OnActivityUnpaused()
+    {
+        _logger.LogDebug("Connection activity resumed for symbols: {@Symbols}", _listenedSymbols);
+    }
+
+    private void OnException(Exception exception)
+    {
+        _logger.LogDebug(exception, "Exception occurred for symbols: {@Symbols}", _listenedSymbols);
+    }
+
+    private void SubscribeToEvents(UpdateSubscription subscription)
+    {
+        subscription.ConnectionLost += OnConnectionLost;
+        subscription.ConnectionRestored += OnConnectionRestored;
+        subscription.ConnectionClosed += OnConnectionClosed;
+        subscription.ResubscribingFailed += OnResubscribingFailed;
+        subscription.ActivityPaused += OnActivityPaused;
+        subscription.ActivityUnpaused += OnActivityUnpaused;
+        subscription.Exception += OnException;
+    }
+
+    private void UnsubscribeEvents(UpdateSubscription subscription)
+    {
+        subscription.ConnectionLost -= OnConnectionLost;
+        subscription.ConnectionRestored -= OnConnectionRestored;
+        subscription.ConnectionClosed -= OnConnectionClosed;
+        subscription.ResubscribingFailed -= OnResubscribingFailed;
+        subscription.ActivityPaused -= OnActivityPaused;
+        subscription.ActivityUnpaused -= OnActivityUnpaused;
+        subscription.Exception -= OnException;
+    }
     private async Task CloseExistingSubscription()
     {
         if (_subscription != null)
         {
             try
             {
+                UnsubscribeEvents(_subscription);
                 await _subscription.CloseAsync();
                 _subscription = null;
             }
