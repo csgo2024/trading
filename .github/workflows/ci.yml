@@ -33,6 +33,7 @@ jobs:
       run: dotnet build Trading.sln --configuration ${{ env.BUILD_CONFIGURATION }}
 
     - name: Run tests
+      timeout-minutes: 15
       run: dotnet test Trading.sln --configuration ${{ env.BUILD_CONFIGURATION }} --logger trx --results-directory ${{ runner.temp }}
 
     - name: Upload test results
