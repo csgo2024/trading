@@ -1,29 +1,24 @@
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
-using Trading.Application.Telegram.Handlers;
 
 namespace Trading.Application.Telegram.HostServices;
 
 public class TelegramBotService : BackgroundService
 {
     private readonly ILogger<TelegramBotService> _logger;
-    private readonly IServiceProvider _serviceProvider;
     private readonly ITelegramBotClient _botClient;
     private readonly ITelegramCommandHandler _commandHandler;
 
     public TelegramBotService(ITelegramBotClient botClient,
                               ITelegramCommandHandler commandHandler,
-                              ILogger<TelegramBotService> logger,
-                              IServiceProvider serviceProvider)
+                              ILogger<TelegramBotService> logger)
     {
         _botClient = botClient;
         _commandHandler = commandHandler;
         _logger = logger;
-        _serviceProvider = serviceProvider;
     }
 
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
@@ -51,15 +46,7 @@ public class TelegramBotService : BackgroundService
         {
             if (update.CallbackQuery is { } callbackQuery)
             {
-                if (callbackQuery.Data?.StartsWith("pause_") == true ||
-                    callbackQuery.Data?.StartsWith("resume_") == true)
-                {
-                    var handler = _serviceProvider.GetService<AlarmCommandHandler>();
-                    if (handler != null)
-                    {
-                        await handler.HandleCallbackAsync(callbackQuery.Data);
-                    }
-                }
+                await _commandHandler.HandleCallbackQuery(callbackQuery);
             }
 
             if (update.Message is { } message && message.Text is { } messageText)

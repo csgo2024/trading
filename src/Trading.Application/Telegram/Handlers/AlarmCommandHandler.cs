@@ -13,6 +13,7 @@ public class AlarmCommandHandler : ICommandHandler
     private readonly ILogger<AlarmCommandHandler> _logger;
     private readonly IMediator _mediator;
     public static string Command => "/alarm";
+    public static string CallbackPrefix => "alarm";
 
     public AlarmCommandHandler(ILogger<AlarmCommandHandler> logger,
                                IMediator mediator,
@@ -115,11 +116,10 @@ public class AlarmCommandHandler : ICommandHandler
         await _alarmRepository.UpdateAsync(id, alarm);
         await _mediator.Publish(new AlarmResumedEvent(alarm));
     }
-    public async Task HandleCallbackAsync(string callbackData)
+
+    public async Task HandleCallbackAsync(string action, string parameters)
     {
-        var parts = callbackData.Split('_');
-        var action = parts[0];
-        var alarmId = parts[1];
+        var alarmId = parameters.Trim();
         switch (action)
         {
             case "pause":

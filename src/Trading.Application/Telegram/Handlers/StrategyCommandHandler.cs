@@ -14,6 +14,7 @@ public class StrategyCommandHandler : ICommandHandler
     private readonly IMediator _mediator;
     private readonly IStrategyRepository _strategyRepository;
     public static string Command => "/strategy";
+    public static string CallbackPrefix => "strategy";
 
     public StrategyCommandHandler(
         IMediator mediator,
@@ -97,8 +98,18 @@ public class StrategyCommandHandler : ICommandHandler
         await _mediator.Publish(new StrategyResumedEvent(strategy));
     }
 
-    public Task HandleCallbackAsync(string callbackData)
+    public async Task HandleCallbackAsync(string action, string parameters)
     {
-        throw new NotImplementedException();
+        var strategyId = parameters.Trim();
+        switch (action)
+        {
+            case "pause":
+                await HandlPause(strategyId);
+                break;
+
+            case "resume":
+                await HandleResume(strategyId);
+                break;
+        }
     }
 }

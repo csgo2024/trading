@@ -189,8 +189,8 @@ public class AlarmNotificationService :
                 ReplyMarkup = new InlineKeyboardMarkup(
                 [
                     [
-                        InlineKeyboardButton.WithCallbackData("暂停", $"pause_{alarm.Id}"),
-                        InlineKeyboardButton.WithCallbackData("恢复", $"resume_{alarm.Id}")
+                        InlineKeyboardButton.WithCallbackData("暂停", $"alarm_pause_{alarm.Id}"),
+                        InlineKeyboardButton.WithCallbackData("恢复", $"alarm_resume_{alarm.Id}")
                     ]
                 ])
             }, CancellationToken.None);

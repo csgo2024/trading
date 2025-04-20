@@ -73,6 +73,8 @@ public class TelegramCommandHandlerFactoryTests
     [InlineData("/status", typeof(StatusCommandHandler))]
     [InlineData("/alarm", typeof(AlarmCommandHandler))]
     [InlineData("/strategy", typeof(StrategyCommandHandler))]
+    [InlineData("alarm", typeof(AlarmCommandHandler))]
+    [InlineData("strategy", typeof(StrategyCommandHandler))]
     public void GetHandler_ShouldReturnCorrectHandler(string command, Type expectedType)
     {
         // Act

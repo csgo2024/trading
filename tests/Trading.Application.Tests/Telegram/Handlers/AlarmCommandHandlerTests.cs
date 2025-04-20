@@ -190,7 +190,7 @@ public class AlarmCommandHandlerTests
     [Theory]
     [InlineData("pause", true)]
     [InlineData("resume", false)]
-    public async Task HandleCallbackAsync_WithValidCallback_PauseOrResumeAlarm(string command, bool isActive)
+    public async Task HandleCallbackAsync_WithValidCallback_PauseOrResumeAlarm(string action, bool isActive)
     {
         // Arrange
         var alarmId = "test-alarm-id";
@@ -201,7 +201,7 @@ public class AlarmCommandHandlerTests
             .ReturnsAsync(alarm);
 
         // Act
-        await _handler.HandleCallbackAsync($"{command}_{alarmId}");
+        await _handler.HandleCallbackAsync(action, alarmId);
 
         // Assert
         _alarmRepositoryMock.Verify(x => x.UpdateAsync(

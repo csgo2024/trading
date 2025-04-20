@@ -56,7 +56,7 @@ public class HelpCommandHandler : ICommandHandler
                                      parseMode: ParseMode.MarkdownV2);
     }
 
-    public Task HandleCallbackAsync(string callbackData)
+    public Task HandleCallbackAsync(string action, string parameters)
     {
         throw new NotImplementedException();
     }

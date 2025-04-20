@@ -40,6 +40,24 @@ public class TelegramCommandHandler : ITelegramCommandHandler
         }
     }
 
+    public async Task HandleCallbackQuery(CallbackQuery? callbackQuery)
+    {
+        var (prefix, action, parameters) = ParseCallbackQuery(callbackQuery);
+
+        try
+        {
+            var handler = _handlerFactory.GetHandler(prefix);
+            if (handler != null)
+            {
+                await handler.HandleCallbackAsync(action, parameters);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Callback execution failed");
+        }
+    }
+
     private static (string command, string parameters) ParseCommand(string messageText)
     {
         var index = messageText.IndexOf(' ');
@@ -47,4 +65,19 @@ public class TelegramCommandHandler : ITelegramCommandHandler
             ? (messageText, string.Empty)
             : (messageText[..index], messageText[(index + 1)..]);
     }
+    private static (string prefix, string action, string parameters) ParseCallbackQuery(CallbackQuery? callbackQuery)
+    {
+        if (callbackQuery == null || string.IsNullOrEmpty(callbackQuery.Data))
+        {
+            return (string.Empty, string.Empty, string.Empty);
+        }
+        var data = callbackQuery.Data;
+        var parts = data.Trim().Split(['_'], 3);
+        if (parts.Length < 2)
+        {
+            return (string.Empty, string.Empty, string.Empty);
+        }
+        return (parts[0], parts[1], parts[2]);
+    }
+
 }

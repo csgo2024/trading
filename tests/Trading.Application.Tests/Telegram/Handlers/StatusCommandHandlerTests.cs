@@ -28,7 +28,7 @@ public class StatusCommandHandlerTests
         var mockBotClient = new Mock<ITelegramBotClient>();
 
         // Create TelegramSettings
-        var telegramSettings = new TelegramSettings { ChatId = "test-chat-id" };
+        var telegramSettings = new TelegramSettings { ChatId = "456456481" };
         var options = Options.Create(telegramSettings);
 
         var jsLoggerMock = new Mock<ILogger<JavaScriptEvaluator>>();
@@ -49,6 +49,8 @@ public class StatusCommandHandlerTests
         _handler = new StatusCommandHandler(
             _mockStrategyRepository.Object,
             alarmService,
+            mockBotClient.Object,
+            options,
             mockLogger.Object
         );
     }

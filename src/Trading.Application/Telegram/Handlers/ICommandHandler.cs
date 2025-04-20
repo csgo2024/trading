@@ -4,6 +4,6 @@ public interface ICommandHandler
 {
     Task HandleAsync(string parameters);
 
-    Task HandleCallbackAsync(string callbackData);
+    Task HandleCallbackAsync(string action, string parameters);
 
 }
