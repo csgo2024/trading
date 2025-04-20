@@ -1,4 +1,5 @@
 using System.Text;
+using MediatR;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
@@ -7,7 +8,9 @@ using Microsoft.Extensions.Hosting;
 using MongoDB.Driver;
 using Testcontainers.MongoDb;
 using Trading.API.HostServices;
+using Trading.Application.Services.Alarms;
 using Trading.Application.Services.Common;
+using Trading.Application.Services.Trading;
 
 namespace Trading.API.Tests;
 
@@ -89,6 +92,27 @@ public class TradingApiFixture : WebApplicationFactory<Program>, IAsyncLifetime
                 {
                     services.Remove(hostedServiceDescriptor);
                 }
+            }
+
+            // Remove StrategyExecutionService from MediatR notification handlers
+            descriptor = services.FirstOrDefault(d =>
+                d.ServiceType.IsGenericType &&
+                d.ServiceType.GetGenericTypeDefinition() == typeof(INotificationHandler<>) &&
+                d.ImplementationType == typeof(StrategyExecutionService));
+
+            if (descriptor != null)
+            {
+                services.Remove(descriptor);
+            }
+            // Remove AlarmNotificationService from MediatR notification handlers
+            descriptor = services.FirstOrDefault(d =>
+                d.ServiceType.IsGenericType &&
+                d.ServiceType.GetGenericTypeDefinition() == typeof(INotificationHandler<>) &&
+                d.ImplementationType == typeof(AlarmNotificationService));
+
+            if (descriptor != null)
+            {
+                services.Remove(descriptor);
             }
 
             // Build the service provider.
