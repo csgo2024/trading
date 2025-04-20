@@ -41,4 +41,10 @@ public class AlarmRepository : BaseRepository<Alarm>, IAlarmRepository
         return (int)deleteResult.DeletedCount;
     }
 
+    public async Task<List<Alarm>> GetAllAlerts()
+    {
+        var filter = Builders<Alarm>.Filter.Empty;
+        var strategies = await _collection.Find(filter).SortBy(x => x.Symbol).SortBy(x => x.CreatedAt).ToListAsync();
+        return strategies;
+    }
 }

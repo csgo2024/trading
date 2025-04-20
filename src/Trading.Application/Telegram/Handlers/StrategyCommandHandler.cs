@@ -111,6 +111,9 @@ public class StrategyCommandHandler : ICommandHandler
             case "resume":
                 await HandleResume(strategyId);
                 break;
+            case "delete":
+                await HandleDelete(strategyId);
+                break;
         }
     }
 }

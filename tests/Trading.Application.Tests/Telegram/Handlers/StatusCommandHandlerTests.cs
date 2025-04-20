@@ -16,12 +16,14 @@ namespace Trading.Application.Tests.Telegram.Handlers;
 public class StatusCommandHandlerTests
 {
     private readonly Mock<IStrategyRepository> _mockStrategyRepository;
+    private readonly Mock<IAlarmRepository> _mockAlarmRepository;
     private readonly StatusCommandHandler _handler;
 
     public StatusCommandHandlerTests()
     {
         // Initialize all mocks
         _mockStrategyRepository = new Mock<IStrategyRepository>();
+        _mockAlarmRepository = new Mock<IAlarmRepository>();
         var mockLogger = new Mock<ILogger<StatusCommandHandler>>();
         var alarmLoggerMock = new Mock<ILogger<AlarmNotificationService>>();
         var alarmRepositoryMock = new Mock<IAlarmRepository>();
@@ -48,6 +50,7 @@ public class StatusCommandHandlerTests
         // Create StatusCommandHandler
         _handler = new StatusCommandHandler(
             _mockStrategyRepository.Object,
+            _mockAlarmRepository.Object,
             alarmService,
             mockBotClient.Object,
             options,
@@ -62,6 +65,8 @@ public class StatusCommandHandlerTests
         var message = new Message { Chat = new Chat { Id = 123 } };
         _mockStrategyRepository.Setup(x => x.GetAllStrategies())
             .ReturnsAsync([new Strategy { Symbol = "BTCUSDT", Status = StateStatus.Running }]);
+        _mockAlarmRepository.Setup(x => x.GetAllAlerts())
+            .ReturnsAsync([new Alarm() { Symbol = "BTCUSDT", IsActive = true, Expression = "close > 100" }]);
 
         // Act
         await _handler.HandleAsync("");

@@ -130,6 +130,10 @@ public class AlarmCommandHandler : ICommandHandler
             case "resume":
                 await HandleResume(alarmId);
                 break;
+
+            case "delete":
+                await HandleDelete(alarmId);
+                break;
         }
     }
 }

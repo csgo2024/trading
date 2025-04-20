@@ -17,4 +17,6 @@ public interface IAlarmRepository : IRepository<Alarm>
     /// <param name="cancellationToken">取消令牌</param>
     /// <returns>清空的告警数量</returns>
     Task<int> ClearAllAlarmsAsync(CancellationToken cancellationToken);
+
+    Task<List<Alarm>> GetAllAlerts();
 }

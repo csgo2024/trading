@@ -96,13 +96,6 @@ public class AlarmNotificationService :
         await _backgroundTaskManager.StopAsync(TaskCategories.Alarm);
     }
 
-    public IEnumerable<Alarm> GetActiveAlarms()
-    {
-        var alarmIds = _backgroundTaskManager.GetActiveTaskIds(TaskCategories.Alarm);
-        var result = _alarmRepository.GetAlarmsById(alarmIds);
-        return result;
-    }
-
     public async Task InitWithAlarms(IEnumerable<Alarm> alarms, CancellationToken cancellationToken)
     {
         try
@@ -177,9 +170,9 @@ public class AlarmNotificationService :
             var text = $"""
             ⏰ <b>️ {alarm.Symbol}-{alarm.Interval} 警报触发</b> ({DateTime.UtcNow.AddHours(8):yyyy-MM-dd HH:mm:ss})
             <pre>条件: {alarm.Expression}
-            开盘价格: {kline.ClosePrice} 
-            收盘价格: {kline.ClosePrice} 
-            最高价格: {kline.HighPrice} 
+            开盘价格: {kline.ClosePrice}
+            收盘价格: {kline.ClosePrice}
+            最高价格: {kline.HighPrice}
             最低价格: {kline.LowPrice}
             {changeText}: {priceChange:F3} ({priceChangePercent:F3}%)</pre>
             """;
@@ -191,8 +184,7 @@ public class AlarmNotificationService :
                 ReplyMarkup = new InlineKeyboardMarkup(
                 [
                     [
-                        InlineKeyboardButton.WithCallbackData("暂停", $"alarm_pause_{alarm.Id}"),
-                        InlineKeyboardButton.WithCallbackData("恢复", $"alarm_resume_{alarm.Id}")
+                        InlineKeyboardButton.WithCallbackData("暂停", $"alarm_pause_{alarm.Id}")
                     ]
                 ])
             }, CancellationToken.None);
