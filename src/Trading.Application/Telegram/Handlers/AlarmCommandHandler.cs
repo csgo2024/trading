@@ -85,6 +85,7 @@ public class AlarmCommandHandler : ICommandHandler
         {
             throw new InvalidOperationException($"Failed to delete alarm {id}");
         }
+        _logger.LogInformation("Alarm {id} deleted successfully.", id);
     }
 
     private async Task HandlPause(string id)

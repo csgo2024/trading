@@ -83,6 +83,7 @@ public class StrategyCommandHandler : ICommandHandler
         {
             throw new InvalidOperationException($"Failed to delete strategy {id}");
         }
+        _logger.LogInformation("Strategy {id} deleted successfully.", id);
     }
 
     private async Task HandlPause(string id)

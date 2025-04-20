@@ -175,11 +175,13 @@ public class AlarmNotificationService :
             var changeText = priceChange >= 0 ? "🟢 上涨" : "🔴 下跌";
 
             var text = $"""
-                ⏰ {DateTime.UtcNow.AddHours(8)}
-                <pre>⚠️ {alarm.Symbol}-{alarm.Interval} 警报触发
-                条件: {alarm.Expression}
-                收盘价格: {kline.ClosePrice}
-                {changeText}: {priceChange:F3} ({priceChangePercent:F3}%)</pre>
+            ⏰ <b>️ {alarm.Symbol}-{alarm.Interval} 警报触发</b> ({DateTime.UtcNow.AddHours(8):yyyy-MM-dd HH:mm:ss})
+            <pre>条件: {alarm.Expression}
+            开盘价格: {kline.ClosePrice} 
+            收盘价格: {kline.ClosePrice} 
+            最高价格: {kline.HighPrice} 
+            最低价格: {kline.LowPrice}
+            {changeText}: {priceChange:F3} ({priceChangePercent:F3}%)</pre>
             """;
             await _botClient.SendRequest(new SendMessageRequest
             {

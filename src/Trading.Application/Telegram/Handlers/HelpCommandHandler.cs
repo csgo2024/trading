@@ -28,14 +28,15 @@ public class HelpCommandHandler : ICommandHandler
 `/strategy create {""Symbol"":""BTCUSDT"",""Amount"":1000,""PriceDropPercentage"":0.2,""Leverage"":5,""AccountType"":""Spot"",""StrategyType"":""BottomBuy""}`
 
 删除策略:
-`/strategy delete 12345`
+`/strategy delete <Id>`
 
 2\. *警报管理:*
 创建警报\(支持间隔: 5m,15m,1h,4h,1d\):
 `/alarm create {""Symbol"":""BTCUSDT"",""Interval"":""4h"",""Expression"":""Math\.abs\(\(close \- open\) / open\) \>\= 0\.02""}`
+`/alarm create {""Symbol"":""BTCUSDT"",""Interval"":""4h"",""Expression"":""close \> 20000""}`
 
 删除警报:
-`/alarm delete 12345`
+`/alarm delete <Id>`
 
 清空警报:
 `/alarm empty`";
