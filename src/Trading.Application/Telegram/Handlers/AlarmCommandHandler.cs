@@ -1,7 +1,7 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
-using Trading.Application.Helpers;
-using Trading.Domain.Entities;
+using Newtonsoft.Json;
+using Trading.Application.Commands;
 using Trading.Domain.Events;
 using Trading.Domain.IRepositories;
 
@@ -12,107 +12,123 @@ public class AlarmCommandHandler : ICommandHandler
     private readonly IAlarmRepository _alarmRepository;
     private readonly ILogger<AlarmCommandHandler> _logger;
     private readonly IMediator _mediator;
-    private readonly JavaScriptEvaluator _javaScriptEvaluator;
     public static string Command => "/alarm";
 
-    public AlarmCommandHandler(
-        ILogger<AlarmCommandHandler> logger,
-        IMediator mediator,
-        JavaScriptEvaluator javaScriptEvaluator,
-        IAlarmRepository alarmRepository)
+    public AlarmCommandHandler(ILogger<AlarmCommandHandler> logger,
+                               IMediator mediator,
+                               IAlarmRepository alarmRepository)
     {
         _logger = logger;
         _alarmRepository = alarmRepository;
         _mediator = mediator;
-        _javaScriptEvaluator = javaScriptEvaluator;
     }
 
     public async Task HandleAsync(string parameters)
     {
-        try
+        if (string.IsNullOrWhiteSpace(parameters))
         {
-            // 处理清空命令
-            if (parameters.Trim().Equals("empty", StringComparison.OrdinalIgnoreCase))
-            {
-                var count = await _alarmRepository.ClearAllAlarmsAsync(CancellationToken.None);
-                await _mediator.Publish(new AlarmEmptyEvent());
-                _logger.LogInformation("<pre>已清空所有价格警报，共删除 {Count} 个警报</pre>", count);
-                return;
-            }
-            var parts = parameters.Trim().Split([' '], 3);
-            if (parts.Length != 3)
-            {
-                _logger.LogError("""
-                <pre>Invalid command format. Use: /alarm [empty|pause|resume] [parameters]
-                Create new alarm: /alarm BTCUSDT 1h close > 50000</pre> 
-                """);
-                return;
-            }
-
-            var symbol = parts[0].ToUpper();
-            var interval = parts[1];
-            var expression = parts[2];
-
-            CommonHelper.ConvertToKlineInterval(interval);
-            // Validate JavaScript expression
-            if (!_javaScriptEvaluator.ValidateExpression(expression, out var message))
-            {
-                _logger.LogError("<pre>条件语法错误: {Message}</pre>", message);
-                return;
-            }
-
-            var alarm = new Alarm
-            {
-                Symbol = symbol,
-                Interval = interval,
-                Expression = expression,
-                IsActive = true,
-                LastNotification = DateTime.UtcNow,
-            };
-
-            await _alarmRepository.AddAsync(alarm);
-            await _mediator.Publish(new AlarmCreatedEvent(alarm));
-            _logger.LogInformation("<pre>已设置 {Symbol} 价格警报\n表达式: {Expression}</pre>", symbol, expression);
+            _logger.LogError("<pre>Invalid command format. Use: /alarm [create|delete|pause|resume|empty] [parameters]</pre>");
+            return;
         }
-        catch (Exception ex)
+        // 处理清空命令
+        if (parameters.Trim().Equals("empty", StringComparison.OrdinalIgnoreCase))
         {
-            _logger.LogError(ex, "Create alarm failed");
+            await HandleEmpty();
+            return;
+        }
+
+        var parts = parameters.Trim().Split([' '], 2);
+        var subCommand = parts[0].ToLower();
+        var subParameters = parts.Length > 1 ? parts[1] : string.Empty;
+
+        switch (subCommand)
+        {
+            case "create":
+                await HandleCreate(subParameters);
+                break;
+            case "delete":
+                await HandleDelete(subParameters);
+                break;
+            case "pause":
+                await HandlPause(subParameters);
+                break;
+            case "resume":
+                await HandleResume(subParameters);
+                break;
+            default:
+                _logger.LogError("<pre>Unknown command. Use: create, delete, pause, or resume</pre>");
+                break;
         }
     }
 
+    private async Task HandleEmpty()
+    {
+        var count = await _alarmRepository.ClearAllAlarmsAsync(CancellationToken.None);
+        await _mediator.Publish(new AlarmEmptyedEvent());
+        _logger.LogInformation("<pre>已清空所有价格警报，共删除 {Count} 个警报</pre>", count);
+        return;
+    }
+    private async Task HandleCreate(string json)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(json, nameof(json));
+        var command = JsonConvert.DeserializeObject<CreateAlarmCommand>(json) ?? throw new InvalidOperationException("Failed to parse alarm parameters");
+        await _mediator.Send(command);
+    }
+
+    private async Task HandleDelete(string id)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(id, nameof(id));
+        var command = new DeleteAlarmCommand { Id = id.Trim() };
+        var result = await _mediator.Send(command);
+        if (!result)
+        {
+            throw new InvalidOperationException($"Failed to delete alarm {id}");
+        }
+    }
+
+    private async Task HandlPause(string id)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(id, nameof(id));
+        var alarm = await _alarmRepository.GetByIdAsync(id);
+        if (alarm == null)
+        {
+            _logger.LogError("<pre>未找到报警 ID: {AlarmId}</pre>", id);
+            return;
+        }
+        alarm.IsActive = false;
+        alarm.UpdatedAt = DateTime.UtcNow;
+        await _alarmRepository.UpdateAsync(id, alarm);
+        await _mediator.Publish(new AlarmPausedEvent(id));
+    }
+
+    private async Task HandleResume(string id)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(id, nameof(id));
+        var alarm = await _alarmRepository.GetByIdAsync(id);
+        if (alarm == null)
+        {
+            _logger.LogError("<pre>未找到报警 ID: {AlarmId}</pre>", id);
+            return;
+        }
+        alarm.IsActive = true;
+        alarm.UpdatedAt = DateTime.UtcNow;
+        await _alarmRepository.UpdateAsync(id, alarm);
+        await _mediator.Publish(new AlarmResumedEvent(alarm));
+    }
     public async Task HandleCallbackAsync(string callbackData)
     {
-        try
+        var parts = callbackData.Split('_');
+        var action = parts[0];
+        var alarmId = parts[1];
+        switch (action)
         {
-            var parts = callbackData.Split('_');
-            var action = parts[0];
-            var alarmId = parts[1];
-            var alarm = await _alarmRepository.GetByIdAsync(alarmId);
-            if (alarm == null)
-            {
-                _logger.LogError("<pre>未找到报警 ID: {AlarmId}</pre>", alarmId);
-                return;
-            }
-            switch (action)
-            {
-                case "pause":
-                    alarm.IsActive = false;
-                    alarm.UpdatedAt = DateTime.UtcNow;
-                    await _alarmRepository.UpdateAsync(alarmId, alarm);
-                    await _mediator.Publish(new AlarmPausedEvent(alarmId));
-                    break;
+            case "pause":
+                await HandlPause(alarmId);
+                break;
 
-                case "resume":
-                    alarm.IsActive = true;
-                    alarm.UpdatedAt = DateTime.UtcNow;
-                    await _alarmRepository.UpdateAsync(alarmId, alarm);
-                    await _mediator.Publish(new AlarmResumedEvent(alarm));
-                    break;
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "处理价格报警回调失败");
+            case "resume":
+                await HandleResume(alarmId);
+                break;
         }
     }
 }

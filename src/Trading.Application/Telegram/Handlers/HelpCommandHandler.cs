@@ -19,7 +19,7 @@ public class HelpCommandHandler : ICommandHandler
 /help \- 显示此帮助信息
 /status \- 查看所有策略状态
 /strategy \- [create\|delete\|pause\|resume] 策略管理
-/alarm \- [empty\|pause\|resume] 警报相关
+/alarm \- [create\|delete\|empty\|pause\|resume] 警报相关
 
 1\. *策略管理:*
 
@@ -30,10 +30,14 @@ public class HelpCommandHandler : ICommandHandler
 删除策略:
 `/strategy delete 12345`
 
-2\. *创建警报\(支持间隔: 5m,15m,1h,4h,1d\):*
-`/alarm BTCUSDT 1h Math\.abs\(\(close \- open\) / open\) \>\= 0\.02`
+2\. *警报管理:*
+创建警报\(支持间隔: 5m,15m,1h,4h,1d\):
+`/alarm create {""Symbol"":""BTCUSDT"",""Interval"":""4h"",""Expression"":""Math\.abs\(\(close \- open\) / open\) \>\= 0\.02""}`
 
-3\. *清空警报:*
+删除警报:
+`/alarm delete 12345`
+
+清空警报:
 `/alarm empty`";
 
     public HelpCommandHandler(ILogger<HelpCommandHandler> logger,

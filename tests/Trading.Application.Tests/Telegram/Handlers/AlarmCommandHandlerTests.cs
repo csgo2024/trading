@@ -1,7 +1,8 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Trading.Application.Helpers;
+using Newtonsoft.Json;
+using Trading.Application.Commands;
 using Trading.Application.Telegram.Handlers;
 using Trading.Domain.Entities;
 using Trading.Domain.Events;
@@ -13,7 +14,6 @@ public class AlarmCommandHandlerTests
 {
     private readonly Mock<ILogger<AlarmCommandHandler>> _loggerMock;
     private readonly Mock<IMediator> _mediatorMock;
-    private readonly Mock<JavaScriptEvaluator> _jsEvaluatorMock;
     private readonly Mock<IAlarmRepository> _alarmRepositoryMock;
     private readonly AlarmCommandHandler _handler;
 
@@ -21,211 +21,216 @@ public class AlarmCommandHandlerTests
     {
         _loggerMock = new Mock<ILogger<AlarmCommandHandler>>();
         _mediatorMock = new Mock<IMediator>();
-        _jsEvaluatorMock = new Mock<JavaScriptEvaluator>(Mock.Of<ILogger<JavaScriptEvaluator>>());
         _alarmRepositoryMock = new Mock<IAlarmRepository>();
-
         _handler = new AlarmCommandHandler(
             _loggerMock.Object,
             _mediatorMock.Object,
-            _jsEvaluatorMock.Object,
             _alarmRepositoryMock.Object);
     }
 
     [Fact]
-    public void Command_ShouldReturnCorrectValue()
+    public async Task HandleAsync_WithEmptyParameters_LogsError()
     {
-        Assert.Equal("/alarm", AlarmCommandHandler.Command);
+        // Act
+        await _handler.HandleAsync("");
+
+        // Assert
+        VerifyLogError("Invalid command format");
     }
 
     [Fact]
-    public async Task HandleAsync_Empty_ShouldClearAllAlarms()
+    public async Task HandleAsync_WithEmptyCommand_ClearsAllAlarms()
     {
         // Arrange
-        const int deletedCount = 5;
         _alarmRepositoryMock
             .Setup(x => x.ClearAllAlarmsAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(deletedCount);
+            .ReturnsAsync(5);
 
         // Act
         await _handler.HandleAsync("empty");
 
         // Assert
         _alarmRepositoryMock.Verify(x => x.ClearAllAlarmsAsync(It.IsAny<CancellationToken>()), Times.Once);
-        _mediatorMock.Verify(x => x.Publish(It.IsAny<AlarmEmptyEvent>(), It.IsAny<CancellationToken>()), Times.Once);
-        VerifyLog(LogLevel.Information, $"<pre>已清空所有价格警报，共删除 {deletedCount} 个警报</pre>");
+        _mediatorMock.Verify(x => x.Publish(It.IsAny<AlarmEmptyedEvent>(), It.IsAny<CancellationToken>()), Times.Once);
+        VerifyLogInfo("已清空所有价格警报");
     }
 
     [Fact]
-    public async Task HandleAsync_InvalidFormat_ShouldLogError()
+    public async Task HandleAsync_WithCreateCommand_CreatesAlarm()
     {
         // Arrange
-        var invalidCommand = "BTCUSDT 1h";  // Missing expression
+        var alarmJson = """{"Symbol":"BTCUSDT","Expression":"close > 1000","Interval":"1h"}""";
+        var command = new CreateAlarmCommand { Symbol = "BTCUSDT", Expression = "close > 1000", Interval = "1h" };
+
+        _mediatorMock
+            .Setup(x => x.Send(It.IsAny<CreateAlarmCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Alarm());
 
         // Act
-        await _handler.HandleAsync(invalidCommand);
+        await _handler.HandleAsync($"create {alarmJson}");
 
         // Assert
-        VerifyLog(LogLevel.Error, "Invalid command format");
-        // _alarmRepositoryMock.Verify(x => x.AddAsync(It.IsAny<Alarm>()), Times.Never);
+        _mediatorMock.Verify(x => x.Send(
+            It.Is<CreateAlarmCommand>(c =>
+                c.Symbol == command.Symbol &&
+                c.Expression == command.Expression &&
+                c.Interval == command.Interval),
+            It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
-    public async Task HandleAsync_ValidCommand_WithInvalidExpression_ShouldLogError()
+    public async Task HandleAsync_WithInvalidCreateJson_ThrowsException()
     {
         // Arrange
-        const string invalidExpression = "invalid expression";
-        _jsEvaluatorMock
-            .Setup(x => x.ValidateExpression(invalidExpression, out It.Ref<string>.IsAny))
-            .Returns(false);
+        var invalidJson = "invalid json";
+
+        // Act & Assert
+        await Assert.ThrowsAsync<JsonReaderException>(() =>
+            _handler.HandleAsync($"create {invalidJson}"));
+    }
+
+    [Fact]
+    public async Task HandleAsync_WithDeleteCommand_DeletesAlarm()
+    {
+        // Arrange
+        var alarmId = "test-alarm-id";
+        _mediatorMock
+            .Setup(x => x.Send(It.IsAny<DeleteAlarmCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
 
         // Act
-        await _handler.HandleAsync($"BTCUSDT 1h {invalidExpression}");
+        await _handler.HandleAsync($"delete {alarmId}");
 
         // Assert
-        VerifyLog(LogLevel.Error, "条件语法错误");
-        // _alarmRepositoryMock.Verify(x => x.AddAsync(It.IsAny<Alarm>()), Times.Never);
+        _mediatorMock.Verify(x => x.Send(
+            It.Is<DeleteAlarmCommand>(c => c.Id == alarmId),
+            It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
-    public async Task HandleAsync_ValidCommand_ShouldCreateAlarm()
+    public async Task HandleAsync_WithDeleteCommandFails_ThrowsException()
     {
         // Arrange
-        const string symbol = "BTCUSDT";
-        const string interval = "1h";
-        const string expression = "close > 50000";
+        var alarmId = "test-alarm-id";
+        _mediatorMock
+            .Setup(x => x.Send(It.IsAny<DeleteAlarmCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
 
-        _jsEvaluatorMock
-            .Setup(x => x.ValidateExpression(expression, out It.Ref<string>.IsAny))
-            .Returns(true);
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            _handler.HandleAsync($"delete {alarmId}"));
+        Assert.Contains(alarmId, exception.Message);
+    }
 
-        Alarm? capturedAlarm = null;
+    [Fact]
+    public async Task HandleAsync_WithPauseCommand_PausesAlarm()
+    {
+        // Arrange
+        var alarmId = "test-alarm-id";
+        var alarm = new Alarm { Id = alarmId, IsActive = true };
+
         _alarmRepositoryMock
-            .Setup(x => x.AddAsync(It.IsAny<Alarm>(), It.IsAny<CancellationToken>()))
-            .Callback<Alarm, CancellationToken>((alarm, _) => capturedAlarm = alarm)
-            .Returns(Task.FromResult(capturedAlarm)!);
+            .Setup(x => x.GetByIdAsync(alarmId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(alarm);
 
         // Act
-        await _handler.HandleAsync($"{symbol} {interval} {expression}");
+        await _handler.HandleAsync($"pause {alarmId}");
 
         // Assert
-        Assert.NotNull(capturedAlarm);
-        Assert.Equal(symbol, capturedAlarm.Symbol);
-        Assert.Equal(interval, capturedAlarm.Interval);
-        Assert.Equal(expression, capturedAlarm.Expression);
-        Assert.True(capturedAlarm.IsActive);
+        _alarmRepositoryMock.Verify(x => x.UpdateAsync(
+            alarmId,
+            It.Is<Alarm>(a => !a.IsActive),
+            It.IsAny<CancellationToken>()), Times.Once);
+        _mediatorMock.Verify(x => x.Publish(
+            It.Is<AlarmPausedEvent>(e => e.AlarmId == alarmId),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
 
-        _mediatorMock.Verify(
-            x => x.Publish(It.Is<AlarmCreatedEvent>(e => e.Alarm == capturedAlarm), It.IsAny<CancellationToken>()),
+    [Fact]
+    public async Task HandleAsync_WithResumeCommand_ResumesAlarm()
+    {
+        // Arrange
+        var alarmId = "test-alarm-id";
+        var alarm = new Alarm { Id = alarmId, IsActive = false };
+
+        _alarmRepositoryMock
+            .Setup(x => x.GetByIdAsync(alarmId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(alarm);
+
+        // Act
+        await _handler.HandleAsync($"resume {alarmId}");
+
+        // Assert
+        _alarmRepositoryMock.Verify(
+            x => x.UpdateAsync(alarm.Id, alarm, It.IsAny<CancellationToken>()),
             Times.Once);
+        _mediatorMock.Verify(x => x.Publish(
+            It.Is<AlarmResumedEvent>(e => e.Alarm == alarm),
+            It.IsAny<CancellationToken>()), Times.Once);
     }
 
-    [Fact]
-    public async Task HandleCallbackAsync_WithInvalidFormat_ShouldLogError()
-    {
-        // Act
-        await _handler.HandleCallbackAsync("invalid_format");
-
-        // Assert
-        // VerifyLog(LogLevel.Error, "处理价格报警回调失败");
-    }
-
-    [Fact]
-    public async Task HandleCallbackAsync_AlarmNotFound_ShouldLogError()
+    [Theory]
+    [InlineData("pause")]
+    [InlineData("resume")]
+    public async Task HandleAsync_WithNonexistentAlarm_LogsError(string command)
     {
         // Arrange
-        const string alarmId = "non-existent-id";
+        var alarmId = "nonexistent-id";
         _alarmRepositoryMock
-            .Setup(x => x.GetByIdAsync(alarmId, It.IsAny<CancellationToken>()))!
+            .Setup(x => x.GetByIdAsync(alarmId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Alarm?)null);
 
         // Act
-        await _handler.HandleCallbackAsync($"pause_{alarmId}");
+        await _handler.HandleAsync($"{command} {alarmId}");
 
         // Assert
-        VerifyLog(LogLevel.Error, $"<pre>未找到报警 ID: {alarmId}</pre>");
+        VerifyLogError($"未找到报警 ID: {alarmId}");
     }
 
-    [Fact]
-    public async Task HandleCallbackAsync_PauseAction_ShouldUpdateAndPublishEvent()
+    [Theory]
+    [InlineData("pause", true)]
+    [InlineData("resume", false)]
+    public async Task HandleCallbackAsync_WithValidCallback_PauseOrResumeAlarm(string command, bool isActive)
     {
         // Arrange
-        var alarm = new Alarm { Id = "test-id", IsActive = true };
+        var alarmId = "test-alarm-id";
+        var alarm = new Alarm { Id = alarmId, IsActive = isActive };
+
         _alarmRepositoryMock
-            .Setup(x => x.GetByIdAsync(alarm.Id, It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetByIdAsync(alarmId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(alarm);
 
         // Act
-        await _handler.HandleCallbackAsync($"pause_{alarm.Id}");
+        await _handler.HandleCallbackAsync($"{command}_{alarmId}");
 
         // Assert
-        Assert.False(alarm.IsActive);
-        Assert.NotNull(alarm.UpdatedAt);
-
-        _alarmRepositoryMock.Verify(
-            x => x.UpdateAsync(alarm.Id, alarm, It.IsAny<CancellationToken>()),
-            Times.Once);
-
-        _mediatorMock.Verify(
-            x => x.Publish(It.Is<AlarmPausedEvent>(e => e.AlarmId == alarm.Id), It.IsAny<CancellationToken>()),
-            Times.Once);
+        _alarmRepositoryMock.Verify(x => x.UpdateAsync(
+            alarmId,
+            It.Is<Alarm>(a => a.IsActive == !isActive),
+            It.IsAny<CancellationToken>()), Times.Once);
     }
 
-    [Fact]
-    public async Task HandleCallbackAsync_ResumeAction_ShouldUpdateAndPublishEvent()
-    {
-        // Arrange
-        var alarm = new Alarm { Id = "test-id", IsActive = false };
-        _alarmRepositoryMock
-            .Setup(x => x.GetByIdAsync(alarm.Id, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(alarm);
-
-        // Act
-        await _handler.HandleCallbackAsync($"resume_{alarm.Id}");
-
-        // Assert
-        Assert.True(alarm.IsActive);
-        Assert.NotNull(alarm.UpdatedAt);
-
-        _alarmRepositoryMock.Verify(
-            x => x.UpdateAsync(alarm.Id, alarm, It.IsAny<CancellationToken>()),
-            Times.Once);
-
-        _mediatorMock.Verify(
-            x => x.Publish(It.Is<AlarmResumedEvent>(e => e.Alarm == alarm), It.IsAny<CancellationToken>()),
-            Times.Once);
-    }
-
-    [Fact]
-    public async Task HandleCallbackAsync_UnknownAction_ShouldNotUpdateAlarm()
-    {
-        // Arrange
-        var alarm = new Alarm { Id = "test-id" };
-        _alarmRepositoryMock
-            .Setup(x => x.GetByIdAsync(alarm.Id, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(alarm);
-
-        // Act
-        await _handler.HandleCallbackAsync($"unknown_{alarm.Id}");
-
-        // Assert
-        _alarmRepositoryMock.Verify(
-            x => x.UpdateAsync(It.IsAny<string>(), It.IsAny<Alarm>(), It.IsAny<CancellationToken>()),
-            Times.Never);
-
-        _mediatorMock.Verify(
-            x => x.Publish(It.IsAny<INotification>(), It.IsAny<CancellationToken>()),
-            Times.Never);
-    }
-
-    private void VerifyLog(LogLevel level, string expectedMessage)
+    private void VerifyLogError(string expectedMessage)
     {
         _loggerMock.Verify(
             x => x.Log(
-                level,
+                LogLevel.Error,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((o, t) => o.ToString()!.Contains(expectedMessage)),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(expectedMessage)),
                 It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                It.Is<Func<It.IsAnyType, Exception, string>>((v, t) => true)),
+            Times.Once);
+    }
+
+    private void VerifyLogInfo(string expectedMessage)
+    {
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(expectedMessage)),
+                It.IsAny<Exception>(),
+                It.Is<Func<It.IsAnyType, Exception, string>>((v, t) => true)),
             Times.Once);
     }
 }

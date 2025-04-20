@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using Binance.Net.Enums;
 using Binance.Net.Objects.Models.Spot;
 
@@ -53,6 +54,6 @@ public static class CommonHelper
         {
             return klineInterval;
         }
-        throw new InvalidOperationException("Invalid interval");
+        throw new ValidationException("Invalid interval");
     }
 }

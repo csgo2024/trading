@@ -49,6 +49,7 @@ public class StatusCommandHandler : ICommandHandler
         foreach (var alarm in alarms)
         {
             var safeMessage = alarm.Expression.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;");
+            htmlBuilder.AppendLine($"{alarm.Id}");
             htmlBuilder.AppendLine($"{alarm.Symbol} {alarm.Interval} {safeMessage}");
             htmlBuilder.AppendLine("------------------------");
         }

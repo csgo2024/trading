@@ -21,7 +21,8 @@ public class AlarmNotificationService :
     INotificationHandler<AlarmCreatedEvent>,
     INotificationHandler<AlarmPausedEvent>,
     INotificationHandler<AlarmResumedEvent>,
-    INotificationHandler<AlarmEmptyEvent>
+    INotificationHandler<AlarmDeletedEvent>,
+    INotificationHandler<AlarmEmptyedEvent>
 {
     private readonly IBackgroundTaskManager _backgroundTaskManager;
     private readonly IAlarmRepository _alarmRepository;
@@ -81,7 +82,12 @@ public class AlarmNotificationService :
                                                 ct => ProcessAlarm(alarm, ct),
                                                 cancellationToken);
     }
-    public async Task Handle(AlarmEmptyEvent notification, CancellationToken cancellationToken)
+    public async Task Handle(AlarmDeletedEvent notification, CancellationToken cancellationToken)
+    {
+        _activeAlarms.TryRemove(notification.AlarmId, out _);
+        await _backgroundTaskManager.StopAsync(TaskCategories.Alarm, notification.AlarmId);
+    }
+    public async Task Handle(AlarmEmptyedEvent notification, CancellationToken cancellationToken)
     {
         _activeAlarms.Clear();
         _lastkLines.Clear();

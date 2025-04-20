@@ -15,12 +15,10 @@ public class TelegramBotService : BackgroundService
     private readonly ITelegramBotClient _botClient;
     private readonly ITelegramCommandHandler _commandHandler;
 
-    public TelegramBotService(
-        ITelegramBotClient botClient,
-        ITelegramCommandHandler commandHandler,
-        ILogger<TelegramBotService> logger,
-        IServiceProvider serviceProvider
-    )
+    public TelegramBotService(ITelegramBotClient botClient,
+                              ITelegramCommandHandler commandHandler,
+                              ILogger<TelegramBotService> logger,
+                              IServiceProvider serviceProvider)
     {
         _botClient = botClient;
         _commandHandler = commandHandler;

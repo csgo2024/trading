@@ -99,11 +99,66 @@ public class AlarmNotificationServiceTests
     }
 
     [Fact]
+    public async Task Handle_AlarmResumedEvent_ShouldStartMonitoring()
+    {
+        // Arrange
+        var alarm = new Alarm
+        {
+            Id = "test-id",
+            Symbol = "BTCUSDT",
+            Interval = "1h",
+            Expression = "close > open",
+            IsActive = true
+        };
+        var notification = new AlarmResumedEvent(alarm);
+
+        _taskManagerMock
+            .Setup(x => x.StartAsync(
+                TaskCategories.Alarm,
+                alarm.Id,
+                It.IsAny<Func<CancellationToken, Task>>(),
+                It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        // Act
+        await _service.Handle(notification, _cts.Token);
+
+        // Assert
+        // Verify the task was started
+        _taskManagerMock.Verify(
+            x => x.StartAsync(
+                TaskCategories.Alarm,
+                alarm.Id,
+                It.IsAny<Func<CancellationToken, Task>>(),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+    [Fact]
     public async Task Handle_AlarmPausedEvent_ShouldStopMonitoring()
     {
         // Arrange
         var alarmId = "test-id";
         var notification = new AlarmPausedEvent(alarmId);
+
+        _taskManagerMock
+            .Setup(x => x.StopAsync(
+                It.Is<string>(category => category == TaskCategories.Alarm),
+                It.IsAny<string>()))
+            .Returns(Task.CompletedTask);
+
+        // Act
+        await _service.Handle(notification, _cts.Token);
+
+        // Assert
+        _taskManagerMock.Verify(x => x.StopAsync(TaskCategories.Alarm, alarmId), Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_AlarmDeletedEvent_ShouldStopMonitoring()
+    {
+        // Arrange
+        var alarmId = "test-id";
+        var notification = new AlarmDeletedEvent(alarmId);
 
         _taskManagerMock
             .Setup(x => x.StopAsync(
