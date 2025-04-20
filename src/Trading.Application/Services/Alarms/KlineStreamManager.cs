@@ -139,6 +139,10 @@ public class KlineStreamManager : IKlineStreamManager
 
     private void SubscribeToEvents(UpdateSubscription subscription)
     {
+        if (subscription == null)
+        {
+            return;
+        }
         subscription.ConnectionLost += OnConnectionLost;
         subscription.ConnectionRestored += OnConnectionRestored;
         subscription.ConnectionClosed += OnConnectionClosed;
@@ -150,6 +154,10 @@ public class KlineStreamManager : IKlineStreamManager
 
     private void UnsubscribeEvents(UpdateSubscription subscription)
     {
+        if (subscription == null)
+        {
+            return;
+        }
         subscription.ConnectionLost -= OnConnectionLost;
         subscription.ConnectionRestored -= OnConnectionRestored;
         subscription.ConnectionClosed -= OnConnectionClosed;
