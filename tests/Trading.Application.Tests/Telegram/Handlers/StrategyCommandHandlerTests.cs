@@ -49,6 +49,26 @@ public class StrategyCommandHandlerTests
         Assert.Equal("/strategy", StrategyCommandHandler.Command);
     }
 
+    [Fact]
+    public async Task HandleAsync_WithEmptyParameters_LogInformation_WhenNoStrategies()
+    {
+        // arrange
+        _strategyRepositoryMock.Setup(x => x.GetAllStrategies())
+            .ReturnsAsync([]);
+        // Act
+        await _handler.HandleAsync("");
+
+        // Assert
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((o, t) => o.ToString()!.Contains("Strategy is empty, please create and call later.")),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
     [Theory]
     [InlineData(StateStatus.Running, "运行中")]
     [InlineData(StateStatus.Paused, "已暂停")]

@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Telegram.Bot;
+using Telegram.Bot.Requests;
 using Telegram.Bot.Types.Enums;
 using Trading.Common.Models;
 
@@ -41,8 +42,8 @@ public class HelpCommandHandler : ICommandHandler
 `/alert empty`";
 
     public HelpCommandHandler(ILogger<HelpCommandHandler> logger,
-        ITelegramBotClient botClient,
-        IOptions<TelegramSettings> settings)
+                              ITelegramBotClient botClient,
+                              IOptions<TelegramSettings> settings)
     {
         _botClient = botClient;
         _chatId = settings.Value.ChatId ?? throw new ArgumentNullException(nameof(settings));
@@ -51,9 +52,13 @@ public class HelpCommandHandler : ICommandHandler
 
     public async Task HandleAsync(string parameters)
     {
-        await _botClient.SendMessage(chatId: _chatId,
-                                     text: _helpText,
-                                     parseMode: ParseMode.MarkdownV2);
+        await _botClient.SendRequest(new SendMessageRequest
+        {
+            ChatId = _chatId,
+            Text = _helpText,
+            ParseMode = ParseMode.MarkdownV2,
+            DisableNotification = true,
+        }, CancellationToken.None);
     }
 
     public Task HandleCallbackAsync(string action, string parameters)

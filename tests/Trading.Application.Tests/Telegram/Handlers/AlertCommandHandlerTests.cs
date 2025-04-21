@@ -68,6 +68,25 @@ public class AlertCommandHandlerTests
     }
 
     [Fact]
+    public async Task HandleAsync_WithEmptyParameters_ShouldLogInformation_WhenNoAlerts()
+    {
+        // arrange
+        _alertRepositoryMock.Setup(x => x.GetAllAlerts())
+            .ReturnsAsync([]);
+        // Act
+        await _handler.HandleAsync("");
+
+        // Assert
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((o, t) => o.ToString()!.Contains("Alert is empty, please create and call later.")),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+    [Fact]
     public async Task HandleAsync_WithEmptyCommand_ClearsAllAlerts()
     {
         // Arrange

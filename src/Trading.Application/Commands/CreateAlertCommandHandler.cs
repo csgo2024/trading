@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.RegularExpressions;
 using MediatR;
 using Trading.Application.Helpers;
 using Trading.Domain.Entities;
@@ -43,7 +44,7 @@ public class CreateAlertCommandHandler : IRequestHandler<CreateAlertCommand, Ale
         {
             Symbol = request.Symbol.ToUpper(),
             Interval = request.Interval,
-            Expression = request.Expression,
+            Expression = Regex.Replace(request.Expression, @"\s+", ""),
             Status = StateStatus.Running,
             LastNotification = DateTime.UtcNow,
         };

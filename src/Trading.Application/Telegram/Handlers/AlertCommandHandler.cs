@@ -97,8 +97,8 @@ public class AlertCommandHandler : ICommandHandler
             var safeExpression = alert.Expression.ToTelegramSafeString();
             var text = $"""
             ⏰ <b>警报状态</b> ({DateTime.UtcNow.AddHours(8):yyyy-MM-dd HH:mm:ss})
-            <pre>{emoji} [{alert.Symbol}-{alert.Interval}]: {status}
-            {safeExpression}</pre>
+            <pre>{emoji} [{alert.Symbol}-{alert.Interval}]:{status}
+            表达式：{safeExpression}</pre>
             """;
             var buttons = alert.Status switch
             {
