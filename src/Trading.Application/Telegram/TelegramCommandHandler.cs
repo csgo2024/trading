@@ -43,6 +43,11 @@ public class TelegramCommandHandler : ITelegramCommandHandler
     {
         var (prefix, action, parameters) = ParseCallbackQuery(callbackQuery);
 
+        if (string.IsNullOrEmpty(prefix))
+        {
+            return;
+        }
+
         try
         {
             var handler = _handlerFactory.GetHandler(prefix);
@@ -72,7 +77,7 @@ public class TelegramCommandHandler : ITelegramCommandHandler
         }
         var data = callbackQuery.Data;
         var parts = data.Trim().Split(['_'], 3);
-        if (parts.Length < 2)
+        if (parts.Length < 3)
         {
             return (string.Empty, string.Empty, string.Empty);
         }

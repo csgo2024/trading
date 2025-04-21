@@ -1,4 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Telegram.Bot.Types;
@@ -17,13 +16,12 @@ public class TelegramCommandHandlerTests
     public TelegramCommandHandlerTests()
     {
         _mockLogger = new Mock<ILogger<TelegramCommandHandler>>();
-        var services = new ServiceCollection();
-
-        var serviceProvider = services.BuildServiceProvider();
-        _mockHandlerFactory = new Mock<TelegramCommandHandlerFactory>(serviceProvider);
+        _mockHandlerFactory = new Mock<TelegramCommandHandlerFactory>(Mock.Of<IServiceProvider>());
         _mockCommandHandler = new Mock<ICommandHandler>();
         _handler = new TelegramCommandHandler(_mockLogger.Object, _mockHandlerFactory.Object);
     }
+
+    // HandleCommand 测试
 
     [Fact]
     public async Task HandleCommand_WithNullText_ShouldReturnWithoutProcessing()
@@ -37,17 +35,28 @@ public class TelegramCommandHandlerTests
         // Assert
         _mockHandlerFactory.Verify(
             x => x.GetHandler(It.IsAny<string>()),
-            Times.Never,
-            "Factory should not be called with null text");
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task HandleCommand_WithEmptyText_ShouldReturnWithoutProcessing()
+    {
+        // Arrange  
+        var message = new Message { Text = "" };
+
+        // Act
+        await _handler.HandleCommand(message);
+
+        // Assert
+        _mockHandlerFactory.Verify(
+            x => x.GetHandler(It.IsAny<string>()),
+            Times.Never);
     }
 
     [Theory]
     [InlineData("/help", "", "/help")]
-    [InlineData("/status", "", "/status")]
-    [InlineData("/create BTCUSDT", "BTCUSDT", "/create")]
-    [InlineData("/delete 123", "123", "/delete")]
-    [InlineData("/pause strategy1", "strategy1", "/pause")]
-    [InlineData("/resume strategy2", "strategy2", "/resume")]
+    [InlineData("/alert", "", "/alert")]
+    [InlineData("/strategy create btc", "create btc", "/strategy")]
     public async Task HandleCommand_WithValidCommand_ShouldProcessCorrectly(
         string input, string expectedParams, string expectedCommand)
     {
@@ -63,13 +72,11 @@ public class TelegramCommandHandlerTests
         // Assert
         _mockHandlerFactory.Verify(
             x => x.GetHandler(expectedCommand),
-            Times.Once,
-            "Factory should be called with correct command");
+            Times.Once);
 
         _mockCommandHandler.Verify(
             x => x.HandleAsync(expectedParams),
-            Times.Once,
-            "Handler should be called with correct parameters");
+            Times.Once);
     }
 
     [Fact]
@@ -79,7 +86,7 @@ public class TelegramCommandHandlerTests
         var message = new Message { Text = "/unknowncommand" };
         _mockHandlerFactory
             .Setup(x => x.GetHandler(It.IsAny<string>()))
-            .Returns(value: null);
+            .Returns((ICommandHandler?)null);
 
         // Act
         await _handler.HandleCommand(message);
@@ -99,7 +106,7 @@ public class TelegramCommandHandlerTests
     public async Task HandleCommand_WhenHandlerThrowsException_ShouldLogError()
     {
         // Arrange
-        var message = new Message { Text = "/errorcommand" };
+        var message = new Message { Text = "/command" };
         var expectedException = new InvalidOperationException("Test exception");
 
         _mockHandlerFactory
@@ -124,22 +131,101 @@ public class TelegramCommandHandlerTests
             Times.Once);
     }
 
+    // HandleCallbackQuery 测试
+
     [Fact]
-    public async Task HandleCommand_WithMultipleParameters_ShouldProcessCorrectly()
+    public async Task HandleCallbackQuery_WithNullQuery_ShouldDoNothing()
+    {
+        // Act
+        await _handler.HandleCallbackQuery(null);
+
+        // Assert
+        _mockHandlerFactory.Verify(
+            x => x.GetHandler(It.IsAny<string>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task HandleCallbackQuery_WithEmptyData_ShouldDoNothing()
     {
         // Arrange
-        var message = new Message { Text = "/create BTCUSDT 100 0.01" };
+        var query = new CallbackQuery { Data = "" };
+
+        // Act  
+        await _handler.HandleCallbackQuery(query);
+
+        // Assert
+        _mockHandlerFactory.Verify(
+            x => x.GetHandler(It.IsAny<string>()),
+            Times.Never);
+    }
+
+    [Theory]
+    [InlineData("alert_pause_123", "alert", "pause", "123")]
+    [InlineData("strategy_resume_456", "strategy", "resume", "456")]
+    public async Task HandleCallbackQuery_WithValidData_ShouldProcessCorrectly(
+        string data, string expectedPrefix, string expectedAction, string expectedParams)
+    {
+        // Arrange
+        var query = new CallbackQuery { Data = data };
         _mockHandlerFactory
-            .Setup(x => x.GetHandler("/create"))
+            .Setup(x => x.GetHandler(expectedPrefix))
             .Returns(_mockCommandHandler.Object);
 
         // Act
-        await _handler.HandleCommand(message);
+        await _handler.HandleCallbackQuery(query);
 
         // Assert
+        _mockHandlerFactory.Verify(
+            x => x.GetHandler(expectedPrefix),
+            Times.Once);
+
         _mockCommandHandler.Verify(
-            x => x.HandleAsync("BTCUSDT 100 0.01"),
-            Times.Once,
-            "Handler should receive all parameters as a single string");
+            x => x.HandleCallbackAsync(expectedAction, expectedParams),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task HandleCallbackQuery_WithInvalidFormat_ShouldDoNothing()
+    {
+        // Arrange
+        var query = new CallbackQuery { Data = "invalid_format" };
+
+        // Act
+        await _handler.HandleCallbackQuery(query);
+
+        // Assert
+        _mockHandlerFactory.Verify(
+            x => x.GetHandler(It.IsAny<string>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task HandleCallbackQuery_WhenHandlerThrowsException_ShouldLogError()
+    {
+        // Arrange
+        var query = new CallbackQuery { Data = "alert_pause_123" };
+        var expectedException = new InvalidOperationException("Test exception");
+
+        _mockHandlerFactory
+            .Setup(x => x.GetHandler(It.IsAny<string>()))
+            .Returns(_mockCommandHandler.Object);
+
+        _mockCommandHandler
+            .Setup(x => x.HandleCallbackAsync(It.IsAny<string>(), It.IsAny<string>()))
+            .ThrowsAsync(expectedException);
+
+        // Act
+        await _handler.HandleCallbackQuery(query);
+
+        // Assert
+        _mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                expectedException,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
     }
 }
