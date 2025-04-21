@@ -92,14 +92,14 @@ public class DeleteStrategyCommandHandlerTests
         {
             Id = strategyId
         };
-        var expectedException = new Exception("Database error");
+        var expectedException = new InvalidOperationException("Database error");
 
         _strategyRepositoryMock
             .Setup(x => x.DeleteAsync(strategyId, It.IsAny<CancellationToken>()))
             .ThrowsAsync(expectedException);
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<Exception>(
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
             () => _handler.Handle(command, CancellationToken.None));
 
         Assert.Same(expectedException, exception);

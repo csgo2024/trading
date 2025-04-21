@@ -4,7 +4,7 @@ namespace Trading.Domain.IRepositories;
 
 public interface IRepository<T> where T : IEntity
 {
-    Task<T> GetByIdAsync(string id, CancellationToken cancellationToken = default);
+    Task<T?> GetByIdAsync(string id, CancellationToken cancellationToken = default);
     Task<T> AddAsync(T entity, CancellationToken cancellationToken = default);
     Task<bool> EmptyAsync(CancellationToken cancellationToken = default);
 

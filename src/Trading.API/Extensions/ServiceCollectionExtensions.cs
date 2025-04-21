@@ -8,7 +8,7 @@ using Trading.Application.Commands;
 using Trading.Application.Helpers;
 using Trading.Application.Middlerwares;
 using Trading.Application.Queries;
-using Trading.Application.Services.Alarms;
+using Trading.Application.Services.Alerts;
 using Trading.Application.Services.Common;
 using Trading.Application.Services.Trading;
 using Trading.Application.Services.Trading.Account;
@@ -55,9 +55,9 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IExecutorFactory, ExecutorFactory>();
         services.AddHostedService<TradingHostService>();
         services.AddSingleton<IKlineStreamManager, KlineStreamManager>();
-        services.AddSingleton<AlarmNotificationService>();
+        services.AddSingleton<AlertNotificationService>();
         services.AddSingleton<IBackgroundTaskManager, BackgroundTaskManager>();
-        services.AddHostedService<AlarmHostService>();
+        services.AddHostedService<AlertHostService>();
         services.AddSingleton<StrategyExecutionService>();
 
         services.AddSingleton<JavaScriptEvaluator>();
@@ -73,9 +73,8 @@ public static class ServiceCollectionExtensions
             return new TelegramBotClient(settings.BotToken ?? throw new InvalidOperationException("TelegramSettings is not valid."));
         });
         services.AddSingleton<HelpCommandHandler>();
-        services.AddSingleton<StatusCommandHandler>();
         services.AddSingleton<StrategyCommandHandler>();
-        services.AddSingleton<AlarmCommandHandler>();
+        services.AddSingleton<AlertCommandHandler>();
         services.AddSingleton<TelegramCommandHandlerFactory>();
         services.AddSingleton<ITelegramCommandHandler, TelegramCommandHandler>();
 

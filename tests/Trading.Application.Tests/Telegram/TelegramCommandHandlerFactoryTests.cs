@@ -5,7 +5,7 @@ using Microsoft.Extensions.Options;
 using Moq;
 using Telegram.Bot;
 using Trading.Application.Helpers;
-using Trading.Application.Services.Alarms;
+using Trading.Application.Services.Alerts;
 using Trading.Application.Services.Common;
 using Trading.Application.Telegram;
 using Trading.Application.Telegram.Handlers;
@@ -41,7 +41,7 @@ public class TelegramCommandHandlerFactoryTests
         services.AddSingleton(Mock.Of<IMediator>());
         services.AddSingleton(Mock.Of<IStrategyRepository>());
         services.AddSingleton(Mock.Of<ICredentialSettingRepository>());
-        services.AddSingleton(Mock.Of<IAlarmRepository>());
+        services.AddSingleton(Mock.Of<IAlertRepository>());
         services.AddSingleton(Mock.Of<ITelegramBotClient>()); // Add TelegramBotClient mock
         var taskManagerMock = new Mock<BackgroundTaskManager>(Mock.Of<ILogger<BackgroundTaskManager>>());
         services.AddSingleton(taskManagerMock.Object);
@@ -49,20 +49,19 @@ public class TelegramCommandHandlerFactoryTests
         var jsEvaluatorMock = new Mock<JavaScriptEvaluator>(Mock.Of<ILogger<JavaScriptEvaluator>>());
         services.AddSingleton(jsEvaluatorMock.Object);
 
-        var alarmNotificationMock = new Mock<AlarmNotificationService>(
-            Mock.Of<ILogger<AlarmNotificationService>>(),
-            Mock.Of<IAlarmRepository>(),
+        var alertNotificationMock = new Mock<AlertNotificationService>(
+            Mock.Of<ILogger<AlertNotificationService>>(),
+            Mock.Of<IAlertRepository>(),
             Mock.Of<ITelegramBotClient>(),
             jsEvaluatorMock.Object,
             taskManagerMock.Object,
             optionsMock.Object
         );
-        services.AddSingleton(alarmNotificationMock.Object);
+        services.AddSingleton(alertNotificationMock.Object);
 
         services.AddTransient<HelpCommandHandler>();
-        services.AddTransient<StatusCommandHandler>();
         services.AddTransient<StrategyCommandHandler>();
-        services.AddTransient<AlarmCommandHandler>();
+        services.AddTransient<AlertCommandHandler>();
 
         _serviceProvider = services.BuildServiceProvider();
         _factory = new TelegramCommandHandlerFactory(_serviceProvider);
@@ -70,10 +69,9 @@ public class TelegramCommandHandlerFactoryTests
 
     [Theory]
     [InlineData("/help", typeof(HelpCommandHandler))]
-    [InlineData("/status", typeof(StatusCommandHandler))]
-    [InlineData("/alarm", typeof(AlarmCommandHandler))]
+    [InlineData("/alert", typeof(AlertCommandHandler))]
     [InlineData("/strategy", typeof(StrategyCommandHandler))]
-    [InlineData("alarm", typeof(AlarmCommandHandler))]
+    [InlineData("alert", typeof(AlertCommandHandler))]
     [InlineData("strategy", typeof(StrategyCommandHandler))]
     public void GetHandler_ShouldReturnCorrectHandler(string command, Type expectedType)
     {

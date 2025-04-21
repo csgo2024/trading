@@ -6,28 +6,28 @@ using Trading.Domain.IRepositories;
 
 namespace Trading.Application.Tests.Commands;
 
-public class DeleteAlarmCommandHandlerTests
+public class DeleteAlertCommandHandlerTests
 {
-    private readonly Mock<IAlarmRepository> _alarmRepositoryMock;
+    private readonly Mock<IAlertRepository> _alertRepositoryMock;
     private readonly Mock<IMediator> _mediatorMock;
-    private readonly DeleteAlarmCommandHandler _handler;
+    private readonly DeleteAlertCommandHandler _handler;
 
-    public DeleteAlarmCommandHandlerTests()
+    public DeleteAlertCommandHandlerTests()
     {
-        _alarmRepositoryMock = new Mock<IAlarmRepository>();
+        _alertRepositoryMock = new Mock<IAlertRepository>();
         _mediatorMock = new Mock<IMediator>();
-        _handler = new DeleteAlarmCommandHandler(_alarmRepositoryMock.Object, _mediatorMock.Object);
+        _handler = new DeleteAlertCommandHandler(_alertRepositoryMock.Object, _mediatorMock.Object);
     }
 
     [Fact]
-    public async Task Handle_WhenAlarmExists_ShouldDeleteAndPublishEvent()
+    public async Task Handle_WhenAlertExists_ShouldDeleteAndPublishEvent()
     {
         // Arrange
-        var alarmId = "test-alarm-id";
-        var command = new DeleteAlarmCommand { Id = alarmId };
+        var alertId = "test-alert-id";
+        var command = new DeleteAlertCommand { Id = alertId };
 
-        _alarmRepositoryMock
-            .Setup(x => x.DeleteAsync(alarmId, It.IsAny<CancellationToken>()))
+        _alertRepositoryMock
+            .Setup(x => x.DeleteAsync(alertId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         // Act
@@ -37,27 +37,27 @@ public class DeleteAlarmCommandHandlerTests
         Assert.True(result);
 
         // Verify repository call
-        _alarmRepositoryMock.Verify(
-            x => x.DeleteAsync(alarmId, It.IsAny<CancellationToken>()),
+        _alertRepositoryMock.Verify(
+            x => x.DeleteAsync(alertId, It.IsAny<CancellationToken>()),
             Times.Once);
 
         // Verify event publication
         _mediatorMock.Verify(
             x => x.Publish(
-                It.Is<AlarmDeletedEvent>(e => e.AlarmId == alarmId),
+                It.Is<AlertDeletedEvent>(e => e.AlertId == alertId),
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
     [Fact]
-    public async Task Handle_WhenAlarmDoesNotExist_ShouldReturnFalseAndNotPublishEvent()
+    public async Task Handle_WhenAlertDoesNotExist_ShouldReturnFalseAndNotPublishEvent()
     {
         // Arrange
-        var alarmId = "non-existent-alarm-id";
-        var command = new DeleteAlarmCommand { Id = alarmId };
+        var alertId = "non-existent-alert-id";
+        var command = new DeleteAlertCommand { Id = alertId };
 
-        _alarmRepositoryMock
-            .Setup(x => x.DeleteAsync(alarmId, It.IsAny<CancellationToken>()))
+        _alertRepositoryMock
+            .Setup(x => x.DeleteAsync(alertId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         // Act
@@ -67,13 +67,13 @@ public class DeleteAlarmCommandHandlerTests
         Assert.False(result);
 
         // Verify repository call
-        _alarmRepositoryMock.Verify(
-            x => x.DeleteAsync(alarmId, It.IsAny<CancellationToken>()),
+        _alertRepositoryMock.Verify(
+            x => x.DeleteAsync(alertId, It.IsAny<CancellationToken>()),
             Times.Once);
 
         // Verify no event was published
         _mediatorMock.Verify(
-            x => x.Publish(It.IsAny<AlarmDeletedEvent>(), It.IsAny<CancellationToken>()),
+            x => x.Publish(It.IsAny<AlertDeletedEvent>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -85,11 +85,11 @@ public class DeleteAlarmCommandHandlerTests
             () => _handler.Handle(null!, CancellationToken.None));
 
         // Verify no repository calls or events
-        _alarmRepositoryMock.Verify(
+        _alertRepositoryMock.Verify(
             x => x.DeleteAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Never);
         _mediatorMock.Verify(
-            x => x.Publish(It.IsAny<AlarmDeletedEvent>(), It.IsAny<CancellationToken>()),
+            x => x.Publish(It.IsAny<AlertDeletedEvent>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -97,23 +97,23 @@ public class DeleteAlarmCommandHandlerTests
     public async Task Handle_WhenRepositoryThrowsException_ShouldPropagateException()
     {
         // Arrange
-        var alarmId = "test-alarm-id";
-        var command = new DeleteAlarmCommand { Id = alarmId };
-        var expectedException = new Exception("Database error");
+        var alertId = "test-alert-id";
+        var command = new DeleteAlertCommand { Id = alertId };
+        var expectedException = new InvalidOperationException("Database error");
 
-        _alarmRepositoryMock
-            .Setup(x => x.DeleteAsync(alarmId, It.IsAny<CancellationToken>()))
+        _alertRepositoryMock
+            .Setup(x => x.DeleteAsync(alertId, It.IsAny<CancellationToken>()))
             .ThrowsAsync(expectedException);
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<Exception>(
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
             () => _handler.Handle(command, CancellationToken.None));
 
         Assert.Same(expectedException, exception);
 
         // Verify no event was published
         _mediatorMock.Verify(
-            x => x.Publish(It.IsAny<AlarmDeletedEvent>(), It.IsAny<CancellationToken>()),
+            x => x.Publish(It.IsAny<AlertDeletedEvent>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 }

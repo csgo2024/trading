@@ -153,7 +153,7 @@ public class BackgroundTaskManagerTests : IAsyncDisposable
     {
         // Arrange
         var strategyTaskId = "strategy-task";
-        var alarmTaskId = "alarm-task";
+        var alertTaskId = "alert-task";
 
         await _taskManager.StartAsync(
             TaskCategories.Strategy,
@@ -162,20 +162,20 @@ public class BackgroundTaskManagerTests : IAsyncDisposable
             _cts.Token);
 
         await _taskManager.StartAsync(
-            TaskCategories.Alarm,
-            alarmTaskId,
+            TaskCategories.Alert,
+            alertTaskId,
             ct => Task.Delay(1000, ct),
             _cts.Token);
 
         // Act
         var strategyTasks = _taskManager.GetActiveTaskIds(TaskCategories.Strategy);
-        var alarmTasks = _taskManager.GetActiveTaskIds(TaskCategories.Alarm);
+        var alertTasks = _taskManager.GetActiveTaskIds(TaskCategories.Alert);
 
         // Assert
         Assert.Single(strategyTasks);
         Assert.Equal(strategyTaskId, strategyTasks[0]);
-        Assert.Single(alarmTasks);
-        Assert.Equal(alarmTaskId, alarmTasks[0]);
+        Assert.Single(alertTasks);
+        Assert.Equal(alertTaskId, alertTasks[0]);
     }
 
     [Fact]
@@ -186,7 +186,7 @@ public class BackgroundTaskManagerTests : IAsyncDisposable
         var tasks = new[]
         {
             (TaskCategories.Strategy, "strategy-task"),
-            (TaskCategories.Alarm, "alarm-task")
+            (TaskCategories.Alert, "alert-task")
         };
 
         foreach (var (category, taskId) in tasks)
@@ -217,7 +217,7 @@ public class BackgroundTaskManagerTests : IAsyncDisposable
         // Assert
         Assert.Equal(0, executingTasks);
         Assert.Empty(_taskManager.GetActiveTaskIds(TaskCategories.Strategy));
-        Assert.Empty(_taskManager.GetActiveTaskIds(TaskCategories.Alarm));
+        Assert.Empty(_taskManager.GetActiveTaskIds(TaskCategories.Alert));
     }
 
     public async ValueTask DisposeAsync()

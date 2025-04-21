@@ -5,7 +5,7 @@ namespace Trading.Application.Services.Common;
 
 public static class TaskCategories
 {
-    public const string Alarm = "Alarm";
+    public const string Alert = "Alert";
     public const string Strategy = "Strategy";
 }
 

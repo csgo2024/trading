@@ -9,9 +9,8 @@ public class TelegramCommandHandler : ITelegramCommandHandler
     private readonly ILogger<TelegramCommandHandler> _logger;
     private readonly TelegramCommandHandlerFactory _handlerFactory;
 
-    public TelegramCommandHandler(
-        ILogger<TelegramCommandHandler> logger,
-        TelegramCommandHandlerFactory handlerFactory)
+    public TelegramCommandHandler(ILogger<TelegramCommandHandler> logger,
+                                  TelegramCommandHandlerFactory handlerFactory)
     {
         _logger = logger;
         _handlerFactory = handlerFactory;

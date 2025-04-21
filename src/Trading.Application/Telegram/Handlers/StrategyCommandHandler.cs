@@ -1,7 +1,13 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using Telegram.Bot;
+using Telegram.Bot.Requests;
+using Telegram.Bot.Types.Enums;
+using Telegram.Bot.Types.ReplyMarkups;
 using Trading.Application.Commands;
+using Trading.Common.Models;
 using Trading.Domain.Entities;
 using Trading.Domain.Events;
 using Trading.Domain.IRepositories;
@@ -13,24 +19,29 @@ public class StrategyCommandHandler : ICommandHandler
     private readonly ILogger<StrategyCommandHandler> _logger;
     private readonly IMediator _mediator;
     private readonly IStrategyRepository _strategyRepository;
+    private readonly ITelegramBotClient _botClient;
+    private readonly string _chatId;
     public static string Command => "/strategy";
     public static string CallbackPrefix => "strategy";
 
-    public StrategyCommandHandler(
-        IMediator mediator,
-        ILogger<StrategyCommandHandler> logger,
-        IStrategyRepository strategyRepository)
+    public StrategyCommandHandler(IMediator mediator,
+                                  ILogger<StrategyCommandHandler> logger,
+                                  IStrategyRepository strategyRepository,
+                                  ITelegramBotClient botClient,
+                                  IOptions<TelegramSettings> settings)
     {
         _mediator = mediator;
         _logger = logger;
         _strategyRepository = strategyRepository;
+        _botClient = botClient;
+        _chatId = settings.Value.ChatId!;
     }
 
     public async Task HandleAsync(string parameters)
     {
         if (string.IsNullOrWhiteSpace(parameters))
         {
-            _logger.LogError("<pre>Invalid command format. Use: /strategy [create|delete|pause|resume] [parameters]</pre>");
+            await HandleDefault();
             return;
         }
 
@@ -53,11 +64,54 @@ public class StrategyCommandHandler : ICommandHandler
                 await HandleResume(subParameters);
                 break;
             default:
-                _logger.LogError("<pre>Unknown command. Use: create, delete, pause, or resume</pre>");
+                _logger.LogError("Unknown command. Use: create, delete, pause, or resume");
                 break;
         }
     }
 
+    private static (string emoji, string status) GetStatusInfo(Strategy strategy) => strategy.Status switch
+    {
+        StateStatus.Running => ("🟢", "运行中"),
+        StateStatus.Paused => ("🔴", "已暂停"),
+        _ => ("⚠️", "未知状态")
+    };
+    private async Task HandleDefault()
+    {
+        var strategies = await _strategyRepository.GetAllStrategies();
+        if (strategies.Count == 0)
+        {
+            _logger.LogInformation("Strategy is empty, please create and call later.");
+            return;
+        }
+
+        foreach (var strategy in strategies)
+        {
+            var (emoji, status) = GetStatusInfo(strategy);
+            var text = $"""
+            📊 <b>策略状态报告</b> ({DateTime.UtcNow.AddHours(8):yyyy-MM-dd HH:mm:ss})
+            <pre>{emoji} [{strategy.AccountType}-{strategy.Symbol}]: {status}
+            跌幅: {strategy.PriceDropPercentage} / 目标价格: {strategy.TargetPrice} 💰
+            金额: {strategy.Amount} / 数量: {strategy.Quantity}</pre>
+            """;
+            var buttons = strategy.Status switch
+            {
+                StateStatus.Running => [InlineKeyboardButton.WithCallbackData("⏸️ 暂停", $"strategy_pause_{strategy.Id}")],
+                StateStatus.Paused => new[] { InlineKeyboardButton.WithCallbackData("▶️ 启用", $"strategy_resume_{strategy.Id}") },
+                _ => throw new InvalidOperationException()
+            };
+            buttons = [.. buttons, InlineKeyboardButton.WithCallbackData("🗑️ 删除", $"strategy_delete_{strategy.Id}")];
+            await _botClient.SendRequest(new SendMessageRequest
+            {
+                ChatId = _chatId,
+                Text = text,
+                ParseMode = ParseMode.Html,
+                DisableNotification = true,
+                ReplyMarkup = new InlineKeyboardMarkup([buttons])
+            }, CancellationToken.None);
+            _logger.LogDebug(text);
+        }
+
+    }
     private async Task HandleCreate(string json)
     {
         if (string.IsNullOrEmpty(json))
@@ -96,7 +150,7 @@ public class StrategyCommandHandler : ICommandHandler
     {
         _ = await _strategyRepository.UpdateStatusAsync(StateStatus.Running);
         var strategy = await _strategyRepository.GetByIdAsync(id.Trim());
-        await _mediator.Publish(new StrategyResumedEvent(strategy));
+        await _mediator.Publish(new StrategyResumedEvent(strategy!));
     }
 
     public async Task HandleCallbackAsync(string action, string parameters)

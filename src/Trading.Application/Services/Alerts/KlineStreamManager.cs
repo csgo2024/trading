@@ -8,7 +8,7 @@ using Trading.Application.Helpers;
 using Trading.Domain.Events;
 using Trading.Exchange.Binance.Wrappers.Clients;
 
-namespace Trading.Application.Services.Alarms;
+namespace Trading.Application.Services.Alerts;
 
 public class KlineUpdateEvent : INotification
 {
@@ -25,8 +25,8 @@ public class KlineUpdateEvent : INotification
 }
 
 public interface IKlineStreamManager : IDisposable,
-    INotificationHandler<AlarmResumedEvent>,
-    INotificationHandler<AlarmCreatedEvent>
+    INotificationHandler<AlertResumedEvent>,
+    INotificationHandler<AlertCreatedEvent>
 {
     Task<bool> SubscribeSymbols(HashSet<string> symbols, HashSet<string> intervals, CancellationToken ct);
     bool NeedsReconnection();
@@ -43,10 +43,9 @@ public class KlineStreamManager : IKlineStreamManager
     private static readonly HashSet<string> _listenedIntervals = [];
     private static readonly HashSet<string> _listenedSymbols = [];
 
-    public KlineStreamManager(
-        ILogger<KlineStreamManager> logger,
-        IMediator mediator,
-        BinanceSocketClientUsdFuturesApiWrapper usdFutureSocketClient)
+    public KlineStreamManager(ILogger<KlineStreamManager> logger,
+                              IMediator mediator,
+                              BinanceSocketClientUsdFuturesApiWrapper usdFutureSocketClient)
     {
         _logger = logger;
         _mediator = mediator;
@@ -189,13 +188,13 @@ public class KlineStreamManager : IKlineStreamManager
         _subscription?.CloseAsync().Wait();
     }
 
-    public async Task Handle(AlarmResumedEvent notification, CancellationToken cancellationToken)
+    public async Task Handle(AlertResumedEvent notification, CancellationToken cancellationToken)
     {
-        await SubscribeSymbols([notification.Alarm.Symbol], [notification.Alarm.Interval], cancellationToken);
+        await SubscribeSymbols([notification.Alert.Symbol], [notification.Alert.Interval], cancellationToken);
     }
 
-    public async Task Handle(AlarmCreatedEvent notification, CancellationToken cancellationToken)
+    public async Task Handle(AlertCreatedEvent notification, CancellationToken cancellationToken)
     {
-        await SubscribeSymbols([notification.Alarm.Symbol], [notification.Alarm.Interval], cancellationToken);
+        await SubscribeSymbols([notification.Alert.Symbol], [notification.Alert.Interval], cancellationToken);
     }
 }

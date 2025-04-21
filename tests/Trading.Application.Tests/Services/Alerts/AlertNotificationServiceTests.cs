@@ -7,32 +7,32 @@ using Telegram.Bot.Requests;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Trading.Application.Helpers;
-using Trading.Application.Services.Alarms;
+using Trading.Application.Services.Alerts;
 using Trading.Application.Services.Common;
 using Trading.Common.Models;
 using Trading.Domain.Entities;
 using Trading.Domain.Events;
 using Trading.Domain.IRepositories;
 
-namespace Trading.Application.Tests.Services.Alarms;
+namespace Trading.Application.Tests.Services.Alerts;
 
-public class AlarmNotificationServiceTests
+public class AlertNotificationServiceTests
 {
-    private readonly Mock<ILogger<AlarmNotificationService>> _loggerMock;
+    private readonly Mock<ILogger<AlertNotificationService>> _loggerMock;
     private readonly Mock<ILogger<JavaScriptEvaluator>> _jsLoggerMock;
-    private readonly Mock<IAlarmRepository> _alarmRepositoryMock;
+    private readonly Mock<IAlertRepository> _alertRepositoryMock;
     private readonly Mock<ITelegramBotClient> _botClientMock;
     private readonly Mock<JavaScriptEvaluator> _jsEvaluatorMock;
     private readonly Mock<IBackgroundTaskManager> _taskManagerMock;
     private readonly CancellationTokenSource _cts;
-    private readonly AlarmNotificationService _service;
+    private readonly AlertNotificationService _service;
 
-    public AlarmNotificationServiceTests()
+    public AlertNotificationServiceTests()
     {
-        _loggerMock = new Mock<ILogger<AlarmNotificationService>>();
+        _loggerMock = new Mock<ILogger<AlertNotificationService>>();
         _jsLoggerMock = new Mock<ILogger<JavaScriptEvaluator>>();
 
-        _alarmRepositoryMock = new Mock<IAlarmRepository>();
+        _alertRepositoryMock = new Mock<IAlertRepository>();
         _botClientMock = new Mock<ITelegramBotClient>();
         _jsEvaluatorMock = new Mock<JavaScriptEvaluator>(_jsLoggerMock.Object);
         _taskManagerMock = new Mock<IBackgroundTaskManager>();
@@ -43,9 +43,9 @@ public class AlarmNotificationServiceTests
         var optionsMock = new Mock<IOptions<TelegramSettings>>();
         optionsMock.Setup(x => x.Value).Returns(settings);
 
-        _service = new AlarmNotificationService(
+        _service = new AlertNotificationService(
             _loggerMock.Object,
-            _alarmRepositoryMock.Object,
+            _alertRepositoryMock.Object,
             _botClientMock.Object,
             _jsEvaluatorMock.Object,
             _taskManagerMock.Object,
@@ -67,19 +67,19 @@ public class AlarmNotificationServiceTests
 
         // Assert
         // Note: Since _lastKLines is private static, we can verify through the behavior
-        // of ProcessAlarm when it's called later
+        // of ProcessAlert when it's called later
     }
 
     [Fact]
-    public async Task Handle_AlarmCreatedEvent_ShouldStartMonitoring()
+    public async Task Handle_AlertCreatedEvent_ShouldStartMonitoring()
     {
         // Arrange
-        var alarm = new Alarm { Id = "test-id", Symbol = "BTCUSDT" };
-        var notification = new AlarmCreatedEvent(alarm);
+        var alert = new Alert { Id = "test-id", Symbol = "BTCUSDT" };
+        var notification = new AlertCreatedEvent(alert);
 
         _taskManagerMock
             .Setup(x => x.StartAsync(
-                It.Is<string>(category => category == TaskCategories.Alarm),
+                It.Is<string>(category => category == TaskCategories.Alert),
                 It.IsAny<string>(),
                 It.IsAny<Func<CancellationToken, Task>>(),
                 It.IsAny<CancellationToken>()))
@@ -91,31 +91,31 @@ public class AlarmNotificationServiceTests
         // Assert
         _taskManagerMock.Verify(
             x => x.StartAsync(
-                It.Is<string>(category => category == TaskCategories.Alarm),
-                alarm.Id,
+                It.Is<string>(category => category == TaskCategories.Alert),
+                alert.Id,
                 It.IsAny<Func<CancellationToken, Task>>(),
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
     [Fact]
-    public async Task Handle_AlarmResumedEvent_ShouldStartMonitoring()
+    public async Task Handle_AlertResumedEvent_ShouldStartMonitoring()
     {
         // Arrange
-        var alarm = new Alarm
+        var alert = new Alert
         {
             Id = "test-id",
             Symbol = "BTCUSDT",
             Interval = "1h",
             Expression = "close > open",
-            IsActive = true
+            Status = StateStatus.Running,
         };
-        var notification = new AlarmResumedEvent(alarm);
+        var notification = new AlertResumedEvent(alert);
 
         _taskManagerMock
             .Setup(x => x.StartAsync(
-                TaskCategories.Alarm,
-                alarm.Id,
+                TaskCategories.Alert,
+                alert.Id,
                 It.IsAny<Func<CancellationToken, Task>>(),
                 It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
@@ -127,22 +127,22 @@ public class AlarmNotificationServiceTests
         // Verify the task was started
         _taskManagerMock.Verify(
             x => x.StartAsync(
-                TaskCategories.Alarm,
-                alarm.Id,
+                TaskCategories.Alert,
+                alert.Id,
                 It.IsAny<Func<CancellationToken, Task>>(),
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }
     [Fact]
-    public async Task Handle_AlarmPausedEvent_ShouldStopMonitoring()
+    public async Task Handle_AlertPausedEvent_ShouldStopMonitoring()
     {
         // Arrange
-        var alarmId = "test-id";
-        var notification = new AlarmPausedEvent(alarmId);
+        var alertId = "test-id";
+        var notification = new AlertPausedEvent(alertId);
 
         _taskManagerMock
             .Setup(x => x.StopAsync(
-                It.Is<string>(category => category == TaskCategories.Alarm),
+                It.Is<string>(category => category == TaskCategories.Alert),
                 It.IsAny<string>()))
             .Returns(Task.CompletedTask);
 
@@ -150,19 +150,19 @@ public class AlarmNotificationServiceTests
         await _service.Handle(notification, _cts.Token);
 
         // Assert
-        _taskManagerMock.Verify(x => x.StopAsync(TaskCategories.Alarm, alarmId), Times.Once);
+        _taskManagerMock.Verify(x => x.StopAsync(TaskCategories.Alert, alertId), Times.Once);
     }
 
     [Fact]
-    public async Task Handle_AlarmDeletedEvent_ShouldStopMonitoring()
+    public async Task Handle_AlertDeletedEvent_ShouldStopMonitoring()
     {
         // Arrange
-        var alarmId = "test-id";
-        var notification = new AlarmDeletedEvent(alarmId);
+        var alertId = "test-id";
+        var notification = new AlertDeletedEvent(alertId);
 
         _taskManagerMock
             .Setup(x => x.StopAsync(
-                It.Is<string>(category => category == TaskCategories.Alarm),
+                It.Is<string>(category => category == TaskCategories.Alert),
                 It.IsAny<string>()))
             .Returns(Task.CompletedTask);
 
@@ -170,14 +170,14 @@ public class AlarmNotificationServiceTests
         await _service.Handle(notification, _cts.Token);
 
         // Assert
-        _taskManagerMock.Verify(x => x.StopAsync(TaskCategories.Alarm, alarmId), Times.Once);
+        _taskManagerMock.Verify(x => x.StopAsync(TaskCategories.Alert, alertId), Times.Once);
     }
 
     [Fact]
-    public async Task ProcessAlarm_WhenExpressionMet_ShouldSendNotification()
+    public async Task ProcessAlert_WhenExpressionMet_ShouldSendNotification()
     {
         // Arrange
-        var alarm = new Alarm
+        var alert = new Alert
         {
             Id = "test-id",
             Symbol = "BTCUSDT",
@@ -192,7 +192,7 @@ public class AlarmNotificationServiceTests
             k.HighPrice == 42000m &&
             k.LowPrice == 39000m);
 
-        await _service.Handle(new KlineUpdateEvent(alarm.Symbol, Binance.Net.Enums.KlineInterval.OneHour, kline), CancellationToken.None);
+        await _service.Handle(new KlineUpdateEvent(alert.Symbol, Binance.Net.Enums.KlineInterval.OneHour, kline), CancellationToken.None);
 
         _jsEvaluatorMock
             .Setup(x => x.EvaluateExpression(
@@ -207,13 +207,13 @@ public class AlarmNotificationServiceTests
             .Setup(x => x.SendRequest(
                 It.Is<SendMessageRequest>(r =>
                     r.ChatId == "456456481" &&
-                    r.Text.Contains(alarm.Symbol) &&
+                    r.Text.Contains(alert.Symbol) &&
                     r.ParseMode == ParseMode.Html),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Message());
 
         // Act & Assert
-        var task = Task.Run(() => _service.ProcessAlarm(alarm, _cts.Token), _cts.Token);
+        var task = Task.Run(() => _service.ProcessAlert(alert, _cts.Token), _cts.Token);
 
         // Give some time for the processing
         await Task.Delay(1000);
@@ -229,37 +229,37 @@ public class AlarmNotificationServiceTests
             x => x.SendRequest(
                 It.Is<SendMessageRequest>(r =>
                     r.ChatId == "456456481" &&
-                    r.Text.Contains(alarm.Symbol) &&
+                    r.Text.Contains(alert.Symbol) &&
                     r.ParseMode == ParseMode.Html),
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
     [Fact]
-    public async Task InitWithAlarms_ShouldInitializeAllAlarms()
+    public async Task InitWithAlerts_ShouldInitializeAllAlerts()
     {
         // Arrange
-        var alarms = new[]
+        var alerts = new[]
         {
-            new Alarm { Id = "test-1", Symbol = "BTCUSDT" },
-            new Alarm { Id = "test-2", Symbol = "ETHUSDT" }
+            new Alert { Id = "test-1", Symbol = "BTCUSDT" },
+            new Alert { Id = "test-2", Symbol = "ETHUSDT" }
         };
 
         _taskManagerMock
             .Setup(x => x.StartAsync(
-                It.Is<string>(category => category == TaskCategories.Alarm),
+                It.Is<string>(category => category == TaskCategories.Alert),
                 It.IsAny<string>(),
                 It.IsAny<Func<CancellationToken, Task>>(),
                 It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
         // Act
-        await _service.InitWithAlarms(alarms, _cts.Token);
+        await _service.InitWithAlerts(alerts, _cts.Token);
 
         // Assert
         _taskManagerMock.Verify(
             x => x.StartAsync(
-                It.Is<string>(category => category == TaskCategories.Alarm),
+                It.Is<string>(category => category == TaskCategories.Alert),
                 It.IsAny<string>(),
                 It.IsAny<Func<CancellationToken, Task>>(),
                 It.IsAny<CancellationToken>()),
@@ -267,10 +267,10 @@ public class AlarmNotificationServiceTests
     }
 
     [Fact]
-    public async Task ProcessAlarm_WhenNoKlineData_ShouldLogWarning()
+    public async Task ProcessAlert_WhenNoKlineData_ShouldLogWarning()
     {
         // Arrange
-        var alarm = new Alarm
+        var alert = new Alert
         {
             Id = "test-id",
             Symbol = "BTCUSDT",
@@ -278,7 +278,7 @@ public class AlarmNotificationServiceTests
         };
 
         // Act
-        var task = Task.Run(() => _service.ProcessAlarm(alarm, _cts.Token), _cts.Token);
+        var task = Task.Run(() => _service.ProcessAlert(alert, _cts.Token), _cts.Token);
 
         await Task.Delay(1000, _cts.Token);
         await _cts.CancelAsync();

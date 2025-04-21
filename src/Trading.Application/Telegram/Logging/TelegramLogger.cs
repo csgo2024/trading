@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 using Telegram.Bot;
 using Telegram.Bot.Requests;
 using Telegram.Bot.Types.Enums;
+using Trading.Common.Extensions;
 using Trading.Common.Models;
 
 namespace Trading.Application.Telegram.Logging;
@@ -52,19 +53,21 @@ public class TelegramLogger : ILogger
         try
         {
             var message = new StringBuilder();
-            message.AppendLine($"{GetEmoji(logLevel)} [{logLevel.ToString()}]");
-            message.AppendLine($"⏰ {DateTime.UtcNow.AddHours(8)}");
-
+            message.AppendLine($"<b>{GetEmoji(logLevel)} {logLevel.ToString()}</b> ({DateTime.UtcNow.AddHours(8):yyyy-MM-dd HH:mm:ss})");
             if (_loggerOptions.Value.IncludeCategory)
             {
                 message.AppendLine($"📁 {_categoryName}");
             }
-            message.AppendLine($"{formatter(state, exception)}");
+            message.AppendLine($"<pre>{formatter(state, exception).ToTelegramSafeString()}");
 
             if (exception != null)
             {
-                message.AppendLine($"❌ {exception.Message}");
-                message.AppendLine($"🔍 {exception.StackTrace}");
+                message.AppendLine($"{exception.Message.ToTelegramSafeString()}</pre>");
+                message.AppendLine($"🔍 {exception.StackTrace?.ToTelegramSafeString()}");
+            }
+            else
+            {
+                message.AppendLine("</pre>");
             }
 
             await _botClient.SendRequest(new SendMessageRequest
@@ -75,9 +78,21 @@ public class TelegramLogger : ILogger
             }
             );
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            // Fallback logging if needed
+            try
+            {
+                await _botClient.SendRequest(new SendMessageRequest
+                {
+                    ChatId = _chatId,
+                    Text = ex.Message,
+                    ParseMode = ParseMode.Html,
+                });
+            }
+            catch
+            {
+                // fallback
+            }
         }
     }
     private static string GetEmoji(LogLevel level) => level switch

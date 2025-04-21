@@ -6,12 +6,12 @@ using CryptoExchange.Net.Objects.Sockets;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Trading.Application.Services.Alarms;
+using Trading.Application.Services.Alerts;
 using Trading.Domain.Entities;
 using Trading.Domain.Events;
 using Trading.Exchange.Binance.Wrappers.Clients;
 
-namespace Trading.Application.Tests.Services.Alarms;
+namespace Trading.Application.Tests.Services.Alerts;
 
 public class KlineStreamManagerTests
 {
@@ -122,16 +122,16 @@ public class KlineStreamManagerTests
                 It.IsAny<EventId>(),
                 It.Is<It.IsAnyType>((v, t) => true),
                 It.IsAny<Exception>(),
-                It.Is<Func<It.IsAnyType, Exception, string>>((v, t) => true)),
+                It.Is<Func<It.IsAnyType, Exception?, string>>((v, t) => true)),
             Times.Once);
     }
 
     [Fact]
-    public async Task Handle_AlarmCreatedEvent_ShouldUpdateSubscriptions()
+    public async Task Handle_AlertCreatedEvent_ShouldUpdateSubscriptions()
     {
         // Arrange
-        var alarm = new Alarm { Symbol = "ETHUSDT", Interval = "1h" };
-        var notification = new AlarmCreatedEvent(alarm);
+        var alert = new Alert { Symbol = "ETHUSDT", Interval = "1h" };
+        var notification = new AlertCreatedEvent(alert);
 
         _mockExchangeData
             .Setup(x => x.SubscribeToKlineUpdatesAsync(
@@ -155,11 +155,11 @@ public class KlineStreamManagerTests
     }
 
     [Fact]
-    public async Task Handle_AlarmResumedEvent_ShouldUpdateSubscriptions()
+    public async Task Handle_AlertResumedEvent_ShouldUpdateSubscriptions()
     {
         // Arrange
-        var alarm = new Alarm { Symbol = "ETHUSDT", Interval = "1h" };
-        var notification = new AlarmResumedEvent(alarm);
+        var alert = new Alert { Symbol = "ETHUSDT", Interval = "1h" };
+        var notification = new AlertResumedEvent(alert);
 
         _mockExchangeData
             .Setup(x => x.SubscribeToKlineUpdatesAsync(

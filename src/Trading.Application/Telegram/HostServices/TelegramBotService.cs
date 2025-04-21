@@ -34,7 +34,7 @@ public class TelegramBotService : BackgroundService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "<pre>Failed to start bot service</pre>");
+            _logger.LogError(ex, "Failed to start bot service");
         }
 
         await Task.Delay(-1, cancellationToken);
@@ -60,13 +60,13 @@ public class TelegramBotService : BackgroundService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "<pre>Error handling update {UpdateId}</pre>", update.Id);
+            _logger.LogError(ex, "Error handling update {UpdateId}", update.Id);
         }
     }
 
     private Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
     {
-        // _logger.LogError(exception, "<pre>Telegram Polling Error</pre>");
+        // _logger.LogError(exception, "Telegram Polling Error");
         return Task.CompletedTask;
     }
 }

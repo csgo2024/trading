@@ -10,29 +10,29 @@ using Trading.Domain.IRepositories;
 
 namespace Trading.Application.Tests.Commands;
 
-public class CreateAlarmCommandHandlerTests
+public class CreateAlertCommandHandlerTests
 {
-    private readonly Mock<IAlarmRepository> _alarmRepositoryMock;
+    private readonly Mock<IAlertRepository> _alertRepositoryMock;
     private readonly Mock<IMediator> _mediatorMock;
     private readonly Mock<JavaScriptEvaluator> _jsEvaluatorMock;
-    private readonly CreateAlarmCommandHandler _handler;
+    private readonly CreateAlertCommandHandler _handler;
 
-    public CreateAlarmCommandHandlerTests()
+    public CreateAlertCommandHandlerTests()
     {
-        _alarmRepositoryMock = new Mock<IAlarmRepository>();
+        _alertRepositoryMock = new Mock<IAlertRepository>();
         _mediatorMock = new Mock<IMediator>();
         _jsEvaluatorMock = new Mock<JavaScriptEvaluator>(Mock.Of<ILogger<JavaScriptEvaluator>>());
-        _handler = new CreateAlarmCommandHandler(
-            _alarmRepositoryMock.Object,
+        _handler = new CreateAlertCommandHandler(
+            _alertRepositoryMock.Object,
             _jsEvaluatorMock.Object,
             _mediatorMock.Object);
     }
 
     [Fact]
-    public async Task Handle_WithValidCommand_ShouldCreateAlarmAndPublishEvent()
+    public async Task Handle_WithValidCommand_ShouldCreateAlertAndPublishEvent()
     {
         // Arrange
-        var command = new CreateAlarmCommand
+        var command = new CreateAlertCommand
         {
             Symbol = "btcusdt",
             Interval = "4h",
@@ -43,36 +43,36 @@ public class CreateAlarmCommandHandlerTests
             .Setup(x => x.ValidateExpression(command.Expression, out It.Ref<string>.IsAny))
             .Returns(true);
 
-        Alarm? capturedAlarm = null;
-        _alarmRepositoryMock
-            .Setup(x => x.AddAsync(It.IsAny<Alarm>(), It.IsAny<CancellationToken>()))
-            .Callback<Alarm, CancellationToken>((alarm, _) => capturedAlarm = alarm)
-            .ReturnsAsync((Alarm a, CancellationToken _) => a);
+        Alert? capturedAlert = null;
+        _alertRepositoryMock
+            .Setup(x => x.AddAsync(It.IsAny<Alert>(), It.IsAny<CancellationToken>()))
+            .Callback<Alert, CancellationToken>((alert, _) => capturedAlert = alert)
+            .ReturnsAsync((Alert a, CancellationToken _) => a);
 
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
         Assert.NotNull(result);
-        Assert.NotNull(capturedAlarm);
+        Assert.NotNull(capturedAlert);
 
         // Verify entity properties
         Assert.Equal(command.Symbol.ToUpper(), result.Symbol);
         Assert.Equal(command.Interval, result.Interval);
         Assert.Equal(command.Expression, result.Expression);
-        Assert.True(result.IsActive);
+        Assert.True(result.Status == StateStatus.Running);
         Assert.True(result.LastNotification <= DateTime.UtcNow);
         Assert.True(result.LastNotification > DateTime.UtcNow.AddMinutes(-1));
 
         // Verify repository call
-        _alarmRepositoryMock.Verify(
-            x => x.AddAsync(It.IsAny<Alarm>(), It.IsAny<CancellationToken>()),
+        _alertRepositoryMock.Verify(
+            x => x.AddAsync(It.IsAny<Alert>(), It.IsAny<CancellationToken>()),
             Times.Once);
 
         // Verify event publication
         _mediatorMock.Verify(
             x => x.Publish(
-                It.Is<AlarmCreatedEvent>(e => e.Alarm == result),
+                It.Is<AlertCreatedEvent>(e => e.Alert == result),
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }
@@ -86,7 +86,7 @@ public class CreateAlarmCommandHandlerTests
         string symbol, string interval, string expression, string expectedError)
     {
         // Arrange
-        var command = new CreateAlarmCommand
+        var command = new CreateAlertCommand
         {
             Symbol = symbol,
             Interval = interval,
@@ -100,11 +100,11 @@ public class CreateAlarmCommandHandlerTests
         Assert.Contains(expectedError, exception.Message);
 
         // Verify no repository calls or events
-        _alarmRepositoryMock.Verify(
-            x => x.AddAsync(It.IsAny<Alarm>(), It.IsAny<CancellationToken>()),
+        _alertRepositoryMock.Verify(
+            x => x.AddAsync(It.IsAny<Alert>(), It.IsAny<CancellationToken>()),
             Times.Never);
         _mediatorMock.Verify(
-            x => x.Publish(It.IsAny<AlarmCreatedEvent>(), It.IsAny<CancellationToken>()),
+            x => x.Publish(It.IsAny<AlertCreatedEvent>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -112,7 +112,7 @@ public class CreateAlarmCommandHandlerTests
     public async Task Handle_WithInvalidJavaScriptExpression_ShouldThrowArgumentException()
     {
         // Arrange
-        var command = new CreateAlarmCommand
+        var command = new CreateAlertCommand
         {
             Symbol = "BTCUSDT",
             Interval = "4h",
@@ -133,11 +133,11 @@ public class CreateAlarmCommandHandlerTests
         Assert.Contains(errorMessage, exception.Message);
 
         // Verify no repository calls or events
-        _alarmRepositoryMock.Verify(
-            x => x.AddAsync(It.IsAny<Alarm>(), It.IsAny<CancellationToken>()),
+        _alertRepositoryMock.Verify(
+            x => x.AddAsync(It.IsAny<Alert>(), It.IsAny<CancellationToken>()),
             Times.Never);
         _mediatorMock.Verify(
-            x => x.Publish(It.IsAny<AlarmCreatedEvent>(), It.IsAny<CancellationToken>()),
+            x => x.Publish(It.IsAny<AlertCreatedEvent>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -145,7 +145,7 @@ public class CreateAlarmCommandHandlerTests
     public async Task Handle_WhenRepositoryFails_ShouldNotPublishEvent()
     {
         // Arrange
-        var command = new CreateAlarmCommand
+        var command = new CreateAlertCommand
         {
             Symbol = "BTCUSDT",
             Interval = "4h",
@@ -156,8 +156,8 @@ public class CreateAlarmCommandHandlerTests
             .Setup(x => x.ValidateExpression(command.Expression, out It.Ref<string>.IsAny))
             .Returns(true);
 
-        _alarmRepositoryMock
-            .Setup(x => x.AddAsync(It.IsAny<Alarm>(), It.IsAny<CancellationToken>()))
+        _alertRepositoryMock
+            .Setup(x => x.AddAsync(It.IsAny<Alert>(), It.IsAny<CancellationToken>()))
             .Throws<InvalidOperationException>();
 
         // Act & Assert
@@ -166,7 +166,7 @@ public class CreateAlarmCommandHandlerTests
 
         // Verify no events were published
         _mediatorMock.Verify(
-            x => x.Publish(It.IsAny<AlarmCreatedEvent>(), It.IsAny<CancellationToken>()),
+            x => x.Publish(It.IsAny<AlertCreatedEvent>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 }

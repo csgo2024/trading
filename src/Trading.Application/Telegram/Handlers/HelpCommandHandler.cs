@@ -17,9 +17,8 @@ public class HelpCommandHandler : ICommandHandler
 
 *基础命令:*
 /help \- 显示此帮助信息
-/status \- 查看所有策略状态
 /strategy \- [create\|delete\|pause\|resume] 策略管理
-/alarm \- [create\|delete\|empty\|pause\|resume] 警报相关
+/alert \- [create\|delete\|empty\|pause\|resume] 警报相关
 
 1\. *策略管理:*
 
@@ -32,14 +31,14 @@ public class HelpCommandHandler : ICommandHandler
 
 2\. *警报管理:*
 创建警报\(支持间隔: 5m,15m,1h,4h,1d\):
-`/alarm create {""Symbol"":""BTCUSDT"",""Interval"":""4h"",""Expression"":""Math\.abs\(\(close \- open\) / open\) \>\= 0\.02""}`
-`/alarm create {""Symbol"":""BTCUSDT"",""Interval"":""4h"",""Expression"":""close \> 20000""}`
+`/alert create {""Symbol"":""BTCUSDT"",""Interval"":""4h"",""Expression"":""Math\.abs\(\(close \- open\) / open\) \>\= 0\.02""}`
+`/alert create {""Symbol"":""BTCUSDT"",""Interval"":""4h"",""Expression"":""close \> 20000""}`
 
 删除警报:
-`/alarm delete <Id>`
+`/alert delete <Id>`
 
 清空警报:
-`/alarm empty`";
+`/alert empty`";
 
     public HelpCommandHandler(ILogger<HelpCommandHandler> logger,
         ITelegramBotClient botClient,

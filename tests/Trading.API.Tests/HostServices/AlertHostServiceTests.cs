@@ -4,7 +4,7 @@ using Moq;
 using Telegram.Bot;
 using Trading.API.HostServices;
 using Trading.Application.Helpers;
-using Trading.Application.Services.Alarms;
+using Trading.Application.Services.Alerts;
 using Trading.Application.Services.Common;
 using Trading.Common.Models;
 using Trading.Domain.Entities;
@@ -12,59 +12,59 @@ using Trading.Domain.IRepositories;
 
 namespace Trading.API.Tests.HostServices;
 
-public class AlarmHostServiceTests : IDisposable
+public class AlertHostServiceTests : IDisposable
 {
-    private readonly Mock<ILogger<AlarmHostService>> _loggerMock;
+    private readonly Mock<ILogger<AlertHostService>> _loggerMock;
     private readonly Mock<IKlineStreamManager> _klineStreamManagerMock;
-    private readonly Mock<IAlarmRepository> _alarmRepositoryMock;
+    private readonly Mock<IAlertRepository> _alertRepositoryMock;
     private readonly Mock<ITelegramBotClient> _botClientMock;
     private readonly Mock<IBackgroundTaskManager> _backgroundTaskManagerMock;
     private readonly CancellationTokenSource _cts;
-    private readonly AlarmNotificationService _alarmNotificationService;
-    private readonly TestAlarmHostService _service;
+    private readonly AlertNotificationService _alertNotificationService;
+    private readonly TestAlertHostService _service;
 
-    public AlarmHostServiceTests()
+    public AlertHostServiceTests()
     {
-        _loggerMock = new Mock<ILogger<AlarmHostService>>();
+        _loggerMock = new Mock<ILogger<AlertHostService>>();
         _klineStreamManagerMock = new Mock<IKlineStreamManager>();
-        _alarmRepositoryMock = new Mock<IAlarmRepository>();
+        _alertRepositoryMock = new Mock<IAlertRepository>();
         _botClientMock = new Mock<ITelegramBotClient>();
         _backgroundTaskManagerMock = new Mock<IBackgroundTaskManager>();
         _cts = new CancellationTokenSource();
 
-        // 创建AlarmNotificationService的依赖
-        var notificationLoggerMock = new Mock<ILogger<AlarmNotificationService>>();
+        // 创建AlertNotificationService的依赖
+        var notificationLoggerMock = new Mock<ILogger<AlertNotificationService>>();
         var jsEvaluatorLoggerMock = new Mock<ILogger<JavaScriptEvaluator>>();
         var telegramSettings = Options.Create(new TelegramSettings { ChatId = "test-chat-id" });
         var jsEvaluator = new JavaScriptEvaluator(jsEvaluatorLoggerMock.Object);
 
-        _alarmNotificationService = new AlarmNotificationService(
+        _alertNotificationService = new AlertNotificationService(
             notificationLoggerMock.Object,
-            _alarmRepositoryMock.Object,
+            _alertRepositoryMock.Object,
             _botClientMock.Object,
             jsEvaluator,
             _backgroundTaskManagerMock.Object,
             telegramSettings);
 
-        _service = new TestAlarmHostService(
+        _service = new TestAlertHostService(
             _loggerMock.Object,
             _klineStreamManagerMock.Object,
-            _alarmNotificationService,
-            _alarmRepositoryMock.Object);
+            _alertNotificationService,
+            _alertRepositoryMock.Object);
 
         SetupDefaults();
     }
 
-    private sealed class TestAlarmHostService : AlarmHostService
+    private sealed class TestAlertHostService : AlertHostService
     {
         private int _delayCallCount;
 
-        public TestAlarmHostService(
-            ILogger<AlarmHostService> logger,
+        public TestAlertHostService(
+            ILogger<AlertHostService> logger,
             IKlineStreamManager klineStreamManager,
-            AlarmNotificationService alarmNotificationService,
-            IAlarmRepository alarmRepository)
-            : base(logger, klineStreamManager, alarmNotificationService, alarmRepository)
+            AlertNotificationService alertNotificationService,
+            IAlertRepository alertRepository)
+            : base(logger, klineStreamManager, alertNotificationService, alertRepository)
         {
         }
 
@@ -92,18 +92,18 @@ public class AlarmHostServiceTests : IDisposable
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        _alarmRepositoryMock
-            .Setup(x => x.GetActiveAlarmsAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<Alarm>());
+        _alertRepositoryMock
+            .Setup(x => x.GetActiveAlertsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Alert>());
     }
 
     [Fact]
-    public async Task ExecuteAsync_WhenNoActiveAlarms_ShouldNotSubscribe()
+    public async Task ExecuteAsync_WhenNoActiveAlerts_ShouldNotSubscribe()
     {
         // Arrange
-        _alarmRepositoryMock
-            .Setup(x => x.GetActiveAlarmsAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<Alarm>());
+        _alertRepositoryMock
+            .Setup(x => x.GetActiveAlertsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Alert>());
 
         // Act
         try
@@ -125,18 +125,18 @@ public class AlarmHostServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task ExecuteAsync_WithActiveAlarms_ShouldSubscribe()
+    public async Task ExecuteAsync_WithActiveAlerts_ShouldSubscribe()
     {
         // Arrange
-        var alarms = new List<Alarm>
+        var alerts = new List<Alert>
         {
             new() { Symbol = "BTCUSDT", Interval = "5m" },
             new() { Symbol = "ETHUSDT", Interval = "15m" }
         };
 
-        _alarmRepositoryMock
-            .Setup(x => x.GetActiveAlarmsAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(alarms);
+        _alertRepositoryMock
+            .Setup(x => x.GetActiveAlertsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(alerts);
 
         // Act
         try
@@ -161,14 +161,14 @@ public class AlarmHostServiceTests : IDisposable
     public async Task ExecuteAsync_WhenNeedsReconnection_ShouldResubscribe()
     {
         // Arrange
-        var alarms = new List<Alarm>
+        var alerts = new List<Alert>
         {
             new() { Symbol = "BTCUSDT", Interval = "5m" }
         };
 
-        _alarmRepositoryMock
-            .Setup(x => x.GetActiveAlarmsAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(alarms);
+        _alertRepositoryMock
+            .Setup(x => x.GetActiveAlertsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(alerts);
 
         _klineStreamManagerMock
             .Setup(x => x.NeedsReconnection())
@@ -199,8 +199,8 @@ public class AlarmHostServiceTests : IDisposable
         // Arrange
         var expectedException = new InvalidOperationException("Test exception");
 
-        _alarmRepositoryMock
-            .Setup(x => x.GetActiveAlarmsAsync(It.IsAny<CancellationToken>()))
+        _alertRepositoryMock
+            .Setup(x => x.GetActiveAlertsAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(expectedException);
 
         _klineStreamManagerMock

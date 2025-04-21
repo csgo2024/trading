@@ -8,7 +8,7 @@ using Microsoft.Extensions.Hosting;
 using MongoDB.Driver;
 using Testcontainers.MongoDb;
 using Trading.API.HostServices;
-using Trading.Application.Services.Alarms;
+using Trading.Application.Services.Alerts;
 using Trading.Application.Services.Common;
 using Trading.Application.Services.Trading;
 
@@ -57,7 +57,7 @@ public class TradingApiFixture : WebApplicationFactory<Program>, IAsyncLifetime
             ]);
         });
 
-        builder.ConfigureServices(async services =>
+        builder.ConfigureServices(services =>
         {
             // Remove the app's MongoDB registration.
             var descriptor = services.SingleOrDefault(
@@ -79,7 +79,7 @@ public class TradingApiFixture : WebApplicationFactory<Program>, IAsyncLifetime
             var hostedServices = new[]
             {
                 typeof(TradingHostService),
-                typeof(AlarmHostService)
+                typeof(AlertHostService)
             };
             // Remove all hosted services that are not needed for testing.
             foreach (var hostedService in hostedServices)
@@ -104,11 +104,11 @@ public class TradingApiFixture : WebApplicationFactory<Program>, IAsyncLifetime
             {
                 services.Remove(descriptor);
             }
-            // Remove AlarmNotificationService from MediatR notification handlers
+            // Remove AlertNotificationService from MediatR notification handlers
             descriptor = services.FirstOrDefault(d =>
                 d.ServiceType.IsGenericType &&
                 d.ServiceType.GetGenericTypeDefinition() == typeof(INotificationHandler<>) &&
-                d.ImplementationType == typeof(AlarmNotificationService));
+                d.ImplementationType == typeof(AlertNotificationService));
 
             if (descriptor != null)
             {

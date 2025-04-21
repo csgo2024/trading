@@ -7,9 +7,6 @@
 #### `/help`
 显示帮助信息
 
-#### `/status`
-查看所有策略状态
-
 #### `/strategy`
 策略管理命令，支持以下操作：
 - create：创建策略
@@ -36,7 +33,7 @@
 /strategy delete 12345
 ```
 
-#### `/alarm`
+#### `/alert`
 警报管理命令，支持以下操作：
 - create：创建警报
 - delete：删除警报
@@ -48,7 +45,7 @@
 
 1. 创建警报（支持间隔: 5m,15m,1h,4h,1d）：
 ```json
-/alarm create {
+/alert create {
     "Symbol": "BTCUSDT",
     "Interval": "4h",
     "Expression": "Math.abs((close - open) / open) >= 0.02"
@@ -57,12 +54,12 @@
 
 2. 删除警报：
 ```
-/alarm delete 12345
+/alert delete 12345
 ```
 
 3. 清空所有警报：
 ```
-/alarm empty
+/alert empty
 ```
 
 ## 部署说明

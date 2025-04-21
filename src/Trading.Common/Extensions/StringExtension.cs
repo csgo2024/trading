@@ -27,4 +27,9 @@ public static class StringExtension
         return sb.ToString();
     }
 
+    public static string ToTelegramSafeString(this string str)
+    {
+        return str.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;");
+    }
+
 }

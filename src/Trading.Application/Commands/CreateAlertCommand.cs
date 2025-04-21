@@ -4,7 +4,7 @@ using Trading.Domain.Entities;
 
 namespace Trading.Application.Commands;
 
-public class CreateAlarmCommand : IRequest<Alarm>
+public class CreateAlertCommand : IRequest<Alert>
 {
     [Required(ErrorMessage = "Symbol cannot be empty")]
     public string Symbol { get; set; } = "";

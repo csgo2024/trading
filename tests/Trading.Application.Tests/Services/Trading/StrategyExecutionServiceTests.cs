@@ -193,7 +193,7 @@ public class StrategyExecutionServiceTests
 
         _accountProcessorFactoryMock
             .Setup(x => x.GetAccountProcessor(It.IsAny<AccountType>()))
-            .Returns((IAccountProcessor)null);
+            .Returns(null as IAccountProcessor);
 
         // Act
         await _service.ExecuteAsync(_cts.Token);

@@ -173,8 +173,8 @@ public class BottomBuyExecutor : IExecutor
         {
             _logger.LogError("""
                             [{AccountType}-{Symbol}] Failed to place order.
-                            StrategyId: <pre>{StrategyId}</pre>,
-                            Error: {ErrorMessage} 
+                            StrategyId: {StrategyId}
+                            Error: {ErrorMessage}
                             TargetPrice:{Price}, Quantity: {Quantity}.
                             """, strategy.AccountType, strategy.Symbol, strategy.Id, orderResult.Error?.Message, price, quantity);
         }

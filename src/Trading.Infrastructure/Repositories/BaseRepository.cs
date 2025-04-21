@@ -17,7 +17,7 @@ public class BaseRepository<T> : IRepository<T> where T : BaseEntity
         _collection = context.GetCollection<T>();
     }
 
-    public async Task<T> GetByIdAsync(string id, CancellationToken cancellationToken = default)
+    public async Task<T?> GetByIdAsync(string id, CancellationToken cancellationToken = default)
     {
         return await _collection.Find(Builders<T>.Filter.Eq("_id", id)).FirstOrDefaultAsync(cancellationToken);
     }

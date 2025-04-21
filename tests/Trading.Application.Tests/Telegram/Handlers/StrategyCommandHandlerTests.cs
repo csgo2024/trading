@@ -1,9 +1,15 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 using Newtonsoft.Json;
+using Telegram.Bot;
+using Telegram.Bot.Requests;
+using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
 using Trading.Application.Commands;
 using Trading.Application.Telegram.Handlers;
+using Trading.Common.Models;
 using Trading.Domain.Entities;
 using Trading.Domain.Events;
 using Trading.Domain.IRepositories;
@@ -15,17 +21,26 @@ public class StrategyCommandHandlerTests
     private readonly Mock<IMediator> _mediatorMock;
     private readonly Mock<ILogger<StrategyCommandHandler>> _loggerMock;
     private readonly Mock<IStrategyRepository> _strategyRepositoryMock;
+    private readonly Mock<ITelegramBotClient> _botClientMock;
     private readonly StrategyCommandHandler _handler;
+    private readonly string _testChatId = "456456481";
 
     public StrategyCommandHandlerTests()
     {
         _mediatorMock = new Mock<IMediator>();
         _loggerMock = new Mock<ILogger<StrategyCommandHandler>>();
         _strategyRepositoryMock = new Mock<IStrategyRepository>();
+        _botClientMock = new Mock<ITelegramBotClient>();
+        var settings = new TelegramSettings { ChatId = _testChatId };
+        var optionsMock = new Mock<IOptions<TelegramSettings>>();
+        optionsMock.Setup(x => x.Value).Returns(settings);
+
         _handler = new StrategyCommandHandler(
             _mediatorMock.Object,
             _loggerMock.Object,
-            _strategyRepositoryMock.Object);
+            _strategyRepositoryMock.Object,
+            _botClientMock.Object,
+            optionsMock.Object);
     }
 
     [Fact]
@@ -34,14 +49,34 @@ public class StrategyCommandHandlerTests
         Assert.Equal("/strategy", StrategyCommandHandler.Command);
     }
 
-    [Fact]
-    public async Task HandleAsync_WithEmptyParameters_ShouldLogError()
+    [Theory]
+    [InlineData(StateStatus.Running, "运行中")]
+    [InlineData(StateStatus.Paused, "已暂停")]
+    public async Task HandleAsync_WithEmptyParameters_ShouldReturnStrategyInformation(StateStatus status, string statusText)
     {
+        // arrange
+        _strategyRepositoryMock.Setup(x => x.GetAllStrategies())
+            .ReturnsAsync([new Strategy()
+                {
+                    Symbol = "BTCUSDT",
+                    AccountType = AccountType.Spot,
+                    Status = status,
+                }
+            ]);
+        _botClientMock
+            .Setup(x => x.SendRequest(It.IsAny<SendMessageRequest>(), default))
+            .ReturnsAsync(new Message());
         // Act
         await _handler.HandleAsync("");
 
         // Assert
-        VerifyLogError("Invalid command format. Use: /strategy [create|delete|pause|resume] [parameters]");
+        _botClientMock.Verify(x => x.SendRequest(
+            It.Is<SendMessageRequest>(r =>
+                r.ChatId == _testChatId &&
+                r.Text.Contains(statusText) &&
+                r.ParseMode == ParseMode.Html),
+            default),
+            Times.Once);
     }
 
     [Fact]

@@ -166,6 +166,7 @@ public class StrategyRepositoryTests : IClassFixture<MongoDbFixture>
         // Assert
         Assert.True(result);
         var updatedStrategy = await _repository.GetByIdAsync(addedStrategy.Id);
+        Assert.NotNull(updatedStrategy);
         Assert.Equal(StateStatus.Paused, updatedStrategy.Status);
     }
 

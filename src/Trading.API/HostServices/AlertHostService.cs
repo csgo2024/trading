@@ -1,25 +1,25 @@
-using Trading.Application.Services.Alarms;
+using Trading.Application.Services.Alerts;
 using Trading.Domain.IRepositories;
 
 namespace Trading.API.HostServices;
 
-public class AlarmHostService : BackgroundService
+public class AlertHostService : BackgroundService
 {
-    private readonly AlarmNotificationService _sendAlarmService;
-    private readonly IAlarmRepository _alarmRepository;
-    private readonly ILogger<AlarmHostService> _logger;
+    private readonly AlertNotificationService _sendAlertService;
+    private readonly IAlertRepository _alertRepository;
+    private readonly ILogger<AlertHostService> _logger;
     private readonly IKlineStreamManager _klineStreamManager;
 
-    public AlarmHostService(
-        ILogger<AlarmHostService> logger,
+    public AlertHostService(
+        ILogger<AlertHostService> logger,
         IKlineStreamManager klineStreamManager,
-        AlarmNotificationService sendAlarmService,
-        IAlarmRepository alarmRepository)
+        AlertNotificationService sendAlertService,
+        IAlertRepository alertRepository)
     {
         _logger = logger;
         _klineStreamManager = klineStreamManager;
-        _sendAlarmService = sendAlarmService;
-        _alarmRepository = alarmRepository;
+        _sendAlertService = sendAlertService;
+        _alertRepository = alertRepository;
     }
 
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
@@ -30,10 +30,10 @@ public class AlarmHostService : BackgroundService
         {
             try
             {
-                var alarms = await _alarmRepository.GetActiveAlarmsAsync(cancellationToken);
-                var symbols = alarms.Select(x => x.Symbol).ToHashSet();
-                var intervals = alarms.Select(x => x.Interval).ToHashSet();
-                await _sendAlarmService.InitWithAlarms(alarms, cancellationToken);
+                var alerts = await _alertRepository.GetActiveAlertsAsync(cancellationToken);
+                var symbols = alerts.Select(x => x.Symbol).ToHashSet();
+                var intervals = alerts.Select(x => x.Interval).ToHashSet();
+                await _sendAlertService.InitWithAlerts(alerts, cancellationToken);
                 var needReconnect = _klineStreamManager.NeedsReconnection();
 
                 if (!isSubscribed && symbols.Count > 0)
