@@ -13,17 +13,14 @@ public class StrategyRepository : BaseRepository<Strategy>, IStrategyRepository
     public async Task<Strategy?> Add(Strategy entity, CancellationToken cancellationToken = default)
     {
         var exist = await _collection.Find(x => x.Symbol == entity.Symbol && x.AccountType == entity.AccountType).FirstOrDefaultAsync(cancellationToken);
-        if (exist != null)
-        {
-            throw new InvalidOperationException($"[{entity.AccountType}-{entity.Symbol}] already exists.");
-        }
+        
         return await AddAsync(entity, cancellationToken);
     }
 
     public async Task<Dictionary<string, Strategy>> InitializeActiveStrategies()
     {
         var data = await _collection.Find(x => x.Status == StateStatus.Running).ToListAsync();
-        return data.ToDictionary(config => $"{config.Symbol}{config.AccountType}", config => config);
+        return data.ToDictionary(config => $"{config.Symbol}{config.Id}{config.AccountType}", config => config);
     }
 
     public async Task<List<Strategy>> GetAllStrategies()

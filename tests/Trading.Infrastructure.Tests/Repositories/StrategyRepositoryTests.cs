@@ -39,7 +39,7 @@ public class StrategyRepositoryTests : IClassFixture<MongoDbFixture>
     }
 
     [Fact]
-    public async Task Add_WithDuplicateStrategy_ShouldThrowException()
+    public async Task Add_WithDuplicateStrategy_ShouldBeAddedSuccessfully()
     {
         // Arrange
         await _repository.EmptyAsync();
@@ -60,10 +60,12 @@ public class StrategyRepositoryTests : IClassFixture<MongoDbFixture>
             Status = StateStatus.Running
         };
 
+        await _repository.Add(duplicateStrategy);
+
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => _repository.Add(duplicateStrategy));
-        Assert.Contains("already exists", exception.Message);
+        var result = await _repository.GetAllStrategies();
+        Assert.Equal(2, result.Count);
+
     }
 
     [Fact]
