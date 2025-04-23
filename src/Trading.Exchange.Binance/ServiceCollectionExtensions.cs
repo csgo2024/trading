@@ -1,13 +1,47 @@
 using Binance.Net.Clients;
+using CryptoExchange.Net.Authentication;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using Trading.Common.Models;
+using Trading.Exchange.Abstraction.Contracts;
 using Trading.Exchange.Binance.Wrappers.Clients;
 
 namespace Trading.Exchange.Binance;
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddBinanceWrapper(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddBinance(this IServiceCollection services, IConfiguration configuration)
     {
+        services.Configure<CredentialSetting>(configuration.GetSection("CredentialSettings"));
+        services.AddSingleton(provider =>
+        {
+            var settings = provider.GetRequiredService<IOptions<CredentialSetting>>().Value;
+            var (apiKey, apiSecret) = RsaEncryptionHelper.DecryptApiCredential(settings.ApiKey, settings.ApiSecret, settings.PrivateKey);
+            return new BinanceSettings
+            {
+                ApiKey = apiKey,
+                ApiSecret = apiSecret
+            };
+        });
+        services.AddSingleton(provider =>
+        {
+            var settings = provider.GetRequiredService<BinanceSettings>();
+            var restClient = new BinanceRestClient(options =>
+            {
+                options.ApiCredentials = new ApiCredentials(settings.ApiKey, settings.ApiSecret);
+            });
+            return restClient;
+        });
+
+        services.AddSingleton(provider =>
+        {
+            var settings = provider.GetRequiredService<BinanceSettings>();
+            var restClient = new BinanceSocketClient(options =>
+            {
+                options.ApiCredentials = new ApiCredentials(settings.ApiKey, settings.ApiSecret);
+            });
+            return restClient;
+        });
 
         services.AddSingleton(provider =>
         {

@@ -57,7 +57,6 @@ public static class ServiceCollectionExtensions
         services.AddScoped(typeof(IRepository<>), typeof(BaseRepository<>));
 
         services.AddSingleton<IStrategyRepository, StrategyRepository>();
-        services.AddSingleton<ICredentialSettingRepository, CredentialSettingRepository>();
         services.AddSingleton<IAlertRepository, AlertRepository>();
         MongoDbConfigration.Configure();
         return services;

@@ -7,9 +7,8 @@ public class TradingHostService : BackgroundService
     private readonly ILogger<TradingHostService> _logger;
     private readonly StrategyExecutionService _strategyExecutionService;
 
-    public TradingHostService(
-        ILogger<TradingHostService> logger,
-        StrategyExecutionService strategyExecutionService)
+    public TradingHostService(ILogger<TradingHostService> logger,
+                              StrategyExecutionService strategyExecutionService)
     {
         _logger = logger;
         _strategyExecutionService = strategyExecutionService;

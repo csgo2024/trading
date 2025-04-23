@@ -1,8 +1,9 @@
-using Trading.API.Extensions;
+using Trading.API.HostServices;
 using Trading.Application.Commands;
 using Trading.Application.Middlerwares;
 using Trading.Application.Queries;
-using Trading.Domain.Entities;
+using Trading.Application.Services;
+using Trading.Application.Telegram;
 using Trading.Exchange.Binance;
 using Trading.Infrastructure;
 
@@ -19,9 +20,6 @@ public class Startup
 
     public void ConfigureServices(IServiceCollection services)
     {
-        services.Configure<CredentialSettings>(Configuration.GetSection("CredentialSettings"));
-        services.Configure<string>(Configuration.GetSection("PrivateKey"));
-
         services.AddCors(options =>
         {
             options.AddPolicy("AllowAll",
@@ -43,16 +41,16 @@ public class Startup
         services.AddTelegram(Configuration);
 
         services.AddScoped<IStrategyQuery, StrategyQuery>();
-        services.AddSingleton<ICredentialQuery, CredentialQuery>();
 
         services.AddMediatR(cfg =>
         {
-            cfg.RegisterServicesFromAssemblyContaining(typeof(CreateCredentialCommand));
+            cfg.RegisterServicesFromAssemblyContaining(typeof(CreateAlertCommand));
             cfg.RegisterServicesFromAssembly(typeof(Program).Assembly);
         });
+        services.AddHostedService<AlertHostService>();
+        services.AddHostedService<TradingHostService>();
         services.AddTradingServices();
         services.AddBinance(Configuration);
-        services.AddBinanceWrapper(Configuration);
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
