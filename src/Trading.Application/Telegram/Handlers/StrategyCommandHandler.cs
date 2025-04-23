@@ -153,6 +153,7 @@ public class StrategyCommandHandler : ICommandHandler
         strategy.UpdatedAt = DateTime.UtcNow;
         await _strategyRepository.UpdateAsync(id, strategy);
         await _mediator.Publish(new StrategyPausedEvent(id));
+        _logger.LogInformation("Strategy {id} paused successfully.", id);
     }
 
     private async Task HandleResume(string id)
@@ -168,6 +169,7 @@ public class StrategyCommandHandler : ICommandHandler
         strategy.UpdatedAt = DateTime.UtcNow;
         await _strategyRepository.UpdateAsync(id, strategy);
         await _mediator.Publish(new StrategyResumedEvent(strategy));
+        _logger.LogInformation("Strategy {id} resumed successfully.", id);
     }
 
     public async Task HandleCallbackAsync(string action, string parameters)
@@ -182,6 +184,7 @@ public class StrategyCommandHandler : ICommandHandler
             case "resume":
                 await HandleResume(strategyId);
                 break;
+
             case "delete":
                 await HandleDelete(strategyId);
                 break;

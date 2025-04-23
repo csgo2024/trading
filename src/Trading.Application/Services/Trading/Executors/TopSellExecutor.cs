@@ -100,7 +100,7 @@ public class TopSellExecutor : IExecutor
         }
         else
         {
-            _logger.LogError("[{AccountType}-{Symbol}] Failed to check order status, Error: {ErrorMessage}.",
+            _logger.LogDebug("[{AccountType}-{Symbol}] Failed to check order status, Error: {ErrorMessage}.",
                 strategy.AccountType, strategy.Symbol, orderStatus.Error?.Message);
         }
     }

@@ -157,6 +157,7 @@ public class AlertCommandHandler : ICommandHandler
         alert.UpdatedAt = DateTime.UtcNow;
         await _alertRepository.UpdateAsync(id, alert);
         await _mediator.Publish(new AlertPausedEvent(id));
+        _logger.LogInformation("Alert {id} paused successfully.", id);
     }
 
     private async Task HandleResume(string id)
@@ -172,6 +173,7 @@ public class AlertCommandHandler : ICommandHandler
         alert.UpdatedAt = DateTime.UtcNow;
         await _alertRepository.UpdateAsync(id, alert);
         await _mediator.Publish(new AlertResumedEvent(alert));
+        _logger.LogInformation("Alert {id} resumed successfully.", id);
     }
 
     public async Task HandleCallbackAsync(string action, string parameters)
