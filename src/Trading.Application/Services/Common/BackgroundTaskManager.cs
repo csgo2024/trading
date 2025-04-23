@@ -55,7 +55,7 @@ public class BackgroundTaskManager : IBackgroundTaskManager
                 await taskInfo.cts.CancelAsync();
                 await taskInfo.task;
                 taskInfo.cts.Dispose();
-                _logger.LogInformation("Task stopped: Category={Category}, TaskId={TaskId}", category, taskId);
+                _logger.LogDebug("Task stopped: Category={Category}, TaskId={TaskId}", category, taskId);
             }
         }
         catch (Exception ex)

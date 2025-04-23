@@ -58,16 +58,16 @@ public class TelegramLogger : ILogger
             {
                 message.AppendLine($"📁 {_categoryName}");
             }
-            message.AppendLine($"<pre>{formatter(state, exception).ToTelegramSafeString()}");
 
             if (exception != null)
             {
-                message.AppendLine($"{exception.Message.ToTelegramSafeString()}</pre>");
-                message.AppendLine($"🔍 {exception.StackTrace?.ToTelegramSafeString()}");
+                message.AppendLine($"<pre>{exception.Message.ToTelegramSafeString()}");
+                message.AppendLine($"{formatter(state, exception).ToTelegramSafeString()}");
+                message.AppendLine($"{exception.StackTrace?.ToTelegramSafeString()}</pre>");
             }
             else
             {
-                message.AppendLine("</pre>");
+                message.AppendLine($"<pre>{formatter(state, exception).ToTelegramSafeString()}</pre>");
             }
 
             await _botClient.SendRequest(new SendMessageRequest
