@@ -51,6 +51,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IAccountProcessorFactory, AccountProcessorFactory>();
 
         services.AddSingleton<BottomBuyExecutor>();
+        services.AddSingleton<TopSellExecutor>();
         services.AddSingleton<DCABuyExecutor>();
         services.AddSingleton<IExecutorFactory, ExecutorFactory>();
         services.AddHostedService<TradingHostService>();
