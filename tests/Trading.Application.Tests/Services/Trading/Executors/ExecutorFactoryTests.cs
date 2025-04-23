@@ -30,6 +30,7 @@ public class ExecutorFactoryTests
         // Register executors
         services.AddScoped<BottomBuyExecutor>();
         services.AddScoped<DCABuyExecutor>();
+        services.AddScoped<TopSellExecutor>();
 
         _serviceProvider = services.BuildServiceProvider();
         _factory = new ExecutorFactory(_serviceProvider);
@@ -38,6 +39,7 @@ public class ExecutorFactoryTests
     [Theory]
     [InlineData(StrategyType.BottomBuy, typeof(BottomBuyExecutor))]
     [InlineData(StrategyType.DCA, typeof(DCABuyExecutor))]
+    [InlineData(StrategyType.TopSell, typeof(TopSellExecutor))]
     public void GetExecutor_WithValidType_ShouldReturnCorrectExecutor(StrategyType type, Type expectedType)
     {
         // Act
@@ -65,7 +67,7 @@ public class ExecutorFactoryTests
     public void Constructor_ShouldInitializeAllStrategies()
     {
         // Arrange
-        var expectedStrategies = new[] { StrategyType.BottomBuy, StrategyType.DCA };
+        var expectedStrategies = new[] { StrategyType.BottomBuy, StrategyType.DCA, StrategyType.TopSell };
 
         // Act
         var results = expectedStrategies.Select(_factory.GetExecutor);

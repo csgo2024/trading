@@ -176,7 +176,7 @@ public class SpotProcessorTests
                                                           null));
 
         // Act
-        var result = await _processor.PlaceOrder(
+        var result = await _processor.PlaceLongOrderAsync(
             "BTCUSDT",
             1.0m,
             50000m,

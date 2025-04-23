@@ -18,7 +18,12 @@ public interface IAccountProcessor
         DateTime? endTime = null,
         int? limit = null,
         CancellationToken ct = default(CancellationToken));
-    Task<WebCallResult<BinanceOrderBase>> PlaceOrder(string symbol,
+    Task<WebCallResult<BinanceOrderBase>> PlaceLongOrderAsync(string symbol,
+        decimal quantity,
+        decimal price,
+        TimeInForce timeInForce,
+        CancellationToken ct);
+    Task<WebCallResult<BinanceOrderBase>> PlaceShortOrderAsync(string symbol,
         decimal quantity,
         decimal price,
         TimeInForce timeInForce,

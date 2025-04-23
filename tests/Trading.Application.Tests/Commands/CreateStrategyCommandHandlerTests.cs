@@ -29,7 +29,7 @@ public class CreateStrategyCommandHandlerTests
         {
             Symbol = "btcusdt",
             Amount = 100,
-            PriceDropPercentage = 0.1m,
+            Volatility = 0.1m,
             AccountType = AccountType.Spot,
             StrategyType = StrategyType.BottomBuy
         };
@@ -50,7 +50,7 @@ public class CreateStrategyCommandHandlerTests
         // Verify entity properties
         Assert.Equal(command.Symbol.ToUpper(), result.Symbol);
         Assert.Equal(command.Amount, result.Amount);
-        Assert.Equal(command.PriceDropPercentage, result.PriceDropPercentage);
+        Assert.Equal(command.Volatility, result.Volatility);
         Assert.Equal(command.AccountType, result.AccountType);
         Assert.Equal(command.StrategyType, result.StrategyType);
         Assert.Equal(StateStatus.Running, result.Status);
@@ -73,17 +73,17 @@ public class CreateStrategyCommandHandlerTests
     [Theory]
     [InlineData("", 100, 0.1, "Symbol cannot be empty")]
     [InlineData("BTCUSDT", 9, 0.1, "Amount must be greater than 10")]
-    [InlineData("BTCUSDT", 100, 0.95, "PriceDropPercentage must be between 0.1 and 0.9")]
-    [InlineData("BTCUSDT", 100, 0.005, "PriceDropPercentage must be between 0.1 and 0.9")]
+    [InlineData("BTCUSDT", 100, 0.95, "Volatility must be between 0.01 and 0.9")]
+    [InlineData("BTCUSDT", 100, 0.005, "Volatility must be between 0.01 and 0.9")]
     public async Task Handle_WithInvalidCommand_ShouldThrowValidationException(
-        string symbol, int amount, decimal priceDropPercentage, string expectedError)
+        string symbol, int amount, decimal Volatility, string expectedError)
     {
         // Arrange
         var command = new CreateStrategyCommand
         {
             Symbol = symbol,
             Amount = amount,
-            PriceDropPercentage = priceDropPercentage,
+            Volatility = Volatility,
             AccountType = AccountType.Spot,
             StrategyType = StrategyType.BottomBuy
         };
@@ -113,7 +113,7 @@ public class CreateStrategyCommandHandlerTests
         {
             Symbol = "BTCUSDT",
             Amount = 100,
-            PriceDropPercentage = 0.1m,
+            Volatility = 0.1m,
             Leverage = leverage,
             AccountType = AccountType.Future,
             StrategyType = StrategyType.BottomBuy
@@ -134,7 +134,7 @@ public class CreateStrategyCommandHandlerTests
         {
             Symbol = "BTCUSDT",
             Amount = 100,
-            PriceDropPercentage = 0.1m
+            Volatility = 0.1m
         };
 
         var expectedException = new InvalidOperationException("Test exception");

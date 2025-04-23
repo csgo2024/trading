@@ -1,4 +1,7 @@
 using System.ComponentModel.DataAnnotations;
+using Binance.Net.Objects.Models;
+using Binance.Net.Objects.Models.Spot;
+using CryptoExchange.Net.Objects;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Trading.Application.Services.Common;
@@ -51,6 +54,27 @@ public class StrategyExecutionServiceTests
             .Setup(x => x.GetAccountProcessor(It.IsAny<AccountType>()))
             .Returns(_accountProcessorMock.Object);
 
+        _accountProcessorMock
+            .Setup(x => x.CancelOrder(
+                It.IsAny<string>(),
+                It.IsAny<long>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new WebCallResult<BinanceOrderBase>(
+                null,
+                null,
+                null,
+                0,
+                null,
+                0,
+                null,
+                null,
+                null,
+                null,
+                ResultDataSource.Server,
+                new BinanceOrder(),
+                null
+                ));
+
         _executorFactoryMock
             .Setup(x => x.GetExecutor(It.IsAny<StrategyType>()))
             .Returns(_executorMock.Object);
@@ -88,7 +112,8 @@ public class StrategyExecutionServiceTests
     public async Task Handle_StrategyDeletedEvent_ShouldStopExecution()
     {
         // Arrange
-        var notification = new StrategyDeletedEvent("test-id");
+        var strategy = new Strategy { Id = "test-id", AccountType = AccountType.Spot };
+        var notification = new StrategyDeletedEvent(strategy);
 
         // Act
         await _service.Handle(notification, _cts.Token);
@@ -96,6 +121,26 @@ public class StrategyExecutionServiceTests
         // Assert
         _backgroundTaskManagerMock.Verify(
             x => x.StopAsync(TaskCategories.Strategy, "test-id"),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_StrategyDeletedEvent_ShouldCancelOrder_WhenHasOpenOrder()
+    {
+        // Arrange
+        var strategy = new Strategy { Id = "test-id", AccountType = AccountType.Spot, OrderId = 1234L };
+        var notification = new StrategyDeletedEvent(strategy);
+
+        // Act
+        await _service.Handle(notification, _cts.Token);
+
+        // Assert
+        _backgroundTaskManagerMock.Verify(
+            x => x.StopAsync(TaskCategories.Strategy, "test-id"),
+            Times.Once);
+
+        _accountProcessorMock.Verify(
+            x => x.CancelOrder(It.IsAny<string>(), 1234L, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 

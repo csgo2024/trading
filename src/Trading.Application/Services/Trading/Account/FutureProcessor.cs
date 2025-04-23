@@ -59,11 +59,11 @@ public class FutureProcessor : IAccountProcessor
         return await _usdFutureRestClient.ExchangeData.GetKlinesAsync(symbol, interval, startTime, endTime, limit, ct);
     }
 
-    public async Task<WebCallResult<BinanceOrderBase>> PlaceOrder(string symbol,
-        decimal quantity,
-        decimal price,
-        TimeInForce timeInForce,
-        CancellationToken ct)
+    public async Task<WebCallResult<BinanceOrderBase>> PlaceLongOrderAsync(string symbol,
+                                                                           decimal quantity,
+                                                                           decimal price,
+                                                                           TimeInForce timeInForce,
+                                                                           CancellationToken ct)
     {
         var webCallResult = await _usdFutureRestClient.Trading.PlaceOrderAsync(
             symbol: symbol,
@@ -149,5 +149,45 @@ public class FutureProcessor : IAccountProcessor
         var priceFilter = symbolInfo.PriceFilter;
         var lotSizeFilter = symbolInfo.LotSizeFilter;
         return (priceFilter, lotSizeFilter);
+    }
+
+    public async Task<WebCallResult<BinanceOrderBase>> PlaceShortOrderAsync(string symbol,
+                                                                            decimal quantity,
+                                                                            decimal price,
+                                                                            TimeInForce timeInForce,
+                                                                            CancellationToken ct)
+    {
+        var webCallResult = await _usdFutureRestClient.Trading.PlaceOrderAsync(
+            symbol: symbol,
+            side: OrderSide.Sell,
+            type: FuturesOrderType.Limit,
+            positionSide: PositionSide.Short,
+            quantity: quantity,
+            price: price,
+            timeInForce: TimeInForce.GoodTillCanceled,
+            ct: ct);
+        if (!webCallResult.Success)
+        {
+            return new WebCallResult<BinanceOrderBase>(webCallResult.Error);
+        }
+        var data = new BinanceOrderBase
+        {
+            Id = webCallResult.Data.Id,
+            Status = webCallResult.Data.Status,
+        };
+        var result = new WebCallResult<BinanceOrderBase>(null,
+                                                         null,
+                                                         null,
+                                                         null,
+                                                         null,
+                                                         null,
+                                                         null,
+                                                         null,
+                                                         null,
+                                                         null,
+                                                         dataSource: ResultDataSource.Server,
+                                                         data: data,
+                                                         error: webCallResult.Error);
+        return result;
     }
 }

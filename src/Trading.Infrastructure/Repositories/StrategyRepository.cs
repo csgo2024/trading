@@ -13,7 +13,7 @@ public class StrategyRepository : BaseRepository<Strategy>, IStrategyRepository
     public async Task<Strategy?> Add(Strategy entity, CancellationToken cancellationToken = default)
     {
         var exist = await _collection.Find(x => x.Symbol == entity.Symbol && x.AccountType == entity.AccountType).FirstOrDefaultAsync(cancellationToken);
-        
+
         return await AddAsync(entity, cancellationToken);
     }
 

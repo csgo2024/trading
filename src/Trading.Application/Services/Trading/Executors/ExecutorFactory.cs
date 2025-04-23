@@ -17,6 +17,7 @@ public class ExecutorFactory : IExecutorFactory
         _serviceProvider = serviceProvider;
         _handlers = new Dictionary<StrategyType, Type>
         {
+            {StrategyType.TopSell, typeof(TopSellExecutor)},
             {StrategyType.BottomBuy, typeof(BottomBuyExecutor)},
             {StrategyType.DCA, typeof(DCABuyExecutor)},
         };

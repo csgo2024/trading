@@ -59,7 +59,7 @@ public class SpotProcessor : IAccountProcessor
         return await _spotApiClient.ExchangeData.GetKlinesAsync(symbol, interval, startTime, endTime, limit, ct);
     }
 
-    public async Task<WebCallResult<BinanceOrderBase>> PlaceOrder(string symbol,
+    public async Task<WebCallResult<BinanceOrderBase>> PlaceLongOrderAsync(string symbol,
         decimal quantity,
         decimal price,
         TimeInForce timeInForce,
@@ -147,5 +147,14 @@ public class SpotProcessor : IAccountProcessor
         var priceFilter = symbolInfo.PriceFilter;
         var lotSizeFilter = symbolInfo.LotSizeFilter;
         return (priceFilter, lotSizeFilter);
+    }
+
+    public Task<WebCallResult<BinanceOrderBase>> PlaceShortOrderAsync(string symbol,
+                                                                      decimal quantity,
+                                                                      decimal price,
+                                                                      TimeInForce timeInForce,
+                                                                      CancellationToken ct)
+    {
+        throw new NotImplementedException("Spot account don't support short order.");
     }
 }

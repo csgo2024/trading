@@ -7,13 +7,13 @@ using Trading.Domain.IRepositories;
 
 namespace Trading.Application.Services.Trading.Executors;
 
-public class BottomBuyExecutor : IExecutor
+public class TopSellExecutor : IExecutor
 {
-    private readonly ILogger<BottomBuyExecutor> _logger;
+    private readonly ILogger<TopSellExecutor> _logger;
     private readonly IStrategyRepository _strategyRepository;
 
-    public BottomBuyExecutor(ILogger<BottomBuyExecutor> logger,
-                             IStrategyRepository strategyRepository)
+    public TopSellExecutor(ILogger<TopSellExecutor> logger,
+                           IStrategyRepository strategyRepository)
     {
         _logger = logger;
         _strategyRepository = strategyRepository;
@@ -79,7 +79,9 @@ public class BottomBuyExecutor : IExecutor
                 case OrderStatus.Expired:
                 case OrderStatus.Rejected:
                     _logger.LogInformation("[{AccountType}-{Symbol}] Order {Status}. Will try to place new order.",
-                        strategy.AccountType, strategy.Symbol, orderStatus.Data.Status);
+                                           strategy.AccountType,
+                                           strategy.Symbol,
+                                           orderStatus.Data.Status);
                     strategy.HasOpenOrder = false;
                     strategy.OrderId = null;
                     strategy.OrderPlacedTime = null;
@@ -89,7 +91,8 @@ public class BottomBuyExecutor : IExecutor
                     if (strategy.OrderPlacedTime.HasValue && strategy.OrderPlacedTime.Value.Date != DateTime.UtcNow.Date)
                     {
                         _logger.LogInformation("[{AccountType}-{Symbol}] Order from previous day detected, initiating cancellation.",
-                            strategy.AccountType, strategy.Symbol);
+                                               strategy.AccountType,
+                                               strategy.Symbol);
                         await CancelExistingOrder(accountProcessor, strategy, ct);
                     }
                     break;
@@ -113,7 +116,9 @@ public class BottomBuyExecutor : IExecutor
         if (cancelResult.Success)
         {
             _logger.LogInformation("[{AccountType}-{Symbol}] Successfully cancelled order, OrderId: {OrderId}",
-                strategy.AccountType, strategy.Symbol, strategy.OrderId);
+                                   strategy.AccountType,
+                                   strategy.Symbol,
+                                   strategy.OrderId);
             strategy.HasOpenOrder = false;
             strategy.OrderId = null;
             strategy.OrderPlacedTime = null;
@@ -121,7 +126,9 @@ public class BottomBuyExecutor : IExecutor
         else
         {
             _logger.LogError("[{AccountType}-{Symbol}] Failed to cancel order. Error: {ErrorMessage}",
-                strategy.AccountType, strategy.Symbol, cancelResult.Error?.Message);
+                             strategy.AccountType,
+                             strategy.Symbol,
+                             cancelResult.Error?.Message);
         }
     }
 
@@ -132,7 +139,7 @@ public class BottomBuyExecutor : IExecutor
         {
             var openPrice = CommonHelper.TrimEndZero(kLines.Data.First().OpenPrice);
             var filterData = await accountProcessor.GetSymbolFilterData(strategy, ct);
-            strategy.TargetPrice = CommonHelper.AdjustPriceByStepSize(openPrice * (1 - strategy.Volatility), filterData.Item1);
+            strategy.TargetPrice = CommonHelper.AdjustPriceByStepSize(openPrice * (1 + strategy.Volatility), filterData.Item1);
             strategy.Quantity = CommonHelper.AdjustQuantityBystepSize(strategy.Amount / strategy.TargetPrice, filterData.Item2);
             strategy.LastTradeDate = currentDate;
             strategy.IsTradedToday = false;
@@ -140,12 +147,17 @@ public class BottomBuyExecutor : IExecutor
             strategy.OrderId = null;
             strategy.OrderPlacedTime = null;
             _logger.LogInformation("[{AccountType}-{Symbol}] New day started, Open price: {OpenPrice}, Target price: {TargetPrice}.",
-                strategy.AccountType, strategy.Symbol, openPrice, strategy.TargetPrice);
+                                   strategy.AccountType,
+                                   strategy.Symbol,
+                                   openPrice,
+                                   strategy.TargetPrice);
         }
         else
         {
             _logger.LogError("[{AccountType}-{Symbol}] Failed to get daily open price. Error: {ErrorMessage}.",
-                strategy.AccountType, strategy.Symbol, kLines.Error?.Message);
+                             strategy.AccountType,
+                             strategy.Symbol,
+                             kLines.Error?.Message);
         }
     }
 
@@ -153,16 +165,15 @@ public class BottomBuyExecutor : IExecutor
     {
         var quantity = CommonHelper.TrimEndZero(strategy.Quantity);
         var price = CommonHelper.TrimEndZero(strategy.TargetPrice);
-        var orderResult = await accountProcessor.PlaceLongOrderAsync(
-            strategy.Symbol,
-            quantity,
-            price,
-            TimeInForce.GoodTillCanceled,
-            ct);
+        var orderResult = await accountProcessor.PlaceShortOrderAsync(strategy.Symbol,
+                                                                      quantity,
+                                                                      price,
+                                                                      TimeInForce.GoodTillCanceled,
+                                                                      ct);
 
         if (orderResult.Success)
         {
-            _logger.LogInformation("[{AccountType}-{Symbol}] Order placed successfully. Quantity: {Quantity}, Price: {Price}.",
+            _logger.LogInformation("[{AccountType}-{Symbol}] Short order placed successfully. Quantity: {Quantity}, Price: {Price}.",
                 strategy.AccountType, strategy.Symbol, quantity, price);
             strategy.OrderId = orderResult.Data.Id;
             strategy.HasOpenOrder = true;
@@ -171,10 +182,10 @@ public class BottomBuyExecutor : IExecutor
         else
         {
             _logger.LogError("""
-                            [{AccountType}-{Symbol}] Failed to place order.
+                            [{AccountType}-{Symbol}] Failed to place short order.
                             StrategyId: {StrategyId}
                             Error: {ErrorMessage}
-                            TargetPrice:{Price}, Quantity: {Quantity}.
+                            TargetPrice: {Price}, Quantity: {Quantity}.
                             """, strategy.AccountType, strategy.Symbol, strategy.Id, orderResult.Error?.Message, price, quantity);
         }
     }

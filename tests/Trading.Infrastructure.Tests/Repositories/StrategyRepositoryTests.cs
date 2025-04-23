@@ -25,7 +25,7 @@ public class StrategyRepositoryTests : IClassFixture<MongoDbFixture>
             Symbol = "BTCUSDT",
             AccountType = AccountType.Spot,
             Amount = 100,
-            PriceDropPercentage = 0.1m,
+            Volatility = 0.1m,
             Status = StateStatus.Running
         };
 

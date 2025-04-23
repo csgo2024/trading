@@ -28,6 +28,9 @@ public enum StrategyType
     [Description("DCA")]
     DCA,
 
+    [Description("TopSell")]
+    TopSell,
+
     [Description("BottomBuy")]
     BottomBuy,
 }

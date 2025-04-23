@@ -73,7 +73,7 @@ public class StrategyControllerTests : IClassFixture<TradingApiFixture>
         {
             Symbol = "SOLUSDT",
             Amount = 300,
-            PriceDropPercentage = 0.15m,
+            Volatility = 0.15m,
             AccountType = AccountType.Spot,
             StrategyType = StrategyType.BottomBuy,
             Leverage = 1
@@ -96,7 +96,7 @@ public class StrategyControllerTests : IClassFixture<TradingApiFixture>
         Assert.NotNull(result.Data);
         Assert.Equal(command.Symbol, result.Data.Symbol);
         Assert.Equal(command.Amount, result.Data.Amount);
-        Assert.Equal(command.PriceDropPercentage, result.Data.PriceDropPercentage);
+        Assert.Equal(command.Volatility, result.Data.Volatility);
 
         // Verify created strategy can be retrieved
         var getResponse = await Client.GetAsync($"/api/v1/strategy/{result.Data.Id}");

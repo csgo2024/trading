@@ -21,7 +21,7 @@
 /strategy create {
     "Symbol": "BTCUSDT",
     "Amount": 1000,
-    "PriceDropPercentage": 0.2,
+    "Volatility": 0.2,
     "Leverage": 5,
     "AccountType": "Spot",
     "StrategyType": "BottomBuy"

@@ -118,7 +118,7 @@ public class StrategyCommandHandlerTests
                 "symbol": "BTCUSDT",
                 "accountType": 0,
                 "amount": 100,
-                "priceDropPercentage": 0.01,
+                "Volatility": 0.01,
                 "strategyType": 0
             }
             """;

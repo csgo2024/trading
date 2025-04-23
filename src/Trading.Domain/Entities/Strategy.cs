@@ -11,7 +11,7 @@ public class Strategy : BaseEntity
     public bool IsTradedToday { get; set; }
     public DateTime? OrderPlacedTime { get; set; }
     public int Amount { get; set; }
-    public decimal PriceDropPercentage { get; set; }
+    public decimal Volatility { get; set; }
 
     public decimal Quantity { get; set; }
     public int? Leverage { get; set; }

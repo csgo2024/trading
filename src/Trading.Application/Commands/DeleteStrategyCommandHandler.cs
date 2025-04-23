@@ -19,10 +19,11 @@ public class DeleteStrategyCommandHandler : IRequestHandler<DeleteStrategyComman
     public async Task<bool> Handle(DeleteStrategyCommand request, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
+        var deletedStrategy = await _strategyRepository.GetByIdAsync(request.Id, cancellationToken);
         var result = await _strategyRepository.DeleteAsync(request.Id, cancellationToken);
-        if (result)
+        if (result && deletedStrategy != null)
         {
-            await _mediator.Publish(new StrategyDeletedEvent(request.Id), cancellationToken);
+            await _mediator.Publish(new StrategyDeletedEvent(deletedStrategy), cancellationToken);
         }
         return result;
     }

@@ -12,49 +12,19 @@ using Trading.Domain.IRepositories;
 
 namespace Trading.Application.Tests.Services.Trading.Executors;
 
-// Add extension method for logger verification
-public static class LoggerExtensions
+public class TopSellExecutorTests
 {
-    public static void VerifyLogging(this Mock<ILogger<BottomBuyExecutor>> logger, string expectedMessage)
-    {
-        logger.Verify(
-            x => x.Log(
-                It.IsAny<LogLevel>(),
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(expectedMessage)),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
-    }
-
-    public static void VerifyLoggingSequence(this Mock<ILogger<BottomBuyExecutor>> logger, string[] expectedMessages)
-    {
-        foreach (var expectedMessage in expectedMessages)
-        {
-            logger.Verify(
-                x => x.Log(
-                    It.IsAny<LogLevel>(),
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(expectedMessage)),
-                    It.IsAny<Exception>(),
-                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-                Times.Once);
-        }
-    }
-}
-public class BottomBuyExecutorTests
-{
-    private readonly Mock<ILogger<BottomBuyExecutor>> _mockLogger;
+    private readonly Mock<ILogger<TopSellExecutor>> _mockLogger;
     private readonly Mock<IStrategyRepository> _mockStrategyRepository;
     private readonly Mock<IAccountProcessor> _mockAccountProcessor;
-    private readonly BottomBuyExecutor _executor;
+    private readonly TopSellExecutor _executor;
 
-    public BottomBuyExecutorTests()
+    public TopSellExecutorTests()
     {
-        _mockLogger = new Mock<ILogger<BottomBuyExecutor>>();
+        _mockLogger = new Mock<ILogger<TopSellExecutor>>();
         _mockStrategyRepository = new Mock<IStrategyRepository>();
         _mockAccountProcessor = new Mock<IAccountProcessor>();
-        _executor = new BottomBuyExecutor(_mockLogger.Object, _mockStrategyRepository.Object);
+        _executor = new TopSellExecutor(_mockLogger.Object, _mockStrategyRepository.Object);
     }
 
     [Fact]
@@ -116,7 +86,7 @@ public class BottomBuyExecutorTests
         Assert.False(strategy.HasOpenOrder);
         Assert.Null(strategy.OrderId);
         Assert.Null(strategy.OrderPlacedTime);
-        _mockLogger.VerifyLogging($"[{strategy.AccountType}-{strategy.Symbol}] Order {status}. Will try to place new order.");
+        VerifyLogging(_mockLogger, $"[{strategy.AccountType}-{strategy.Symbol}] Order {status}. Will try to place new order.");
     }
 
     [Fact]
@@ -148,8 +118,8 @@ public class BottomBuyExecutorTests
         Assert.NotNull(strategy.OrderPlacedTime);
         Assert.NotEqual(0, strategy.TargetPrice);
         Assert.NotEqual(0, strategy.Quantity);
-        _mockLogger.VerifyLogging($"[{strategy.AccountType}-{strategy.Symbol}] Previous day's order not filled, cancelling order before reset.");
-        _mockLogger.VerifyLogging($"[{strategy.AccountType}-{strategy.Symbol}] Successfully cancelled order");
+        VerifyLogging(_mockLogger, $"[{strategy.AccountType}-{strategy.Symbol}] Previous day's order not filled, cancelling order before reset.");
+        VerifyLogging(_mockLogger, $"[{strategy.AccountType}-{strategy.Symbol}] Successfully cancelled order");
     }
 
     [Theory]
@@ -178,7 +148,7 @@ public class BottomBuyExecutorTests
 
         // Assert
         // Verify order cancellation
-        _mockLogger.VerifyLoggingSequence(new[]
+        VerifyLoggingSequence(_mockLogger, new[]
         {
             $"[{strategy.AccountType}-{strategy.Symbol}] Order from previous day detected, initiating cancellation.",
             $"[{strategy.AccountType}-{strategy.Symbol}] Successfully cancelled order"
@@ -274,7 +244,7 @@ public class BottomBuyExecutorTests
 
         // Assert
         Assert.NotEqual(0, strategy.TargetPrice);
-        Assert.True(openPrice > strategy.TargetPrice); // Long order target price must less than today open price.
+        Assert.True(strategy.TargetPrice > openPrice); // Short order target price must greater than today open price.
         Assert.NotEqual(0, strategy.Quantity);
         Assert.False(strategy.HasOpenOrder);
         Assert.False(strategy.IsTradedToday);
@@ -289,7 +259,7 @@ public class BottomBuyExecutorTests
         {
             Id = "test-id",
             Symbol = "BTCUSDT",
-            AccountType = Domain.Entities.AccountType.Spot,
+            AccountType = Domain.Entities.AccountType.Future,
             Amount = 1000,
             Volatility = 0.01m,
             HasOpenOrder = hasOpenOrder,
@@ -354,7 +324,7 @@ public class BottomBuyExecutorTests
     private void SetupSuccessfulPlaceOrderResponse(long orderId)
     {
         _mockAccountProcessor
-            .Setup(x => x.PlaceLongOrderAsync(
+            .Setup(x => x.PlaceShortOrderAsync(
                 It.IsAny<string>(),
                 It.IsAny<decimal>(),
                 It.IsAny<decimal>(),
@@ -418,6 +388,33 @@ public class BottomBuyExecutorTests
                 MinQuantity = decimal.MinValue,
                 MaxQuantity = decimal.MaxValue,
             }));
+    }
+
+    private static void VerifyLogging(Mock<ILogger<TopSellExecutor>> logger, string expectedMessage)
+    {
+        logger.Verify(
+            x => x.Log(
+                It.IsAny<LogLevel>(),
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(expectedMessage)),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    private static void VerifyLoggingSequence(Mock<ILogger<TopSellExecutor>> logger, string[] expectedMessages)
+    {
+        foreach (var expectedMessage in expectedMessages)
+        {
+            logger.Verify(
+                x => x.Log(
+                    It.IsAny<LogLevel>(),
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(expectedMessage)),
+                    It.IsAny<Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.Once);
+        }
     }
 
 }

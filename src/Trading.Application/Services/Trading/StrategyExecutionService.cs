@@ -43,7 +43,13 @@ public class StrategyExecutionService :
 
     public async Task Handle(StrategyDeletedEvent notification, CancellationToken cancellationToken)
     {
-        await _backgroundTaskManager.StopAsync(TaskCategories.Strategy, notification.Id);
+        var strategy = notification.Strategy;
+        if (strategy.OrderId.HasValue)
+        {
+            var accountProcessor = _accountProcessorFactory.GetAccountProcessor(strategy.AccountType);
+            await accountProcessor!.CancelOrder(strategy.Symbol, strategy.OrderId.Value, cancellationToken);
+        }
+        await _backgroundTaskManager.StopAsync(TaskCategories.Strategy, strategy.Id);
     }
 
     public async Task Handle(StrategyPausedEvent notification, CancellationToken cancellationToken)

@@ -33,7 +33,7 @@ public class CreateStrategyCommandHandler : IRequestHandler<CreateStrategyComman
         var entity = new Strategy
         {
             CreatedAt = DateTime.Now,
-            PriceDropPercentage = request.PriceDropPercentage,
+            Volatility = request.Volatility,
             AccountType = request.AccountType,
             Symbol = request.Symbol.ToUpper(),
             Amount = request.Amount,

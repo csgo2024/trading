@@ -150,7 +150,7 @@ public class FutureProcessorTests
                 ResultDataSource.Server, expectedOrder, null));
 
         // Act
-        var result = await _processor.PlaceOrder(
+        var result = await _processor.PlaceLongOrderAsync(
             "BTCUSDT",
             1.0m,
             50000m,

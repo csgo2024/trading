@@ -32,6 +32,9 @@ public class DeleteStrategyCommandHandlerTests
         _strategyRepositoryMock
             .Setup(x => x.DeleteAsync(strategyId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
+        _strategyRepositoryMock
+            .Setup(x => x.GetByIdAsync(strategyId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Domain.Entities.Strategy { Id = strategyId });
 
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
@@ -47,7 +50,7 @@ public class DeleteStrategyCommandHandlerTests
         // Verify event publication
         _mediatorMock.Verify(
             x => x.Publish(
-                It.Is<StrategyDeletedEvent>(e => e.Id == strategyId),
+                It.Is<StrategyDeletedEvent>(e => e.Strategy.Id == strategyId),
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }

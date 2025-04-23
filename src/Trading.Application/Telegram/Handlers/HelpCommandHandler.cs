@@ -25,7 +25,11 @@ public class HelpCommandHandler : ICommandHandler
 
 *示例:*
 创建策略:
-`/strategy create {""Symbol"":""BTCUSDT"",""Amount"":1000,""PriceDropPercentage"":0.2,""Leverage"":5,""AccountType"":""Spot"",""StrategyType"":""BottomBuy""}`
+`/strategy create {""Symbol"":""BTCUSDT"",""Amount"":1000,""Volatility"":0.2,""Leverage"":5,""AccountType"":""Spot"",""StrategyType"":""BottomBuy""}`
+
+做空策略\(合约\)
+`/strategy create {""Symbol"":""BTCUSDT"",""Amount"":1000,""Volatility"":0.2,""Leverage"":5,""AccountType"":""Future"",""StrategyType"":""TopSell""}`
+
 
 删除策略:
 `/strategy delete <Id>`

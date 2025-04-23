@@ -12,8 +12,8 @@ public class CreateStrategyCommand : IRequest<Strategy>
     [Range(10, int.MaxValue, ErrorMessage = "Amount must be greater than 10")]
     public int Amount { get; set; }
 
-    [Range(0.01, 0.9, ErrorMessage = "PriceDropPercentage must be between 0.1 and 0.9")]
-    public decimal PriceDropPercentage { get; set; }
+    [Range(0.01, 0.9, ErrorMessage = "Volatility must be between 0.01 and 0.9")]
+    public decimal Volatility { get; set; }
 
     [Range(1, 20, ErrorMessage = "Leverage must be between 1 and 20")]
     public int? Leverage { get; set; }
