@@ -46,14 +46,4 @@ public class StrategyRepository : BaseRepository<Strategy>, IStrategyRepository
     {
         return await UpdateAsync(entity.Id, entity, cancellationToken);
     }
-    public async Task<bool> UpdateStatusAsync(StateStatus newStatus)
-    {
-        var filter = Builders<Strategy>.Filter.Empty; // 匹配所有文档
-        var update = Builders<Strategy>.Update
-            .Set(d => d.Status, newStatus)
-            .Set(d => d.UpdatedAt, DateTime.UtcNow);
-
-        _ = await _collection.UpdateManyAsync(filter, update);
-        return true;
-    }
 }

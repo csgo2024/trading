@@ -6,9 +6,6 @@ public interface IStrategyRepository : IRepository<Strategy>
 {
     Task<Strategy?> Add(Strategy entity, CancellationToken cancellationToken = default);
     Task<bool> UpdateOrderStatusAsync(Strategy entity, CancellationToken cancellationToken = default);
-
-    Task<bool> UpdateStatusAsync(StateStatus newStatus);
-
     Task<Dictionary<string, Strategy>?> InitializeSpotStrategies();
     Task<Dictionary<string, Strategy>?> InitializeFutureStrategies();
 
@@ -19,5 +16,4 @@ public interface IStrategyRepository : IRepository<Strategy>
     /// </summary>
     /// <returns></returns>
     Task<List<Strategy>> GetAllStrategies();
-
 }

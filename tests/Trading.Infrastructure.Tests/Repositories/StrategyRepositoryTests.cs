@@ -171,29 +171,4 @@ public class StrategyRepositoryTests : IClassFixture<MongoDbFixture>
         Assert.NotNull(updatedStrategy);
         Assert.Equal(StateStatus.Paused, updatedStrategy.Status);
     }
-
-    [Fact]
-    public async Task UpdateStatusAsync_ShouldUpdateAllStrategiesStatus()
-    {
-        // Arrange
-        await _repository.EmptyAsync();
-        var strategies = new List<Strategy>
-        {
-            new() { Symbol = "S1", Status = StateStatus.Running },
-            new() { Symbol = "S2", Status = StateStatus.Running }
-        };
-
-        foreach (var strategy in strategies)
-        {
-            await _repository.Add(strategy);
-        }
-
-        // Act
-        var result = await _repository.UpdateStatusAsync(StateStatus.Paused);
-
-        // Assert
-        Assert.True(result);
-        var allStrategies = await _repository.GetAllStrategies();
-        Assert.All(allStrategies, s => Assert.Equal(StateStatus.Paused, s.Status));
-    }
 }

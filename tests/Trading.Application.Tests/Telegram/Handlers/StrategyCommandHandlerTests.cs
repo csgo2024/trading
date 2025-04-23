@@ -203,7 +203,15 @@ public class StrategyCommandHandlerTests
         // Arrange
         const string strategyId = "test-id";
         _strategyRepositoryMock
-            .Setup(x => x.UpdateStatusAsync(StateStatus.Paused))
+            .Setup(x => x.GetByIdAsync(strategyId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Strategy()
+            {
+                Symbol = "BTCUSDT",
+                AccountType = AccountType.Spot,
+            });
+
+        _strategyRepositoryMock
+            .Setup(x => x.UpdateAsync(strategyId, It.IsAny<Strategy>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         // Act
@@ -211,7 +219,10 @@ public class StrategyCommandHandlerTests
 
         // Assert
         _strategyRepositoryMock.Verify(
-            x => x.UpdateStatusAsync(StateStatus.Paused),
+            x => x.UpdateAsync(
+                strategyId,
+                It.Is<Strategy>(x => x.Status == StateStatus.Paused),
+                It.IsAny<CancellationToken>()),
             Times.Once);
 
         _mediatorMock.Verify(
@@ -226,26 +237,28 @@ public class StrategyCommandHandlerTests
     {
         // Arrange
         const string strategyId = "test-id";
-        var strategy = new Strategy { Id = strategyId };
-
-        _strategyRepositoryMock
-            .Setup(x => x.UpdateStatusAsync(StateStatus.Running))
-            .ReturnsAsync(true);
+        var strategy = new Strategy { Id = strategyId, Symbol = "BTCUSDT", AccountType = AccountType.Spot, };
 
         _strategyRepositoryMock
             .Setup(x => x.GetByIdAsync(strategyId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(strategy);
+        _strategyRepositoryMock
+            .Setup(x => x.UpdateAsync(strategyId, It.IsAny<Strategy>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
 
         // Act
         await _handler.HandleAsync($"resume {strategyId}");
 
         // Assert
         _strategyRepositoryMock.Verify(
-            x => x.UpdateStatusAsync(StateStatus.Running),
+            x => x.GetByIdAsync(strategyId, It.IsAny<CancellationToken>()),
             Times.Once);
 
         _strategyRepositoryMock.Verify(
-            x => x.GetByIdAsync(strategyId, It.IsAny<CancellationToken>()),
+            x => x.UpdateAsync(
+                strategyId,
+                It.Is<Strategy>(x => x.Status == StateStatus.Running),
+                It.IsAny<CancellationToken>()),
             Times.Once);
 
         _mediatorMock.Verify(

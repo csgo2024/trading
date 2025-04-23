@@ -142,15 +142,32 @@ public class StrategyCommandHandler : ICommandHandler
 
     private async Task HandlPause(string id)
     {
-        _ = await _strategyRepository.UpdateStatusAsync(StateStatus.Paused);
-        await _mediator.Publish(new StrategyPausedEvent(id.Trim()));
+        ArgumentException.ThrowIfNullOrWhiteSpace(id, nameof(id));
+        var strategy = await _strategyRepository.GetByIdAsync(id);
+        if (strategy == null)
+        {
+            _logger.LogError("未找到策略 ID: {Id}", id);
+            return;
+        }
+        strategy.Status = StateStatus.Paused;
+        strategy.UpdatedAt = DateTime.UtcNow;
+        await _strategyRepository.UpdateAsync(id, strategy);
+        await _mediator.Publish(new StrategyPausedEvent(id));
     }
 
     private async Task HandleResume(string id)
     {
-        _ = await _strategyRepository.UpdateStatusAsync(StateStatus.Running);
-        var strategy = await _strategyRepository.GetByIdAsync(id.Trim());
-        await _mediator.Publish(new StrategyResumedEvent(strategy!));
+        ArgumentException.ThrowIfNullOrWhiteSpace(id, nameof(id));
+        var strategy = await _strategyRepository.GetByIdAsync(id);
+        if (strategy == null)
+        {
+            _logger.LogError("未找到策略 ID: {Id}", id);
+            return;
+        }
+        strategy.Status = StateStatus.Running;
+        strategy.UpdatedAt = DateTime.UtcNow;
+        await _strategyRepository.UpdateAsync(id, strategy);
+        await _mediator.Publish(new StrategyResumedEvent(strategy));
     }
 
     public async Task HandleCallbackAsync(string action, string parameters)
