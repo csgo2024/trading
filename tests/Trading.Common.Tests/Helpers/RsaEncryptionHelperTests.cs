@@ -1,7 +1,126 @@
+using System.Text;
+
 namespace Trading.Common.Tests.Helpers;
 
 public class RsaEncryptionHelperTests
 {
+
+    [Fact]
+    public void EncryptDecryptV1_WithSimpleString_ShouldReturnOriginalValue()
+    {
+        // Arrange
+        string originalText = "Hello World";
+        using var rsa = new System.Security.Cryptography.RSACryptoServiceProvider(2048);
+        string publicKey = rsa.ToXmlString(false);
+        string privateKey = rsa.ToXmlString(true);
+
+        // Act
+        byte[] encryptedData = RsaEncryptionHelper.EncryptDataV1(originalText, publicKey);
+        byte[] decryptedData = RsaEncryptionHelper.DecryptDataV1(encryptedData, privateKey);
+        string decryptedText = Encoding.UTF8.GetString(decryptedData);
+
+        // Assert
+        Assert.Equal(originalText, decryptedText);
+    }
+
+    [Fact]
+    public void EncryptDecryptV1_WithSpecialCharacters_ShouldReturnOriginalValue()
+    {
+        // Arrange
+        string originalText = "!@#$%^&*()_+-=[]{}|;:,.<>?";
+        using var rsa = new System.Security.Cryptography.RSACryptoServiceProvider(2048);
+        string publicKey = rsa.ToXmlString(false);
+        string privateKey = rsa.ToXmlString(true);
+
+        // Act
+        byte[] encryptedData = RsaEncryptionHelper.EncryptDataV1(originalText, publicKey);
+        byte[] decryptedData = RsaEncryptionHelper.DecryptDataV1(encryptedData, privateKey);
+        string decryptedText = Encoding.UTF8.GetString(decryptedData);
+
+        // Assert
+        Assert.Equal(originalText, decryptedText);
+    }
+
+    [Fact]
+    public void EncryptDecryptV1_WithChineseCharacters_ShouldReturnOriginalValue()
+    {
+        // Arrange
+        string originalText = "你好世界";
+        using var rsa = new System.Security.Cryptography.RSACryptoServiceProvider(2048);
+        string publicKey = rsa.ToXmlString(false);
+        string privateKey = rsa.ToXmlString(true);
+
+        // Act
+        byte[] encryptedData = RsaEncryptionHelper.EncryptDataV1(originalText, publicKey);
+        byte[] decryptedData = RsaEncryptionHelper.DecryptDataV1(encryptedData, privateKey);
+        string decryptedText = Encoding.UTF8.GetString(decryptedData);
+
+        // Assert
+        Assert.Equal(originalText, decryptedText);
+    }
+
+    [Fact]
+    public void EncryptDecryptV1_WithEmptyString_ShouldReturnEmptyString()
+    {
+        // Arrange
+        string originalText = "";
+        using var rsa = new System.Security.Cryptography.RSACryptoServiceProvider(2048);
+        string publicKey = rsa.ToXmlString(false);
+        string privateKey = rsa.ToXmlString(true);
+
+        // Act
+        byte[] encryptedData = RsaEncryptionHelper.EncryptDataV1(originalText, publicKey);
+        byte[] decryptedData = RsaEncryptionHelper.DecryptDataV1(encryptedData, privateKey);
+        string decryptedText = Encoding.UTF8.GetString(decryptedData);
+
+        // Assert
+        Assert.Equal(originalText, decryptedText);
+    }
+
+    [Fact]
+    public void EncryptV1_ShouldProduceDifferentOutput_ThanOriginalData()
+    {
+        // Arrange
+        string originalText = "test_data";
+        using var rsa = new System.Security.Cryptography.RSACryptoServiceProvider(2048);
+        string publicKey = rsa.ToXmlString(false);
+
+        // Act
+        byte[] encryptedData = RsaEncryptionHelper.EncryptDataV1(originalText, publicKey);
+
+        // Assert
+        Assert.NotEqual(originalText, Encoding.UTF8.GetString(encryptedData));
+        Assert.True(encryptedData.Length > 0);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("invalid_key")]
+    public void EncryptV1_WithInvalidPublicKey_ShouldThrowCryptographicException(string invalidKey)
+    {
+        // Arrange
+        string originalText = "test_data";
+
+        // Act & Assert
+        Assert.Throws<System.Security.Cryptography.CryptographicException>(
+            () => RsaEncryptionHelper.EncryptDataV1(originalText, invalidKey)
+        );
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("invalid_key")]
+    public void DecryptV1_WithInvalidPrivateKey_ShouldThrowCryptographicException(string invalidKey)
+    {
+        // Arrange
+        byte[] someData = new byte[] { 1, 2, 3, 4, 5 };
+
+        // Act & Assert
+        Assert.Throws<System.Security.Cryptography.CryptographicException>(
+            () => RsaEncryptionHelper.DecryptDataV1(someData, invalidKey)
+        );
+    }
+
     [Fact]
     public void EncryptDecrypt_WithSimpleString_ShouldReturnOriginalValue()
     {
