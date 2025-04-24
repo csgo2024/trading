@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using Trading.Common.Models;
 using Trading.Domain.IRepositories;
+using Trading.Exchange.Abstraction;
 using Trading.Infrastructure.Repositories;
 
 namespace Trading.Infrastructure;
@@ -27,6 +28,8 @@ public static class ServiceCollectionExtensions
 
         services.AddSingleton<IStrategyRepository, StrategyRepository>();
         services.AddSingleton<IAlertRepository, AlertRepository>();
+        services.AddSingleton<ICredentialSettingRepository, CredentialSettingRepository>();
+        services.AddSingleton<IApiCredentialProvider, ApiCredentialProvider>();
         MongoDbConfigration.Configure();
         return services;
     }

@@ -1,6 +1,6 @@
 namespace Trading.Exchange.Abstraction.Contracts;
 
-public class CredentialSetting
+public class CredentialSettingV2
 {
     public string ApiKey { get; set; } = "";
     public string ApiSecret { get; set; } = "";

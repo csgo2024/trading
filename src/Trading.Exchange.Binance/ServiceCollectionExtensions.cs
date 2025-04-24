@@ -1,9 +1,10 @@
+using System.ComponentModel.DataAnnotations;
 using Binance.Net.Clients;
 using CryptoExchange.Net.Authentication;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 using Trading.Common.Models;
+using Trading.Exchange.Abstraction;
 using Trading.Exchange.Abstraction.Contracts;
 using Trading.Exchange.Binance.Wrappers.Clients;
 
@@ -12,16 +13,12 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddBinance(this IServiceCollection services, IConfiguration configuration)
     {
-        services.Configure<CredentialSetting>(configuration.GetSection("CredentialSettings"));
+        services.Configure<CredentialSettingV2>(configuration.GetSection("CredentialSettings"));
         services.AddSingleton(provider =>
         {
-            var settings = provider.GetRequiredService<IOptions<CredentialSetting>>().Value;
-            var (apiKey, apiSecret) = RsaEncryptionHelper.DecryptApiCredential(settings.ApiKey, settings.ApiSecret, settings.PrivateKey);
-            return new BinanceSettings
-            {
-                ApiKey = apiKey,
-                ApiSecret = apiSecret
-            };
+            var credentialProvider = provider.GetRequiredService<IApiCredentialProvider>();
+            var settings = credentialProvider.GetBinanceSettingsV1() ?? throw new ValidationException("Binance settings not found");
+            return settings;
         });
         services.AddSingleton(provider =>
         {
