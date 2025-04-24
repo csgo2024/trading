@@ -4,15 +4,15 @@ using Trading.Domain.IRepositories;
 
 namespace Trading.Infrastructure.Repositories;
 
-public class CredentialSettingRepository : BaseRepository<CredentialSettings>, ICredentialSettingRepository
+public class CredentialSettingRepository : BaseRepository<CredentialSetting>, ICredentialSettingRepository
 {
     public CredentialSettingRepository(IMongoDbContext context) : base(context)
     {
     }
 
-    public CredentialSettings? GetCredentialSetting()
+    public CredentialSetting? GetEncryptedRawSetting()
     {
-        var data = _collection.Find(x => x.Status == 1).FirstOrDefault();
-        return data;
+        var setting = _collection.Find(x => x.Status == 1).FirstOrDefault();
+        return setting;
     }
 }

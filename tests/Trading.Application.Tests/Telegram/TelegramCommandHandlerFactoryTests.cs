@@ -40,7 +40,6 @@ public class TelegramCommandHandlerFactoryTests
         // Add mock dependencies
         services.AddSingleton(Mock.Of<IMediator>());
         services.AddSingleton(Mock.Of<IStrategyRepository>());
-        services.AddSingleton(Mock.Of<ICredentialSettingRepository>());
         services.AddSingleton(Mock.Of<IAlertRepository>());
         services.AddSingleton(Mock.Of<ITelegramBotClient>()); // Add TelegramBotClient mock
         var taskManagerMock = new Mock<BackgroundTaskManager>(Mock.Of<ILogger<BackgroundTaskManager>>());

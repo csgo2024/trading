@@ -7,10 +7,11 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <ProjectReference Include="../Trading.Exchange.Abstraction/Trading.Exchange.Abstraction.csproj" />
       <ProjectReference Include="..\Trading.Domain\Trading.Domain.csproj" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="Telegram.Bot" Version="22.4.3" />
+        <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="8.0.0" />
         <PackageReference Include="MongoDB.Driver" Version="3.1.0" />
     </ItemGroup>
 

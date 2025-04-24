@@ -1,13 +1,44 @@
+using System.ComponentModel.DataAnnotations;
 using Binance.Net.Clients;
+using CryptoExchange.Net.Authentication;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Trading.Common.Models;
+using Trading.Exchange.Abstraction;
+using Trading.Exchange.Abstraction.Contracts;
 using Trading.Exchange.Binance.Wrappers.Clients;
 
 namespace Trading.Exchange.Binance;
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddBinanceWrapper(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddBinance(this IServiceCollection services, IConfiguration configuration)
     {
+        services.Configure<CredentialSettingV2>(configuration.GetSection("CredentialSettings"));
+        services.AddSingleton(provider =>
+        {
+            var credentialProvider = provider.GetRequiredService<IApiCredentialProvider>();
+            var settings = credentialProvider.GetBinanceSettingsV1() ?? throw new ValidationException("Binance settings not found");
+            return settings;
+        });
+        services.AddSingleton(provider =>
+        {
+            var settings = provider.GetRequiredService<BinanceSettings>();
+            var restClient = new BinanceRestClient(options =>
+            {
+                options.ApiCredentials = new ApiCredentials(settings.ApiKey, settings.ApiSecret);
+            });
+            return restClient;
+        });
+
+        services.AddSingleton(provider =>
+        {
+            var settings = provider.GetRequiredService<BinanceSettings>();
+            var restClient = new BinanceSocketClient(options =>
+            {
+                options.ApiCredentials = new ApiCredentials(settings.ApiKey, settings.ApiSecret);
+            });
+            return restClient;
+        });
 
         services.AddSingleton(provider =>
         {

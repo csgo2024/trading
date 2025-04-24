@@ -44,12 +44,6 @@ public static class MongoDbConfigration
                     .SetIdGenerator(StringObjectIdGenerator.Instance);
             });
 
-            RegisterClassMap<CredentialSettings>(cm =>
-            {
-                cm.AutoMap();
-                cm.SetIgnoreExtraElements(true);
-            });
-
             RegisterClassMap<Strategy>(cm =>
             {
                 cm.AutoMap();

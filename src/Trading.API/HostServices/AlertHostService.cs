@@ -10,11 +10,10 @@ public class AlertHostService : BackgroundService
     private readonly ILogger<AlertHostService> _logger;
     private readonly IKlineStreamManager _klineStreamManager;
 
-    public AlertHostService(
-        ILogger<AlertHostService> logger,
-        IKlineStreamManager klineStreamManager,
-        AlertNotificationService sendAlertService,
-        IAlertRepository alertRepository)
+    public AlertHostService(ILogger<AlertHostService> logger,
+                            IKlineStreamManager klineStreamManager,
+                            AlertNotificationService sendAlertService,
+                            IAlertRepository alertRepository)
     {
         _logger = logger;
         _klineStreamManager = klineStreamManager;

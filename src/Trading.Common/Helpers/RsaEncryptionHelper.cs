@@ -3,6 +3,33 @@ using System.Text;
 
 public static class RsaEncryptionHelper
 {
+
+    #region V1
+    public static byte[] EncryptDataV1(string data, string publicKey)
+    {
+        using (var rsa = new RSACryptoServiceProvider())
+        {
+            rsa.FromXmlString(publicKey);
+
+            byte[] dataBytes = Encoding.UTF8.GetBytes(data);
+            byte[] encryptedData = rsa.Encrypt(dataBytes, false); // false 表示不使用 OAEP
+            return encryptedData;
+        }
+    }
+
+    // 使用私钥解密数据
+    public static byte[] DecryptDataV1(byte[] encryptedBytes, string privateKey)
+    {
+        using (var rsa = new RSACryptoServiceProvider())
+        {
+            rsa.FromXmlString(privateKey);
+
+            byte[] decryptedData = rsa.Decrypt(encryptedBytes, false); // false 表示不使用 OAEP
+            return decryptedData;
+        }
+    }
+    #endregion
+
     private static string EncryptData(string data, string publicKey)
     {
         using (var rsa = new RSACryptoServiceProvider())
