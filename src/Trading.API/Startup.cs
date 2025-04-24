@@ -36,6 +36,7 @@ public class Startup
         services.AddControllers();
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen();
+        services.AddSingleton<IErrorMessageResolver, DefaultErrorMessageResolver>();
 
         services.AddMongoDb(Configuration);
         services.AddTelegram(Configuration);

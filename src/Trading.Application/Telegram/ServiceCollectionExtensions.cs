@@ -3,7 +3,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Telegram.Bot;
-using Trading.Application.Middlerwares;
 using Trading.Application.Telegram.Handlers;
 using Trading.Application.Telegram.HostServices;
 using Trading.Common.Models;
@@ -32,7 +31,6 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<TelegramCommandHandlerFactory>();
         services.AddSingleton<ITelegramCommandHandler, TelegramCommandHandler>();
 
-        services.AddSingleton<IErrorMessageResolver, DefaultErrorMessageResolver>();
         services.AddLogging(builder =>
         {
             builder.ClearProviders();
