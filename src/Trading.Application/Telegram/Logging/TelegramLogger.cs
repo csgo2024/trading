@@ -9,12 +9,29 @@ using Trading.Common.Models;
 
 namespace Trading.Application.Telegram.Logging;
 
+internal sealed class DisposableScope : IDisposable
+{
+    private readonly Action _onDispose;
+
+    public DisposableScope(Action onDispose)
+    {
+        _onDispose = onDispose;
+    }
+
+    public void Dispose()
+    {
+        _onDispose();
+    }
+}
+
 public class TelegramLogger : ILogger
 {
     private readonly IOptions<TelegramLoggerOptions> _loggerOptions;
     private readonly ITelegramBotClient _botClient;
     private readonly string _categoryName;
     private readonly string _chatId;
+    private const string NotificationKey = "DisableNotification";
+    private readonly AsyncLocal<Stack<IReadOnlyDictionary<string, object>>> _scopeStack = new();
 
     public TelegramLogger(ITelegramBotClient botClient,
                           IOptions<TelegramLoggerOptions> loggerOptions,
@@ -27,7 +44,42 @@ public class TelegramLogger : ILogger
         _chatId = settings.ChatId ?? throw new ArgumentNullException(nameof(settings), "TelegramSettings is not valid.");
     }
 
-    public IDisposable BeginScope<TState>(TState state) where TState : notnull => default!;
+    public IDisposable BeginScope<TState>(TState state) where TState : notnull
+    {
+        var scopeStack = _scopeStack.Value ??= new Stack<IReadOnlyDictionary<string, object>>();
+
+        var scopeData = state as IReadOnlyDictionary<string, object>
+            ?? new Dictionary<string, object> { { "Scope", state } };
+
+        scopeStack.Push(scopeData);
+
+        return new DisposableScope(() =>
+        {
+            if (_scopeStack.Value?.Count > 0)
+            {
+                _scopeStack.Value.Pop();
+            }
+        });
+    }
+
+    private bool ShouldDisableNotification()
+    {
+        var scopeStack = _scopeStack.Value;
+        if (scopeStack == null || scopeStack.Count == 0)
+        {
+            return true; // 默认禁用通知
+        }
+
+        foreach (var scope in scopeStack)
+        {
+            if (scope.TryGetValue(NotificationKey, out var value) &&
+                value is bool disableNotification)
+            {
+                return disableNotification;
+            }
+        }
+        return true;
+    }
 
     public bool IsEnabled(LogLevel logLevel)
     {
@@ -75,7 +127,7 @@ public class TelegramLogger : ILogger
                 ChatId = _chatId,
                 Text = message.ToString(),
                 ParseMode = ParseMode.Html,
-                DisableNotification = NotificationScope.Current,
+                DisableNotification = ShouldDisableNotification(),
             }
             );
         }

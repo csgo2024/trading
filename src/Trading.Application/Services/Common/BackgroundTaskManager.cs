@@ -40,7 +40,7 @@ public class BackgroundTaskManager : IBackgroundTaskManager
         var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         var task = Task.Run(() => executionFunc(cts.Token), cancellationToken);
         _monitoringTasks.TryAdd(key, (cts, task));
-        _logger.LogDebug("Task started: Category={Category}, TaskId={TaskId}", category, taskId);
+        _logger.LogInformation("Task started: Category={Category}, TaskId={TaskId}", category, taskId);
         return Task.CompletedTask;
     }
 
@@ -55,7 +55,7 @@ public class BackgroundTaskManager : IBackgroundTaskManager
                 await taskInfo.cts.CancelAsync();
                 await taskInfo.task;
                 taskInfo.cts.Dispose();
-                _logger.LogDebug("Task stopped: Category={Category}, TaskId={TaskId}", category, taskId);
+                _logger.LogInformation("Task stopped: Category={Category}, TaskId={TaskId}", category, taskId);
             }
         }
         catch (Exception ex)
