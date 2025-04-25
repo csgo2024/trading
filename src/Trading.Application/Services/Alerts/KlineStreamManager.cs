@@ -82,7 +82,7 @@ public class KlineStreamManager : IKlineStreamManager
         _lastConnectionTime = DateTime.UtcNow;
 
         SubscribeToEvents(_subscription);
-        _logger.LogInformation("Subscribed to {Count} symbols: {@Symbols} intervals: {@Intervals}",
+        _logger.LogDebug("Subscribed to {Count} symbols: {@Symbols} intervals: {@Intervals}",
             _listenedSymbols.Count, _listenedSymbols, _listenedIntervals);
         return true;
     }
