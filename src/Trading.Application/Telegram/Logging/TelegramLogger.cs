@@ -75,6 +75,7 @@ public class TelegramLogger : ILogger
                 ChatId = _chatId,
                 Text = message.ToString(),
                 ParseMode = ParseMode.Html,
+                DisableNotification = NotificationScope.Current,
             }
             );
         }

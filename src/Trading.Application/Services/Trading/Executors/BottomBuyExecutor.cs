@@ -2,6 +2,7 @@ using Binance.Net.Enums;
 using Microsoft.Extensions.Logging;
 using Trading.Application.Helpers;
 using Trading.Application.Services.Trading.Account;
+using Trading.Application.Telegram.Logging;
 using Trading.Domain.Entities;
 using Trading.Domain.IRepositories;
 
@@ -97,7 +98,7 @@ public class BottomBuyExecutor : IExecutor
         }
         else
         {
-            _logger.LogDebug("[{AccountType}-{Symbol}] Failed to check order status, Error: {ErrorMessage}.",
+            _logger.LogInformation("[{AccountType}-{Symbol}] Failed to check order status, Error: {ErrorMessage}.",
                 strategy.AccountType, strategy.Symbol, orderStatus.Error?.Message);
         }
     }
@@ -144,7 +145,7 @@ public class BottomBuyExecutor : IExecutor
         }
         else
         {
-            _logger.LogError("[{AccountType}-{Symbol}] Failed to get daily open price. Error: {ErrorMessage}.",
+            _logger.LogErrorWithAlert("[{AccountType}-{Symbol}] Failed to get daily open price. Error: {ErrorMessage}.",
                 strategy.AccountType, strategy.Symbol, kLines.Error?.Message);
         }
     }
@@ -170,7 +171,7 @@ public class BottomBuyExecutor : IExecutor
         }
         else
         {
-            _logger.LogError("""
+            _logger.LogErrorWithAlert("""
                             [{AccountType}-{Symbol}] Failed to place order.
                             StrategyId: {StrategyId}
                             Error: {ErrorMessage}

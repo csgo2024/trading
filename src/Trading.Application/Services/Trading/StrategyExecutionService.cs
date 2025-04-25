@@ -21,12 +21,11 @@ public class StrategyExecutionService :
     private readonly IStrategyRepository _strategyRepository;
     private readonly IBackgroundTaskManager _backgroundTaskManager;
 
-    public StrategyExecutionService(
-        ILogger<StrategyExecutionService> logger,
-        IAccountProcessorFactory accountProcessorFactory,
-        IExecutorFactory executorFactory,
-        IBackgroundTaskManager backgroundTaskManager,
-        IStrategyRepository strategyRepository)
+    public StrategyExecutionService(ILogger<StrategyExecutionService> logger,
+                                    IAccountProcessorFactory accountProcessorFactory,
+                                    IExecutorFactory executorFactory,
+                                    IBackgroundTaskManager backgroundTaskManager,
+                                    IStrategyRepository strategyRepository)
     {
         _logger = logger;
         _accountProcessorFactory = accountProcessorFactory;
