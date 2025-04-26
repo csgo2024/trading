@@ -24,7 +24,7 @@ public class HelpCommandHandler : ICommandHandler
 1\. *策略管理:*
 *StrategyType* 类型说明
 
-*BottomBuy、TopSell是基于RestClient的日内交易策略，第二天可以自动管理。*
+*BottomBuy、TopSell是基于RestClient的根据当天开盘价格\(不需要收盘\)的策略，第二天可以自动管理。*
 
 做多策略\(现货\)
 `/strategy create {""Symbol"":""BTCUSDT"",""Amount"":1000,""Volatility"":0.2,""Interval"":""1d"",""Leverage"":5,""AccountType"":""Spot"",""StrategyType"":""BottomBuy""}`
@@ -32,7 +32,7 @@ public class HelpCommandHandler : ICommandHandler
 做空策略\(合约\)
 `/strategy create {""Symbol"":""BTCUSDT"",""Amount"":1000,""Volatility"":0.2,""Interval"":""1d"",""Leverage"":5,""AccountType"":""Future"",""StrategyType"":""TopSell""}`
 
-*CloseBuy、CloseSell是基于SocketClient的支持配置交易周期的策略，根据收盘价格进行下单！需要关注！！！。*
+*CloseBuy、CloseSell是基于SocketClient收盘价格执行的策略，必须收盘后才会进行下单！！！！。*
 
 做空策略\(合约基于配置周期收盘价格\) WebSocket
 `/strategy create {""Symbol"":""BTCUSDT"",""Amount"":1000,""Volatility"":0.0002,""Interval"":""4h"",""AccountType"":""Future"",""StrategyType"":""CloseSell""}`
