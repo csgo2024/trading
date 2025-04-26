@@ -7,19 +7,16 @@ using Trading.Domain.IRepositories;
 
 namespace Trading.Application.Services.Trading.Executors;
 
-public class TopSellExecutor : IExecutor
+public class TopSellExecutor : BaseExecutor
 {
-    private readonly ILogger<TopSellExecutor> _logger;
     private readonly IStrategyRepository _strategyRepository;
-
     public TopSellExecutor(ILogger<TopSellExecutor> logger,
-                           IStrategyRepository strategyRepository)
+                           IStrategyRepository strategyRepository) : base(logger)
     {
-        _logger = logger;
         _strategyRepository = strategyRepository;
     }
 
-    public async Task Execute(IAccountProcessor accountProcessor, Strategy strategy, CancellationToken ct)
+    public override async Task Execute(IAccountProcessor accountProcessor, Strategy strategy, CancellationToken ct)
     {
         var currentDate = DateTime.UtcNow.Date;
         if (strategy.LastTradeDate?.Date != currentDate)
@@ -53,85 +50,6 @@ public class TopSellExecutor : IExecutor
         }
     }
 
-    public async Task CheckOrderStatus(IAccountProcessor accountProcessor, Strategy strategy, CancellationToken ct)
-    {
-        if (strategy.OrderId is null)
-        {
-            strategy.HasOpenOrder = false;
-            return;
-        }
-
-        var orderStatus = await accountProcessor.GetOrder(strategy.Symbol, strategy.OrderId.Value, ct);
-        if (orderStatus.Success)
-        {
-            switch (orderStatus.Data.Status)
-            {
-                case OrderStatus.Filled:
-                    _logger.LogInformation("[{AccountType}-{Symbol}] Order filled successfully at price: {Price}.",
-                        strategy.AccountType, strategy.Symbol, strategy.TargetPrice);
-                    strategy.IsTradedToday = true;
-                    strategy.HasOpenOrder = false;
-                    strategy.OrderId = null;
-                    strategy.OrderPlacedTime = null;
-                    break;
-
-                case OrderStatus.Canceled:
-                case OrderStatus.Expired:
-                case OrderStatus.Rejected:
-                    _logger.LogInformation("[{AccountType}-{Symbol}] Order {Status}. Will try to place new order.",
-                                           strategy.AccountType,
-                                           strategy.Symbol,
-                                           orderStatus.Data.Status);
-                    strategy.HasOpenOrder = false;
-                    strategy.OrderId = null;
-                    strategy.OrderPlacedTime = null;
-                    break;
-
-                default:
-                    if (strategy.OrderPlacedTime.HasValue && strategy.OrderPlacedTime.Value.Date != DateTime.UtcNow.Date)
-                    {
-                        _logger.LogInformation("[{AccountType}-{Symbol}] Order from previous day detected, initiating cancellation.",
-                                               strategy.AccountType,
-                                               strategy.Symbol);
-                        await CancelExistingOrder(accountProcessor, strategy, ct);
-                    }
-                    break;
-            }
-        }
-        else
-        {
-            _logger.LogInformation("[{AccountType}-{Symbol}] Failed to check order status, Error: {ErrorMessage}.",
-                strategy.AccountType, strategy.Symbol, orderStatus.Error?.Message);
-        }
-    }
-
-    public async Task CancelExistingOrder(IAccountProcessor accountProcessor, Strategy strategy, CancellationToken ct)
-    {
-        if (strategy.OrderId is null)
-        {
-            return;
-        }
-
-        var cancelResult = await accountProcessor.CancelOrder(strategy.Symbol, strategy.OrderId.Value, ct);
-        if (cancelResult.Success)
-        {
-            _logger.LogInformation("[{AccountType}-{Symbol}] Successfully cancelled order, OrderId: {OrderId}",
-                                   strategy.AccountType,
-                                   strategy.Symbol,
-                                   strategy.OrderId);
-            strategy.HasOpenOrder = false;
-            strategy.OrderId = null;
-            strategy.OrderPlacedTime = null;
-        }
-        else
-        {
-            _logger.LogError("[{AccountType}-{Symbol}] Failed to cancel order. Error: {ErrorMessage}",
-                             strategy.AccountType,
-                             strategy.Symbol,
-                             cancelResult.Error?.Message);
-        }
-    }
-
     public async Task ResetDailyStrategy(IAccountProcessor accountProcessor, Strategy strategy, DateTime currentDate, CancellationToken ct)
     {
         var kLines = await accountProcessor.GetKlines(strategy.Symbol, KlineInterval.OneDay, startTime: currentDate, limit: 1, ct: ct);
@@ -161,32 +79,4 @@ public class TopSellExecutor : IExecutor
         }
     }
 
-    public async Task TryPlaceOrder(IAccountProcessor accountProcessor, Strategy strategy, CancellationToken ct)
-    {
-        var quantity = CommonHelper.TrimEndZero(strategy.Quantity);
-        var price = CommonHelper.TrimEndZero(strategy.TargetPrice);
-        var orderResult = await accountProcessor.PlaceShortOrderAsync(strategy.Symbol,
-                                                                      quantity,
-                                                                      price,
-                                                                      TimeInForce.GoodTillCanceled,
-                                                                      ct);
-
-        if (orderResult.Success)
-        {
-            _logger.LogInformation("[{AccountType}-{Symbol}] Short order placed successfully. Quantity: {Quantity}, Price: {Price}.",
-                strategy.AccountType, strategy.Symbol, quantity, price);
-            strategy.OrderId = orderResult.Data.Id;
-            strategy.HasOpenOrder = true;
-            strategy.OrderPlacedTime = DateTime.UtcNow;
-        }
-        else
-        {
-            _logger.LogErrorWithAlert("""
-                            [{AccountType}-{Symbol}] Failed to place short order.
-                            StrategyId: {StrategyId}
-                            Error: {ErrorMessage}
-                            TargetPrice: {Price}, Quantity: {Quantity}.
-                            """, strategy.AccountType, strategy.Symbol, strategy.Id, orderResult.Error?.Message, price, quantity);
-        }
-    }
 }

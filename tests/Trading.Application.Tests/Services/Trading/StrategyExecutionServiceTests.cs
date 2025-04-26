@@ -22,7 +22,7 @@ public class StrategyExecutionServiceTests
     private readonly Mock<IBackgroundTaskManager> _backgroundTaskManagerMock;
     private readonly Mock<IStrategyRepository> _strategyRepositoryMock;
     private readonly Mock<IAccountProcessor> _accountProcessorMock;
-    private readonly Mock<IExecutor> _executorMock;
+    private readonly Mock<BaseExecutor> _executorMock;
     private readonly StrategyExecutionService _service;
     private readonly CancellationTokenSource _cts;
 
@@ -34,7 +34,7 @@ public class StrategyExecutionServiceTests
         _backgroundTaskManagerMock = new Mock<IBackgroundTaskManager>();
         _strategyRepositoryMock = new Mock<IStrategyRepository>();
         _accountProcessorMock = new Mock<IAccountProcessor>();
-        _executorMock = new Mock<IExecutor>();
+        _executorMock = new Mock<BaseExecutor>(_loggerMock.Object);
         _cts = new CancellationTokenSource();
 
         _service = new StrategyExecutionService(

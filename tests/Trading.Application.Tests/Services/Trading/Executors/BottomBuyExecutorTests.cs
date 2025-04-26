@@ -290,6 +290,7 @@ public class BottomBuyExecutorTests
             Id = "test-id",
             Symbol = "BTCUSDT",
             AccountType = Domain.Entities.AccountType.Spot,
+            StrategyType = StrategyType.BottomBuy,
             Amount = 1000,
             Volatility = 0.01m,
             HasOpenOrder = hasOpenOrder,

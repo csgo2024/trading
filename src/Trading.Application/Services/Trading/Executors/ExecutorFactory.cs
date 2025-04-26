@@ -4,7 +4,7 @@ namespace Trading.Application.Services.Trading.Executors;
 
 public interface IExecutorFactory
 {
-    IExecutor? GetExecutor(StrategyType strategyType);
+    BaseExecutor? GetExecutor(StrategyType strategyType);
 }
 
 public class ExecutorFactory : IExecutorFactory
@@ -23,10 +23,10 @@ public class ExecutorFactory : IExecutorFactory
         };
     }
 
-    public IExecutor? GetExecutor(StrategyType strategyType)
+    public BaseExecutor? GetExecutor(StrategyType strategyType)
     {
         return _handlers.TryGetValue(strategyType, out var handlerType)
-            ? _serviceProvider.GetService(handlerType) as IExecutor
+            ? _serviceProvider.GetService(handlerType) as BaseExecutor
             : null;
     }
 }

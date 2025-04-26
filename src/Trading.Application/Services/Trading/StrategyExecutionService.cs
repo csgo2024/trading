@@ -95,7 +95,7 @@ public class StrategyExecutionService :
             cancellationToken);
     }
 
-    private async Task ExecuteStrategyLoop(IExecutor executor,
+    private async Task ExecuteStrategyLoop(BaseExecutor executor,
                                            IAccountProcessor accountProcessor,
                                            Strategy strategy,
                                            CancellationToken cancellationToken)

@@ -260,6 +260,7 @@ public class TopSellExecutorTests
             Id = "test-id",
             Symbol = "BTCUSDT",
             AccountType = Domain.Entities.AccountType.Future,
+            StrategyType = StrategyType.TopSell,
             Amount = 1000,
             Volatility = 0.01m,
             HasOpenOrder = hasOpenOrder,
