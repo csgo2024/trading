@@ -31,7 +31,6 @@ public class AlertHostServiceTests : IDisposable
         var backgroundTaskManagerMock = new Mock<IBackgroundTaskManager>();
         _cts = new CancellationTokenSource();
 
-        // 创建AlertNotificationService的依赖
         var notificationLoggerMock = new Mock<ILogger<AlertNotificationService>>();
         var jsEvaluatorLoggerMock = new Mock<ILogger<JavaScriptEvaluator>>();
         var telegramSettings = Options.Create(new TelegramSettings { ChatId = "test-chat-id" });

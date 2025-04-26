@@ -95,7 +95,7 @@ public class CloseSellExecutor :
                 currentRetry++;
                 if (currentRetry < maxRetries)
                 {
-                    var delay = TimeSpan.FromSeconds(Math.Pow(2, currentRetry)); // 指数退避延迟
+                    var delay = TimeSpan.FromSeconds(Math.Pow(2, currentRetry));
                     _logger.LogWarning("[{StrategyType}-{AccountType}-{Symbol}] Attempt {RetryCount} of {MaxRetries} failed. Retrying in {Delay} seconds. Error: {Error}",
                                        strategy.StrategyType,
                                        strategy.AccountType,
@@ -126,7 +126,6 @@ public class CloseSellExecutor :
             }
         }
 
-        // 所有重试都失败后记录错误
         _logger.LogErrorWithAlert("""
         [{StrategyType}-{AccountType}-{Symbol}] Failed to place order after {MaxRetries} attempts.
         StrategyId: {StrategyId}

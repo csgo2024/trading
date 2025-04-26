@@ -33,7 +33,7 @@ public class TradingApiFixture : WebApplicationFactory<Program>, IAsyncLifetime
     protected override IWebHostBuilder CreateWebHostBuilder()
     {
         return new WebHostBuilder()
-            .UseStartup<Startup>(); // 使用 Program 类作为启动类
+            .UseStartup<Startup>();
     }
 
     public async Task InitializeAsync()

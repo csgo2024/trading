@@ -45,7 +45,7 @@ public class AlertCommandHandler : ICommandHandler
             await HandleDefault();
             return;
         }
-        // 处理清空命令
+
         if (parameters.Trim().Equals("empty", StringComparison.OrdinalIgnoreCase))
         {
             await HandleEmpty();

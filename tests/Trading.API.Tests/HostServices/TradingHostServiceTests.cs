@@ -46,7 +46,7 @@ public class TradingHostServiceTests : IDisposable
         public override Task SimulateDelay(TimeSpan delay, CancellationToken cancellationToken)
         {
             _delayCallCount++;
-            // 如果被调用2次以上，取消token以停止循环
+
             if (_delayCallCount >= 2)
             {
                 throw new OperationCanceledException();

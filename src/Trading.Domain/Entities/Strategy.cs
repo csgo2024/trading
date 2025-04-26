@@ -1,6 +1,5 @@
 namespace Trading.Domain.Entities;
 
-// 每个交易对的策略状态
 public class Strategy : BaseEntity
 {
     public string Symbol { get; set; } = string.Empty;

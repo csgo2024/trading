@@ -83,7 +83,6 @@ public class BaseRepository<T> : IRepository<T> where T : BaseEntity
             )
         };
 
-        // 执行聚合查询
         var result = await _collection.Aggregate<BsonDocument>(pipeline, cancellationToken: cancellationToken).FirstOrDefaultAsync(cancellationToken);
 
         if (result == null)
@@ -91,7 +90,6 @@ public class BaseRepository<T> : IRepository<T> where T : BaseEntity
             return new PagedResult<T>(new List<T>(), pageIndex, pageSize, 0);
         }
 
-        // 解析结果
         var items = BsonSerializer.Deserialize<List<T>>(
             result.GetValue("paginatedResults").AsBsonArray.ToJson());
 

@@ -26,7 +26,6 @@ public static class MongoDbConfigration
                 return;
             }
 
-            // 注册 Snake Case 命名约定
             var pack = new ConventionPack
             {
                 new SnakeCaseElementNameConvention(),

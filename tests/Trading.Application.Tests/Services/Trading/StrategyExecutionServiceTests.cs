@@ -44,7 +44,6 @@ public class StrategyExecutionServiceTests
             _backgroundTaskManagerMock.Object,
             _strategyRepositoryMock.Object);
 
-        // 默认设置
         SetupDefaults();
     }
 

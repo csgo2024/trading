@@ -17,7 +17,6 @@ public static class RsaEncryptionHelper
         }
     }
 
-    // 使用私钥解密数据
     public static byte[] DecryptDataV1(byte[] encryptedBytes, string privateKey)
     {
         using (var rsa = new RSACryptoServiceProvider())
@@ -43,7 +42,6 @@ public static class RsaEncryptionHelper
         }
     }
 
-    // 使用私钥解密数据
     private static string DecryptData(string encrypted64Str, string privateKey)
     {
         using (var rsa = new RSACryptoServiceProvider())
@@ -65,8 +63,8 @@ public static class RsaEncryptionHelper
 
         using (var rsa = new RSACryptoServiceProvider(2048))
         {
-            string publicKey = rsa.ToXmlString(false); // 公钥
-            privateKey = rsa.ToXmlString(true); // 私钥
+            string publicKey = rsa.ToXmlString(false);
+            privateKey = rsa.ToXmlString(true);
 
             encryptedKey = EncryptData(apiKey, publicKey);
             encryptedSecret = EncryptData(apiSecret, publicKey);

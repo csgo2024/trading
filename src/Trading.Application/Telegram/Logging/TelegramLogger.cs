@@ -67,7 +67,7 @@ public class TelegramLogger : ILogger
         var scopeStack = _scopeStack.Value;
         if (scopeStack == null || scopeStack.Count == 0)
         {
-            return true; // 默认禁用通知
+            return true;
         }
 
         foreach (var scope in scopeStack)
@@ -94,12 +94,10 @@ public class TelegramLogger : ILogger
             return;
         }
 
-        // 将异步操作包装在一个可等待的任务中
         var task = LogInternalAsync(logLevel, state, exception, formatter);
         task.ConfigureAwait(false).GetAwaiter().GetResult();
     }
 
-    // 新增内部异步方法
     internal async Task LogInternalAsync<TState>(LogLevel logLevel, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
     {
         try

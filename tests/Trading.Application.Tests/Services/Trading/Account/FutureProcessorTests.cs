@@ -124,27 +124,27 @@ public class FutureProcessorTests
 
         _mockTrading
             .Setup(m => m.PlaceOrderAsync(
-                It.IsAny<string>(),              // 忽略 symbol
-                It.IsAny<OrderSide>(),           // 忽略 side
-                It.IsAny<FuturesOrderType>(),    // 忽略 type
-                It.IsAny<decimal?>(),            // 忽略 quantity
-                It.IsAny<decimal?>(),            // 忽略 price
-                It.IsAny<PositionSide?>(),       // 忽略 positionSide
-                It.IsAny<TimeInForce?>(),        // 忽略 timeInForce
-                It.IsAny<bool?>(),               // 忽略 reduceOnly
-                It.IsAny<string?>(),             // 忽略 newClientOrderId
-                It.IsAny<decimal?>(),            // 忽略 stopPrice
-                It.IsAny<decimal?>(),            // 忽略 activationPrice
-                It.IsAny<decimal?>(),            // 忽略 callbackRate
-                It.IsAny<WorkingType?>(),        // 忽略 workingType
-                It.IsAny<bool?>(),               // 忽略 closePosition
-                It.IsAny<OrderResponseType?>(),  // 忽略 orderResponseType
-                It.IsAny<bool?>(),               // 忽略 priceProtect
-                It.IsAny<PriceMatch?>(),         // 忽略 priceMatch
-                It.IsAny<SelfTradePreventionMode?>(), // 忽略 selfTradePreventionMode
-                It.IsAny<DateTime?>(),           // 忽略 goodTillDate
-                It.IsAny<int?>(),                // 忽略 receiveWindow
-                It.IsAny<CancellationToken>()    // 忽略 ct
+                It.IsAny<string>(),
+                It.IsAny<OrderSide>(),
+                It.IsAny<FuturesOrderType>(),
+                It.IsAny<decimal?>(),
+                It.IsAny<decimal?>(),
+                It.IsAny<PositionSide?>(),
+                It.IsAny<TimeInForce?>(),
+                It.IsAny<bool?>(),
+                It.IsAny<string?>(),
+                It.IsAny<decimal?>(),
+                It.IsAny<decimal?>(),
+                It.IsAny<decimal?>(),
+                It.IsAny<WorkingType?>(),
+                It.IsAny<bool?>(),
+                It.IsAny<OrderResponseType?>(),
+                It.IsAny<bool?>(),
+                It.IsAny<PriceMatch?>(),
+                It.IsAny<SelfTradePreventionMode?>(),
+                It.IsAny<DateTime?>(),
+                It.IsAny<int?>(),
+                It.IsAny<CancellationToken>()
             )).ReturnsAsync(new WebCallResult<BinanceUsdFuturesOrder>(
                 null, null, TimeSpan.Zero, null, null, null, null, null, null, null,
                 ResultDataSource.Server, expectedOrder, null));

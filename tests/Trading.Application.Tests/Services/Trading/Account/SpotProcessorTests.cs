@@ -144,23 +144,23 @@ public class SpotProcessorTests
 
         _mockTrading
             .Setup(m => m.PlaceOrderAsync(
-            It.IsAny<string>(),    // 忽略 symbol
-            It.IsAny<OrderSide>(), // 忽略 side
-            It.IsAny<SpotOrderType>(), // 忽略 type
-            It.IsAny<decimal?>(),  // 忽略 quantity
-            It.IsAny<decimal?>(),  // 忽略 quoteQuantity
-            It.IsAny<string?>(),   // 忽略 newClientOrderId
-            It.IsAny<decimal?>(),  // 忽略 price
-            It.IsAny<TimeInForce?>(),  // 忽略 timeInForce
-            It.IsAny<decimal?>(),  // 忽略 stopPrice
-            It.IsAny<decimal?>(),  // 忽略 icebergQty
-            It.IsAny<OrderResponseType?>(), // 忽略 orderResponseType
-            It.IsAny<int?>(),      // 忽略 trailingDelta
-            It.IsAny<int?>(),      // 忽略 strategyId
-            It.IsAny<int?>(),      // 忽略 strategyType
-            It.IsAny<SelfTradePreventionMode?>(), // 忽略 selfTradePreventionMode
-            It.IsAny<int?>(),      // 忽略 receiveWindow
-            It.IsAny<CancellationToken>() // 忽略 ct
+            It.IsAny<string>(),
+            It.IsAny<OrderSide>(),
+            It.IsAny<SpotOrderType>(),
+            It.IsAny<decimal?>(),
+            It.IsAny<decimal?>(),
+            It.IsAny<string?>(),
+            It.IsAny<decimal?>(),
+            It.IsAny<TimeInForce?>(),
+            It.IsAny<decimal?>(),
+            It.IsAny<decimal?>(),
+            It.IsAny<OrderResponseType?>(),
+            It.IsAny<int?>(),
+            It.IsAny<int?>(),
+            It.IsAny<int?>(),
+            It.IsAny<SelfTradePreventionMode?>(),
+            It.IsAny<int?>(),
+            It.IsAny<CancellationToken>()
             )).ReturnsAsync(new WebCallResult<BinancePlacedOrder>(null,
                                                           null,
                                                           TimeSpan.Zero,
@@ -201,13 +201,13 @@ public class SpotProcessorTests
 
         _mockTrading
             .Setup(m => m.CancelOrderAsync(
-                It.IsAny<string>(),        // 忽略 symbol
-                It.IsAny<long?>(),         // 忽略 orderId
-                It.IsAny<string?>(),       // 忽略 origClientOrderId
-                It.IsAny<string?>(),       // 忽略 newClientOrderId
-                It.IsAny<CancelRestriction?>(), // 忽略 cancelRestriction
-                It.IsAny<long?>(),         // 忽略 receiveWindow
-                It.IsAny<CancellationToken>() // 忽略 ct
+                It.IsAny<string>(),
+                It.IsAny<long?>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<CancelRestriction?>(),
+                It.IsAny<long?>(),
+                It.IsAny<CancellationToken>()
             ))
             .ReturnsAsync(new WebCallResult<BinanceOrderBase>(null,
                                                                 null,

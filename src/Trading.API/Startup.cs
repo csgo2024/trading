@@ -26,9 +26,9 @@ public class Startup
                 builder =>
                 {
                     builder
-                        .AllowAnyOrigin()        // 允许任何来源
-                        .AllowAnyMethod()        // 允许任何HTTP方法
-                        .AllowAnyHeader();       // 允许任何请求头
+                        .AllowAnyOrigin()
+                        .AllowAnyMethod()
+                        .AllowAnyHeader();
                 }
             );
         });
@@ -60,7 +60,7 @@ public class Startup
         {
             app.UseDeveloperExceptionPage();
         }
-        app.UseCors("AllowAll");  // 使用允许所有的策略
+        app.UseCors("AllowAll");
         app.UseExceptionHandlingMiddleware();
         app.UseSwagger();
         app.UseSwaggerUI();

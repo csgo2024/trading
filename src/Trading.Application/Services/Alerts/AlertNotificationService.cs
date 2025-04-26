@@ -174,7 +174,7 @@ public class AlertNotificationService :
     {
         try
         {
-            // 计算涨波动率
+
             var priceChange = kline.ClosePrice - kline.OpenPrice;
             var priceChangePercent = priceChange / kline.OpenPrice * 100;
             var changeText = priceChange >= 0 ? "🟢 上涨" : "🔴 下跌";
