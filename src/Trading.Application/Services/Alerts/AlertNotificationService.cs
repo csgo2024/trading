@@ -47,13 +47,26 @@ public class AlertNotificationService :
         _backgroundTaskManager = backgroundTaskManager;
     }
 
-    public Task Handle(KlineUpdateEvent notification, CancellationToken cancellationToken)
+    public async Task Handle(KlineUpdateEvent notification, CancellationToken cancellationToken)
     {
         var kline = notification.Kline;
         var key = $"{notification.Symbol}-{notification.Interval}";
         _lastkLines.AddOrUpdate(key, kline, (_, _) => kline);
         _logger.LogDebug("LastkLines: {@LastKlines} after klineUpdate.", _lastkLines);
-        return Task.CompletedTask;
+        // reset paused alerts to running if the kline is closed
+
+        var idsToUpdate = await _alertRepository.ResumeAlertAsync(notification.Symbol,
+                                                CommonHelper.ConvertToIntervalString(notification.Interval),
+                                                cancellationToken);
+        if (idsToUpdate.Count > 0)
+        {
+            var alerts = await _alertRepository.GetActiveAlertsAsync(cancellationToken);
+            await InitWithAlerts(alerts, cancellationToken);
+        }
+        else
+        {
+            _logger.LogDebug("No alerts to resume for symbol {Symbol}", notification.Symbol);
+        }
     }
 
     public async Task Handle(AlertCreatedEvent notification, CancellationToken cancellationToken)

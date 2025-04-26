@@ -19,4 +19,6 @@ public interface IAlertRepository : IRepository<Alert>
     Task<int> ClearAllAlertsAsync(CancellationToken cancellationToken);
 
     Task<List<Alert>> GetAllAlerts();
+
+    Task<List<string>> ResumeAlertAsync(string symbol, string Interval, CancellationToken cancellationToken);
 }

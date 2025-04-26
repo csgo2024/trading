@@ -47,4 +47,20 @@ public class AlertRepository : BaseRepository<Alert>, IAlertRepository
         var strategies = await _collection.Find(filter).SortBy(x => x.Symbol).SortBy(x => x.CreatedAt).ToListAsync();
         return strategies;
     }
+
+    public async Task<List<string>> ResumeAlertAsync(string symbol, string Interval, CancellationToken cancellationToken)
+    {
+        var idsToUpdate = await _collection
+            .Find(x => x.Symbol == symbol && x.Interval == Interval && x.Status == StateStatus.Paused)
+            .Project(x => x.Id)
+            .ToListAsync(cancellationToken);
+
+        var update = Builders<Alert>.Update.Set(x => x.Status, StateStatus.Running);
+        var result = await _collection.UpdateManyAsync(
+            x => x.Symbol == symbol && x.Interval == Interval && x.Status == StateStatus.Paused,
+            update,
+            cancellationToken: cancellationToken);
+
+        return idsToUpdate;
+    }
 }

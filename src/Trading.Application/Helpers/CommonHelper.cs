@@ -14,6 +14,14 @@ public static class CommonHelper
         {"4h", KlineInterval.FourHour},
         {"1d", KlineInterval.OneDay},
     };
+    public static Dictionary<KlineInterval, string> IntervalKlineDict = new()
+    {
+        { KlineInterval.FiveMinutes,"5m"},
+        { KlineInterval.FifteenMinutes,"15m"},
+        { KlineInterval.OneHour,"1h"},
+        { KlineInterval.FourHour,"4h"},
+        { KlineInterval.OneDay,"1d"},
+    };
     public static decimal AdjustPriceByStepSize(decimal price, BinanceSymbolPriceFilter? filter)
     {
         ArgumentNullException.ThrowIfNull(filter);
@@ -53,6 +61,14 @@ public static class CommonHelper
         if (KlineIntervalDict.TryGetValue(interval, out var klineInterval))
         {
             return klineInterval;
+        }
+        throw new ValidationException("Invalid interval");
+    }
+    public static string ConvertToIntervalString(KlineInterval interval)
+    {
+        if (IntervalKlineDict.TryGetValue(interval, out var intervalStr))
+        {
+            return intervalStr;
         }
         throw new ValidationException("Invalid interval");
     }
