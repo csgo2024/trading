@@ -17,7 +17,7 @@ using Trading.Domain.IRepositories;
 namespace Trading.Application.Services.Alerts;
 
 public class AlertNotificationService :
-    INotificationHandler<KlineUpdateEvent>,
+    INotificationHandler<KlineClosedEvent>,
     INotificationHandler<AlertCreatedEvent>,
     INotificationHandler<AlertPausedEvent>,
     INotificationHandler<AlertResumedEvent>,
@@ -47,7 +47,7 @@ public class AlertNotificationService :
         _backgroundTaskManager = backgroundTaskManager;
     }
 
-    public async Task Handle(KlineUpdateEvent notification, CancellationToken cancellationToken)
+    public async Task Handle(KlineClosedEvent notification, CancellationToken cancellationToken)
     {
         var kline = notification.Kline;
         var key = $"{notification.Symbol}-{notification.Interval}";

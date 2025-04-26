@@ -60,7 +60,7 @@ public class AlertNotificationServiceTests
         var symbol = "BTCUSDT";
         var interval = Binance.Net.Enums.KlineInterval.OneHour;
         var kline = Mock.Of<IBinanceKline>();
-        var notification = new KlineUpdateEvent(symbol, interval, kline);
+        var notification = new KlineClosedEvent(symbol, interval, kline);
         var idsToUpdate = new List<string> { };
         _alertRepositoryMock
             .Setup(x => x.ResumeAlertAsync(
@@ -209,7 +209,7 @@ public class AlertNotificationServiceTests
             ))
             .ReturnsAsync(idsToUpdate);
 
-        await _service.Handle(new KlineUpdateEvent(alert.Symbol, Binance.Net.Enums.KlineInterval.OneHour, kline), CancellationToken.None);
+        await _service.Handle(new KlineClosedEvent(alert.Symbol, Binance.Net.Enums.KlineInterval.OneHour, kline), CancellationToken.None);
 
         _jsEvaluatorMock
             .Setup(x => x.EvaluateExpression(

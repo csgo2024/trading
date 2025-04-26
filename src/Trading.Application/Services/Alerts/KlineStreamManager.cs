@@ -10,13 +10,13 @@ using Trading.Exchange.Binance.Wrappers.Clients;
 
 namespace Trading.Application.Services.Alerts;
 
-public class KlineUpdateEvent : INotification
+public class KlineClosedEvent : INotification
 {
     public string Symbol { get; }
     public KlineInterval Interval { get; }
     public IBinanceKline Kline { get; }
 
-    public KlineUpdateEvent(string symbol, KlineInterval interval, IBinanceKline kline)
+    public KlineClosedEvent(string symbol, KlineInterval interval, IBinanceKline kline)
     {
         Symbol = symbol;
         Interval = interval;
@@ -97,7 +97,7 @@ public class KlineStreamManager : IKlineStreamManager
             return;
         }
 
-        Task.Run(() => _mediator.Publish(new KlineUpdateEvent(data.Data.Symbol, data.Data.Data.Interval, data.Data.Data)));
+        Task.Run(() => _mediator.Publish(new KlineClosedEvent(data.Data.Symbol, data.Data.Data.Interval, data.Data.Data)));
     }
 
     private void OnConnectionLost()

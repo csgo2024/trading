@@ -10,7 +10,7 @@ using Trading.Domain.IRepositories;
 namespace Trading.Application.Services.Trading.Executors;
 
 public class CloseBuyExecutor :
-    INotificationHandler<KlineUpdateEvent>
+    INotificationHandler<KlineClosedEvent>
 {
     private readonly ILogger<CloseBuyExecutor> _logger;
     private readonly IStrategyRepository _strategyRepository;
@@ -26,7 +26,7 @@ public class CloseBuyExecutor :
         _strategyRepository = strategyRepository;
     }
 
-    public async Task Handle(KlineUpdateEvent notification, CancellationToken cancellationToken)
+    public async Task Handle(KlineClosedEvent notification, CancellationToken cancellationToken)
     {
         var aaa = await _strategyRepository.Find(notification.Symbol,
                                                  CommonHelper.ConvertToIntervalString(notification.Interval),
