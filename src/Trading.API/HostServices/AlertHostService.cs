@@ -78,11 +78,6 @@ public class AlertHostService : BackgroundService
         }
     }
 
-    public override async Task StopAsync(CancellationToken cancellationToken)
-    {
-        await base.StopAsync(cancellationToken);
-    }
-
     public virtual Task SimulateDelay(TimeSpan delay, CancellationToken cancellationToken)
     {
         return Task.Delay(delay, cancellationToken);

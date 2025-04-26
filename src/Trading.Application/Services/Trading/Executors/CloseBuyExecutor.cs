@@ -29,11 +29,11 @@ public class CloseBuyExecutor : BaseExecutor,
 
     public async Task Handle(KlineClosedEvent notification, CancellationToken cancellationToken)
     {
-        var aaa = await _strategyRepository.Find(notification.Symbol,
+        var strategies = await _strategyRepository.Find(notification.Symbol,
                                                  CommonHelper.ConvertToIntervalString(notification.Interval),
                                                  StrategyType.CloseBuy,
                                                  cancellationToken);
-        foreach (var strategy in aaa)
+        foreach (var strategy in strategies)
         {
             var accountProcessor = _accountProcessorFactory.GetAccountProcessor(strategy.AccountType);
             if (accountProcessor != null)
@@ -42,14 +42,9 @@ public class CloseBuyExecutor : BaseExecutor,
                 var closePrice = notification.Kline.ClosePrice;
                 strategy.TargetPrice = CommonHelper.AdjustPriceByStepSize(closePrice * (1 - strategy.Volatility), filterData.Item1);
                 strategy.Quantity = CommonHelper.AdjustQuantityBystepSize(strategy.Amount / strategy.TargetPrice, filterData.Item2);
-                if (strategy.HasOpenOrder)
-                {
-                    continue;
-                }
-                else
+                if (!strategy.HasOpenOrder)
                 {
                     await TryPlaceOrder(accountProcessor, strategy, cancellationToken);
-
                 }
                 strategy.UpdatedAt = DateTime.UtcNow;
                 await _strategyRepository.UpdateAsync(strategy.Id, strategy, cancellationToken);

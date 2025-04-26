@@ -46,11 +46,7 @@ public class CloseSellExecutor : BaseExecutor,
                 var closePrice = notification.Kline.ClosePrice;
                 strategy.TargetPrice = CommonHelper.AdjustPriceByStepSize(closePrice * (1 + strategy.Volatility), filterData.Item1);
                 strategy.Quantity = CommonHelper.AdjustQuantityBystepSize(strategy.Amount / strategy.TargetPrice, filterData.Item2);
-                if (strategy.HasOpenOrder)
-                {
-                    continue;
-                }
-                else
+                if (!strategy.HasOpenOrder)
                 {
                     await TryPlaceOrder(accountProcessor, strategy, cancellationToken);
                 }
