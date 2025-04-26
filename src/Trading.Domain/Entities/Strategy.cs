@@ -20,5 +20,6 @@ public class Strategy : BaseEntity
     public StrategyType StrategyType { get; set; }
 
     public StateStatus Status { get; set; }
+    public string? Interval { get; set; }
 
 }

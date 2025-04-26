@@ -61,6 +61,14 @@ public class AlertNotificationServiceTests
         var interval = Binance.Net.Enums.KlineInterval.OneHour;
         var kline = Mock.Of<IBinanceKline>();
         var notification = new KlineUpdateEvent(symbol, interval, kline);
+        var idsToUpdate = new List<string> { };
+        _alertRepositoryMock
+            .Setup(x => x.ResumeAlertAsync(
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<CancellationToken>()
+            ))
+            .ReturnsAsync(idsToUpdate);
 
         // Act
         await _service.Handle(notification, _cts.Token);
@@ -191,6 +199,15 @@ public class AlertNotificationServiceTests
             k.ClosePrice == 41000m &&
             k.HighPrice == 42000m &&
             k.LowPrice == 39000m);
+
+        var idsToUpdate = new List<string> { };
+        _alertRepositoryMock
+            .Setup(x => x.ResumeAlertAsync(
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<CancellationToken>()
+            ))
+            .ReturnsAsync(idsToUpdate);
 
         await _service.Handle(new KlineUpdateEvent(alert.Symbol, Binance.Net.Enums.KlineInterval.OneHour, kline), CancellationToken.None);
 

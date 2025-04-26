@@ -26,7 +26,8 @@ public class KlineUpdateEvent : INotification
 
 public interface IKlineStreamManager : IDisposable,
     INotificationHandler<AlertResumedEvent>,
-    INotificationHandler<AlertCreatedEvent>
+    INotificationHandler<AlertCreatedEvent>,
+    INotificationHandler<StrategyCreatedEvent>
 {
     Task<bool> SubscribeSymbols(HashSet<string> symbols, HashSet<string> intervals, CancellationToken ct);
     bool NeedsReconnection();
@@ -82,8 +83,10 @@ public class KlineStreamManager : IKlineStreamManager
         _lastConnectionTime = DateTime.UtcNow;
 
         SubscribeToEvents(_subscription);
-        _logger.LogDebug("Subscribed to {Count} symbols: {@Symbols} intervals: {@Intervals}",
-            _listenedSymbols.Count, _listenedSymbols, _listenedIntervals);
+        _logger.LogInformation("Subscribed to {Count} symbols: {@Symbols} intervals: {@Intervals}",
+                               _listenedSymbols.Count,
+                               _listenedSymbols,
+                               _listenedIntervals);
         return true;
     }
 
@@ -99,41 +102,41 @@ public class KlineStreamManager : IKlineStreamManager
 
     private void OnConnectionLost()
     {
-        _logger.LogDebug("WebSocket connection lost for symbols: {@Symbols}", _listenedSymbols);
+        _logger.LogInformation("WebSocket connection lost for symbols: {@Symbols}", _listenedSymbols);
     }
 
     private void OnConnectionRestored(TimeSpan timeSpan)
     {
-        _logger.LogDebug("Connection restored after {Delay}ms for symbols: {@Symbols}",
+        _logger.LogInformation("Connection restored after {Delay}ms for symbols: {@Symbols}",
             timeSpan.TotalMilliseconds,
             _listenedSymbols);
     }
 
     private void OnConnectionClosed()
     {
-        _logger.LogDebug("Connection closed for symbols: {@Symbols}", _listenedSymbols);
+        _logger.LogInformation("Connection closed for symbols: {@Symbols}", _listenedSymbols);
     }
 
     private void OnResubscribingFailed(Error error)
     {
-        _logger.LogDebug("Resubscribing failed for symbols: {@Symbols}, Error: {@Error}",
+        _logger.LogInformation("Resubscribing failed for symbols: {@Symbols}, Error: {@Error}",
             _listenedSymbols,
             error);
     }
 
     private void OnActivityPaused()
     {
-        _logger.LogDebug("Connection activity paused for symbols: {@Symbols}", _listenedSymbols);
+        _logger.LogInformation("Connection activity paused for symbols: {@Symbols}", _listenedSymbols);
     }
 
     private void OnActivityUnpaused()
     {
-        _logger.LogDebug("Connection activity resumed for symbols: {@Symbols}", _listenedSymbols);
+        _logger.LogInformation("Connection activity resumed for symbols: {@Symbols}", _listenedSymbols);
     }
 
     private void OnException(Exception exception)
     {
-        _logger.LogDebug(exception, "Exception occurred for symbols: {@Symbols}", _listenedSymbols);
+        _logger.LogInformation(exception, "Exception occurred for symbols: {@Symbols}", _listenedSymbols);
     }
 
     private void SubscribeToEvents(UpdateSubscription subscription)
@@ -196,5 +199,13 @@ public class KlineStreamManager : IKlineStreamManager
     public async Task Handle(AlertCreatedEvent notification, CancellationToken cancellationToken)
     {
         await SubscribeSymbols([notification.Alert.Symbol], [notification.Alert.Interval], cancellationToken);
+    }
+
+    public async Task Handle(StrategyCreatedEvent notification, CancellationToken cancellationToken)
+    {
+        if (notification.Strategy.Symbol != null && notification.Strategy.Interval != null)
+        {
+            await SubscribeSymbols([notification.Strategy.Symbol], [notification.Strategy.Interval], cancellationToken);
+        }
     }
 }

@@ -16,4 +16,9 @@ public interface IStrategyRepository : IRepository<Strategy>
     /// </summary>
     /// <returns></returns>
     Task<List<Strategy>> GetAllStrategies();
+
+    Task<List<Strategy>> Find(string symbol,
+                              string interval,
+                              StrategyType strategyType,
+                              CancellationToken cancellationToken = default);
 }

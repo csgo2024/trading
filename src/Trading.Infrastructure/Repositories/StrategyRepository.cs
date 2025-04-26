@@ -46,4 +46,16 @@ public class StrategyRepository : BaseRepository<Strategy>, IStrategyRepository
     {
         return await UpdateAsync(entity.Id, entity, cancellationToken);
     }
+
+    public async Task<List<Strategy>> Find(string symbol,
+                                           string interval,
+                                            StrategyType strategyType,
+                                           CancellationToken cancellationToken = default)
+    {
+        var data = await _collection.Find(x => x.Symbol == symbol
+                                               && x.Status == StateStatus.Running
+                                               && x.StrategyType == strategyType
+                                               && x.Interval == interval).ToListAsync(cancellationToken: cancellationToken);
+        return data;
+    }
 }

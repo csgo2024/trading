@@ -33,4 +33,11 @@ public enum StrategyType
 
     [Description("BottomBuy")]
     BottomBuy,
+
+    [Description("CloseBuy")]
+    CloseBuy,
+
+    [Description("CloseSell")]
+    CloseSell,
+
 }

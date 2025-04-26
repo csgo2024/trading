@@ -17,10 +17,8 @@ public class AlertHostServiceTests : IDisposable
     private readonly Mock<ILogger<AlertHostService>> _loggerMock;
     private readonly Mock<IKlineStreamManager> _klineStreamManagerMock;
     private readonly Mock<IAlertRepository> _alertRepositoryMock;
-    private readonly Mock<ITelegramBotClient> _botClientMock;
-    private readonly Mock<IBackgroundTaskManager> _backgroundTaskManagerMock;
+    private readonly Mock<IStrategyRepository> _strategyRepositoryMock;
     private readonly CancellationTokenSource _cts;
-    private readonly AlertNotificationService _alertNotificationService;
     private readonly TestAlertHostService _service;
 
     public AlertHostServiceTests()
@@ -28,8 +26,9 @@ public class AlertHostServiceTests : IDisposable
         _loggerMock = new Mock<ILogger<AlertHostService>>();
         _klineStreamManagerMock = new Mock<IKlineStreamManager>();
         _alertRepositoryMock = new Mock<IAlertRepository>();
-        _botClientMock = new Mock<ITelegramBotClient>();
-        _backgroundTaskManagerMock = new Mock<IBackgroundTaskManager>();
+        _strategyRepositoryMock = new Mock<IStrategyRepository>();
+        var botClientMock = new Mock<ITelegramBotClient>();
+        var backgroundTaskManagerMock = new Mock<IBackgroundTaskManager>();
         _cts = new CancellationTokenSource();
 
         // 创建AlertNotificationService的依赖
@@ -38,19 +37,20 @@ public class AlertHostServiceTests : IDisposable
         var telegramSettings = Options.Create(new TelegramSettings { ChatId = "test-chat-id" });
         var jsEvaluator = new JavaScriptEvaluator(jsEvaluatorLoggerMock.Object);
 
-        _alertNotificationService = new AlertNotificationService(
+        var alertNotificationService = new AlertNotificationService(
             notificationLoggerMock.Object,
             _alertRepositoryMock.Object,
-            _botClientMock.Object,
+            botClientMock.Object,
             jsEvaluator,
-            _backgroundTaskManagerMock.Object,
+            backgroundTaskManagerMock.Object,
             telegramSettings);
 
         _service = new TestAlertHostService(
             _loggerMock.Object,
             _klineStreamManagerMock.Object,
-            _alertNotificationService,
-            _alertRepositoryMock.Object);
+            alertNotificationService,
+            _alertRepositoryMock.Object,
+            _strategyRepositoryMock.Object);
 
         SetupDefaults();
     }
@@ -63,8 +63,9 @@ public class AlertHostServiceTests : IDisposable
             ILogger<AlertHostService> logger,
             IKlineStreamManager klineStreamManager,
             AlertNotificationService alertNotificationService,
-            IAlertRepository alertRepository)
-            : base(logger, klineStreamManager, alertNotificationService, alertRepository)
+            IAlertRepository alertRepository,
+            IStrategyRepository strategyRepository)
+            : base(logger, klineStreamManager, alertNotificationService, strategyRepository, alertRepository)
         {
         }
 
@@ -134,6 +135,12 @@ public class AlertHostServiceTests : IDisposable
             new() { Symbol = "ETHUSDT", Interval = "15m" }
         };
 
+        var strategy = new Strategy { Id = "123", Symbol = "DOGEUSDT", Interval = "4h", StrategyType = StrategyType.CloseBuy };
+
+        _strategyRepositoryMock
+            .Setup(x => x.InitializeActiveStrategies())
+            .ReturnsAsync(new Dictionary<string, Strategy> { { "123", strategy } });
+
         _alertRepositoryMock
             .Setup(x => x.GetActiveAlertsAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(alerts);
@@ -151,8 +158,8 @@ public class AlertHostServiceTests : IDisposable
         // Assert
         _klineStreamManagerMock.Verify(
             x => x.SubscribeSymbols(
-                It.Is<HashSet<string>>(s => s.SetEquals(new[] { "BTCUSDT", "ETHUSDT" })),
-                It.Is<HashSet<string>>(i => i.SetEquals(new[] { "5m", "15m" })),
+                It.Is<HashSet<string>>(s => s.SetEquals(new[] { "BTCUSDT", "ETHUSDT", "DOGEUSDT" })),
+                It.Is<HashSet<string>>(i => i.SetEquals(new[] { "5m", "15m", "4h" })),
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }
@@ -165,10 +172,14 @@ public class AlertHostServiceTests : IDisposable
         {
             new() { Symbol = "BTCUSDT", Interval = "5m" }
         };
+        var strategy = new Strategy { Id = "123", Symbol = "BTCUSDT", Interval = "5m", StrategyType = StrategyType.CloseBuy };
 
         _alertRepositoryMock
             .Setup(x => x.GetActiveAlertsAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(alerts);
+        _strategyRepositoryMock
+            .Setup(x => x.InitializeActiveStrategies())
+            .ReturnsAsync(new Dictionary<string, Strategy> { { "123", strategy } });
 
         _klineStreamManagerMock
             .Setup(x => x.NeedsReconnection())

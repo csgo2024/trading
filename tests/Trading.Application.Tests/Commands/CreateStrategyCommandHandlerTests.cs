@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using MediatR;
+using Microsoft.Extensions.Logging;
 using Moq;
 using Trading.Application.Commands;
 using Trading.Domain.Entities;
@@ -12,13 +13,15 @@ public class CreateStrategyCommandHandlerTests
 {
     private readonly Mock<IStrategyRepository> _strategyRepositoryMock;
     private readonly Mock<IMediator> _mediatorMock;
+    private readonly Mock<ILogger<CreateStrategyCommandHandler>> _loggerMock;
     private readonly CreateStrategyCommandHandler _handler;
 
     public CreateStrategyCommandHandlerTests()
     {
         _strategyRepositoryMock = new Mock<IStrategyRepository>();
         _mediatorMock = new Mock<IMediator>();
-        _handler = new CreateStrategyCommandHandler(_strategyRepositoryMock.Object, _mediatorMock.Object);
+        _loggerMock = new Mock<ILogger<CreateStrategyCommandHandler>>();
+        _handler = new CreateStrategyCommandHandler(_strategyRepositoryMock.Object, _loggerMock.Object, _mediatorMock.Object);
     }
 
     [Fact]
@@ -73,8 +76,8 @@ public class CreateStrategyCommandHandlerTests
     [Theory]
     [InlineData("", 100, 0.1, "Symbol cannot be empty")]
     [InlineData("BTCUSDT", 9, 0.1, "Amount must be greater than 10")]
-    [InlineData("BTCUSDT", 100, 0.95, "Volatility must be between 0.01 and 0.9")]
-    [InlineData("BTCUSDT", 100, 0.005, "Volatility must be between 0.01 and 0.9")]
+    [InlineData("BTCUSDT", 100, 0.95, "Volatility must be between 0.00001 and 0.9")]
+    [InlineData("BTCUSDT", 100, 0.000005, "Volatility must be between 0.00001 and 0.9")]
     public async Task Handle_WithInvalidCommand_ShouldThrowValidationException(
         string symbol, int amount, decimal Volatility, string expectedError)
     {

@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using MediatR;
+using Microsoft.Extensions.Logging;
 using Trading.Domain.Entities;
 using Trading.Domain.Events;
 using Trading.Domain.IRepositories;
@@ -11,10 +12,14 @@ public class CreateStrategyCommandHandler : IRequestHandler<CreateStrategyComman
     private readonly IStrategyRepository _strategyRepository;
     private readonly IMediator _mediator;
 
+    private readonly ILogger<CreateStrategyCommandHandler> _logger;
+
     public CreateStrategyCommandHandler(IStrategyRepository strategyRepository,
+                                        ILogger<CreateStrategyCommandHandler> logger,
                                         IMediator mediator)
     {
         _mediator = mediator;
+        _logger = logger;
         _strategyRepository = strategyRepository;
     }
 
@@ -29,7 +34,13 @@ public class CreateStrategyCommandHandler : IRequestHandler<CreateStrategyComman
             var errorMessage = string.Join("; ", validationResults.Select(r => r.ErrorMessage));
             throw new ValidationException(errorMessage);
         }
-
+        if (request.AccountType == AccountType.Spot)
+        {
+            if (request.StrategyType == StrategyType.TopSell || request.StrategyType == StrategyType.CloseSell)
+            {
+                throw new ValidationException("Spot account type is not supported for TopSell or CloseSell strategies.");
+            }
+        }
         var entity = new Strategy
         {
             CreatedAt = DateTime.Now,
@@ -40,9 +51,14 @@ public class CreateStrategyCommandHandler : IRequestHandler<CreateStrategyComman
             Leverage = request.Leverage,
             Status = StateStatus.Running,
             StrategyType = request.StrategyType,
+            Interval = request.Interval,
         };
 
         await _strategyRepository.Add(entity, cancellationToken);
+        _logger.LogInformation("[{Interval}-{StrategyType}] Strategy created: {StrategyId}",
+                               entity.Interval,
+                               entity.StrategyType,
+                               entity.Id);
         await _mediator.Publish(new StrategyCreatedEvent(entity), cancellationToken);
         return entity;
     }

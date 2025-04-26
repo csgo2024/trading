@@ -7,18 +7,22 @@ public class AlertHostService : BackgroundService
 {
     private readonly AlertNotificationService _sendAlertService;
     private readonly IAlertRepository _alertRepository;
+    private readonly IStrategyRepository _strategyRepository;
+
     private readonly ILogger<AlertHostService> _logger;
     private readonly IKlineStreamManager _klineStreamManager;
 
     public AlertHostService(ILogger<AlertHostService> logger,
                             IKlineStreamManager klineStreamManager,
                             AlertNotificationService sendAlertService,
+                            IStrategyRepository strategyRepository,
                             IAlertRepository alertRepository)
     {
         _logger = logger;
         _klineStreamManager = klineStreamManager;
         _sendAlertService = sendAlertService;
         _alertRepository = alertRepository;
+        _strategyRepository = strategyRepository;
     }
 
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
@@ -30,8 +34,17 @@ public class AlertHostService : BackgroundService
             try
             {
                 var alerts = await _alertRepository.GetActiveAlertsAsync(cancellationToken);
-                var symbols = alerts.Select(x => x.Symbol).ToHashSet();
-                var intervals = alerts.Select(x => x.Interval).ToHashSet();
+                var strategyDict = await _strategyRepository.InitializeActiveStrategies();
+
+                var symbols = alerts.Select(x => x.Symbol)
+                    .Concat(strategyDict.Values.Select(x => x.Symbol))
+                    .ToHashSet();
+
+                var intervals = alerts.Select(x => x.Interval)
+                    .Concat(strategyDict.Values.Where(x => x.Interval != null)
+                    .Select(x => x.Interval!))
+                    .ToHashSet();
+
                 await _sendAlertService.InitWithAlerts(alerts, cancellationToken);
                 var needReconnect = _klineStreamManager.NeedsReconnection();
 

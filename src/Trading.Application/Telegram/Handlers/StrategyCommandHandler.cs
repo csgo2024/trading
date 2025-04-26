@@ -90,6 +90,7 @@ public class StrategyCommandHandler : ICommandHandler
             var text = $"""
             📊 <b>策略状态报告</b> ({DateTime.UtcNow.AddHours(8):yyyy-MM-dd HH:mm:ss})
             <pre>{emoji} [{strategy.AccountType}-{strategy.StrategyType}-{strategy.Symbol}]: {status}
+            时间级别: {strategy.Interval} 
             波动率: {strategy.Volatility} / 目标价格: {strategy.TargetPrice} 💰
             金额: {strategy.Amount} / 数量: {strategy.Quantity}</pre>
             """;

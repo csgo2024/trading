@@ -84,7 +84,7 @@ public class StrategyExecutionService :
 
         if (executor == null || accountProcessor == null)
         {
-            _logger.LogError("Failed to get executor or account processor for strategy {StrategyId}", strategy.Id);
+            // _logger.LogError("Failed to get executor or account processor for strategy {StrategyId}", strategy.Id);
             return;
         }
 

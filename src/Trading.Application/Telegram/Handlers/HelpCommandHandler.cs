@@ -22,14 +22,23 @@ public class HelpCommandHandler : ICommandHandler
 /alert \- [create\|delete\|empty\|pause\|resume] 警报相关
 
 1\. *策略管理:*
+*StrategyType* 类型说明
 
-*示例:*
-创建策略:
-`/strategy create {""Symbol"":""BTCUSDT"",""Amount"":1000,""Volatility"":0.2,""Leverage"":5,""AccountType"":""Spot"",""StrategyType"":""BottomBuy""}`
+*BottomBuy、TopSell是基于RestClient的日内交易策略，第二天可以自动管理。*
+
+做多策略\(现货\)
+`/strategy create {""Symbol"":""BTCUSDT"",""Amount"":1000,""Volatility"":0.2,""Interval"":""1d"",""Leverage"":5,""AccountType"":""Spot"",""StrategyType"":""BottomBuy""}`
 
 做空策略\(合约\)
-`/strategy create {""Symbol"":""BTCUSDT"",""Amount"":1000,""Volatility"":0.2,""Leverage"":5,""AccountType"":""Future"",""StrategyType"":""TopSell""}`
+`/strategy create {""Symbol"":""BTCUSDT"",""Amount"":1000,""Volatility"":0.2,""Interval"":""1d"",""Leverage"":5,""AccountType"":""Future"",""StrategyType"":""TopSell""}`
 
+*CloseBuy、CloseSell是基于SocketClient的支持配置交易周期的策略，根据收盘价格进行下单！需要关注！！！。*
+
+做空策略\(合约基于配置周期收盘价格\) WebSocket
+`/strategy create {""Symbol"":""BTCUSDT"",""Amount"":1000,""Volatility"":0.0002,""Interval"":""4h"",""AccountType"":""Future"",""StrategyType"":""CloseSell""}`
+
+做多策略\(合约基于配置周期收盘价格\) WebSocket
+`/strategy create {""Symbol"":""BTCUSDT"",""Amount"":1000,""Volatility"":0.0002,""Interval"":""4h"",""AccountType"":""Future"",""StrategyType"":""CloseBuy""}`
 
 删除策略:
 `/strategy delete <Id>`
