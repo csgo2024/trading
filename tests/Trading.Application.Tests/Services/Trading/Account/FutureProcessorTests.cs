@@ -8,6 +8,7 @@ using Moq;
 using Trading.Application.Services.Trading.Account;
 using Trading.Domain.Entities;
 using Trading.Exchange.Binance.Wrappers.Clients;
+using AccountType = Trading.Common.Enums.AccountType;
 
 namespace Trading.Application.Tests.Services.Trading.Account;
 
@@ -222,7 +223,7 @@ public class FutureProcessorTests
     public async Task GetSymbolFilterData_WhenSuccessful_ShouldReturnFilters()
     {
         // Arrange
-        var strategy = new Strategy { Symbol = "BTCUSDT", AccountType = Domain.Entities.AccountType.Future };
+        var strategy = new Strategy { Symbol = "BTCUSDT", AccountType = AccountType.Future };
         var expectedPriceFilter = new BinanceSymbolPriceFilter
         {
             TickSize = 0.01m,
@@ -272,7 +273,7 @@ public class FutureProcessorTests
     public async Task GetSymbolFilterData_WhenSymbolNotFound_ShouldThrowException()
     {
         // Arrange
-        var strategy = new Strategy { Symbol = "UNKNOWN", AccountType = Domain.Entities.AccountType.Future };
+        var strategy = new Strategy { Symbol = "UNKNOWN", AccountType = AccountType.Future };
         var exchangeInfo = new BinanceFuturesUsdtExchangeInfo
         {
             Symbols = Array.Empty<BinanceFuturesUsdtSymbol>()

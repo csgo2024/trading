@@ -1,7 +1,7 @@
 using Jint;
 using Microsoft.Extensions.Logging;
 
-namespace Trading.Application.Helpers;
+namespace Trading.Application.JavaScript;
 
 public class JavaScriptEvaluator : IDisposable
 {
@@ -43,7 +43,7 @@ public class JavaScriptEvaluator : IDisposable
                                   decimal high,
                                   decimal low)
     {
-        for (int attempt = 1; attempt <= MaxRetries; attempt++)
+        for (var attempt = 1; attempt <= MaxRetries; attempt++)
         {
             try
             {

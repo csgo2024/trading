@@ -3,7 +3,8 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Trading.Application.Commands;
-using Trading.Application.Helpers;
+using Trading.Application.JavaScript;
+using Trading.Common.Enums;
 using Trading.Domain.Entities;
 using Trading.Domain.Events;
 using Trading.Domain.IRepositories;
@@ -60,7 +61,7 @@ public class CreateAlertCommandHandlerTests
         Assert.Equal(command.Symbol.ToUpper(), result.Symbol);
         Assert.Equal(command.Interval, result.Interval);
         // Assert.Equal(command.Expression, result.Expression);
-        Assert.True(result.Status == StateStatus.Running);
+        Assert.True(result.Status == Status.Running);
         Assert.True(result.LastNotification <= DateTime.UtcNow);
         Assert.True(result.LastNotification > DateTime.UtcNow.AddMinutes(-1));
 
@@ -79,7 +80,7 @@ public class CreateAlertCommandHandlerTests
 
     [Theory]
     [InlineData("", "4h", "close > open", "Symbol cannot be empty")]
-    [InlineData("BTCUSDT", "", "close > open", "Interval cannot be empty")]
+    [InlineData("BTCUSDT", "", "close > open", "Interval is required.")]
     [InlineData("BTCUSDT", "4h", "", "Expression cannot be empty")]
     [InlineData("BTCUSDT", "invalid", "close > open", "Invalid interval")]
     public async Task Handle_WithInvalidCommand_ShouldThrowValidationException(

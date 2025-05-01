@@ -1,4 +1,4 @@
-using Trading.Domain.Entities;
+using Trading.Common.Enums;
 
 namespace Trading.Application.Services.Trading.Executors;
 

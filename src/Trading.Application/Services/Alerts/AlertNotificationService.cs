@@ -7,12 +7,14 @@ using Telegram.Bot;
 using Telegram.Bot.Requests;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
-using Trading.Application.Helpers;
+using Trading.Application.JavaScript;
 using Trading.Application.Services.Common;
+using Trading.Common.Enums;
 using Trading.Common.Models;
 using Trading.Domain.Entities;
 using Trading.Domain.Events;
 using Trading.Domain.IRepositories;
+using Trading.Exchange.Binance.Helpers;
 
 namespace Trading.Application.Services.Alerts;
 
@@ -56,7 +58,7 @@ public class AlertNotificationService :
         // reset paused alerts to running if the kline is closed
 
         var idsToUpdate = await _alertRepository.ResumeAlertAsync(notification.Symbol,
-                                                CommonHelper.ConvertToIntervalString(notification.Interval),
+                                                BinanceHelper.ConvertToIntervalString(notification.Interval),
                                                 cancellationToken);
         if (idsToUpdate.Count > 0)
         {
@@ -73,7 +75,7 @@ public class AlertNotificationService :
     {
         var alert = notification.Alert;
         _activeAlerts.AddOrUpdate(alert.Id, alert, (_, _) => alert);
-        await _backgroundTaskManager.StartAsync(TaskCategories.Alert,
+        await _backgroundTaskManager.StartAsync(TaskCategory.Alert,
                                                 alert.Id,
                                                 ct => ProcessAlert(alert, ct),
                                                 cancellationToken);
@@ -82,14 +84,14 @@ public class AlertNotificationService :
     public async Task Handle(AlertPausedEvent notification, CancellationToken cancellationToken)
     {
         _activeAlerts.TryRemove(notification.AlertId, out _);
-        await _backgroundTaskManager.StopAsync(TaskCategories.Alert, notification.AlertId);
+        await _backgroundTaskManager.StopAsync(TaskCategory.Alert, notification.AlertId);
     }
 
     public async Task Handle(AlertResumedEvent notification, CancellationToken cancellationToken)
     {
         var alert = notification.Alert;
         _activeAlerts.AddOrUpdate(alert.Id, alert, (_, _) => alert);
-        await _backgroundTaskManager.StartAsync(TaskCategories.Alert,
+        await _backgroundTaskManager.StartAsync(TaskCategory.Alert,
                                                 alert.Id,
                                                 ct => ProcessAlert(alert, ct),
                                                 cancellationToken);
@@ -97,7 +99,7 @@ public class AlertNotificationService :
     public async Task Handle(AlertDeletedEvent notification, CancellationToken cancellationToken)
     {
         _activeAlerts.TryRemove(notification.AlertId, out _);
-        await _backgroundTaskManager.StopAsync(TaskCategories.Alert, notification.AlertId);
+        await _backgroundTaskManager.StopAsync(TaskCategory.Alert, notification.AlertId);
     }
     public async Task Handle(AlertEmptyedEvent notification, CancellationToken cancellationToken)
     {
@@ -105,7 +107,7 @@ public class AlertNotificationService :
         _lastkLines.Clear();
         _logger.LogInformation("Alert list is empty, stopping all monitors.");
         // Stop all monitors
-        await _backgroundTaskManager.StopAsync(TaskCategories.Alert);
+        await _backgroundTaskManager.StopAsync(TaskCategory.Alert);
     }
 
     public async Task InitWithAlerts(IEnumerable<Alert> alerts, CancellationToken cancellationToken)
@@ -115,7 +117,7 @@ public class AlertNotificationService :
             foreach (var alert in alerts)
             {
                 _activeAlerts.AddOrUpdate(alert.Id, alert, (_, _) => alert);
-                await _backgroundTaskManager.StartAsync(TaskCategories.Alert,
+                await _backgroundTaskManager.StartAsync(TaskCategory.Alert,
                                                         alert.Id,
                                                         ct => ProcessAlert(alert, ct),
                                                         cancellationToken);
@@ -133,7 +135,7 @@ public class AlertNotificationService :
                          alert.Symbol,
                          alert.Interval,
                          alert.Expression);
-        var key = $"{alert.Symbol}-{CommonHelper.ConvertToKlineInterval(alert.Interval)}";
+        var key = $"{alert.Symbol}-{BinanceHelper.ConvertToKlineInterval(alert.Interval)}";
         while (!cancellationToken.IsCancellationRequested)
         {
             try

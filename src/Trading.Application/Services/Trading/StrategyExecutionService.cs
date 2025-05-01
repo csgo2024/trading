@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Trading.Application.Services.Common;
 using Trading.Application.Services.Trading.Account;
 using Trading.Application.Services.Trading.Executors;
+using Trading.Common.Enums;
 using Trading.Domain.Entities;
 using Trading.Domain.Events;
 using Trading.Domain.IRepositories;
@@ -37,7 +38,7 @@ public class StrategyExecutionService :
     public async Task Handle(StrategyCreatedEvent notification, CancellationToken cancellationToken)
     {
         var strategy = notification.Strategy;
-        await StartStrategyExecution(strategy, cancellationToken);
+        await ExecuteAsync(strategy, cancellationToken);
     }
 
     public async Task Handle(StrategyDeletedEvent notification, CancellationToken cancellationToken)
@@ -48,17 +49,17 @@ public class StrategyExecutionService :
             var accountProcessor = _accountProcessorFactory.GetAccountProcessor(strategy.AccountType);
             await accountProcessor!.CancelOrder(strategy.Symbol, strategy.OrderId.Value, cancellationToken);
         }
-        await _backgroundTaskManager.StopAsync(TaskCategories.Strategy, strategy.Id);
+        await _backgroundTaskManager.StopAsync(TaskCategory.Strategy, strategy.Id);
     }
 
     public async Task Handle(StrategyPausedEvent notification, CancellationToken cancellationToken)
     {
-        await _backgroundTaskManager.StopAsync(TaskCategories.Strategy, notification.Id);
+        await _backgroundTaskManager.StopAsync(TaskCategory.Strategy, notification.Id);
     }
 
     public async Task Handle(StrategyResumedEvent notification, CancellationToken cancellationToken)
     {
-        await StartStrategyExecution(notification.Strategy, cancellationToken);
+        await ExecuteAsync(notification.Strategy, cancellationToken);
     }
 
     public virtual async Task ExecuteAsync(CancellationToken cancellationToken)
@@ -68,7 +69,7 @@ public class StrategyExecutionService :
             var strategies = await _strategyRepository.InitializeActiveStrategies();
             foreach (var strategy in strategies.Values)
             {
-                await StartStrategyExecution(strategy, cancellationToken);
+                await ExecuteAsync(strategy, cancellationToken);
             }
         }
         catch (Exception ex)
@@ -77,7 +78,7 @@ public class StrategyExecutionService :
         }
     }
 
-    private async Task StartStrategyExecution(Strategy strategy, CancellationToken cancellationToken)
+    private async Task ExecuteAsync(Strategy strategy, CancellationToken cancellationToken)
     {
         var accountProcessor = _accountProcessorFactory.GetAccountProcessor(strategy.AccountType);
         var executor = _executorFactory.GetExecutor(strategy.StrategyType);
@@ -89,16 +90,16 @@ public class StrategyExecutionService :
         }
 
         await _backgroundTaskManager.StartAsync(
-            TaskCategories.Strategy,
+            TaskCategory.Strategy,
             strategy.Id,
-            async (ct) => await ExecuteStrategyLoop(executor, accountProcessor, strategy, ct),
+            async (ct) => await ExecuteAsync(executor, accountProcessor, strategy, ct),
             cancellationToken);
     }
 
-    private async Task ExecuteStrategyLoop(BaseExecutor executor,
-                                           IAccountProcessor accountProcessor,
-                                           Strategy strategy,
-                                           CancellationToken cancellationToken)
+    private async Task ExecuteAsync(BaseExecutor executor,
+                                    IAccountProcessor accountProcessor,
+                                    Strategy strategy,
+                                    CancellationToken cancellationToken)
     {
         while (!cancellationToken.IsCancellationRequested)
         {

@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using Trading.Application.Commands;
+using Trading.Common.Enums;
 using Trading.Common.Models;
 using Trading.Domain.Entities;
 

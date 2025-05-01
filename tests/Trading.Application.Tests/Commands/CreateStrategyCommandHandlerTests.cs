@@ -6,6 +6,9 @@ using Trading.Application.Commands;
 using Trading.Domain.Entities;
 using Trading.Domain.Events;
 using Trading.Domain.IRepositories;
+using AccountType = Trading.Common.Enums.AccountType;
+using Status = Trading.Common.Enums.Status;
+using StrategyType = Trading.Common.Enums.StrategyType;
 
 namespace Trading.Application.Tests.Commands;
 
@@ -56,7 +59,7 @@ public class CreateStrategyCommandHandlerTests
         Assert.Equal(command.Volatility, result.Volatility);
         Assert.Equal(command.AccountType, result.AccountType);
         Assert.Equal(command.StrategyType, result.StrategyType);
-        Assert.Equal(StateStatus.Running, result.Status);
+        Assert.Equal(Status.Running, result.Status);
         Assert.True(result.CreatedAt <= DateTime.Now);
         Assert.True(result.CreatedAt > DateTime.Now.AddMinutes(-1));
 

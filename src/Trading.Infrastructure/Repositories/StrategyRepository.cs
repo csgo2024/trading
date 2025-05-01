@@ -1,4 +1,5 @@
 using MongoDB.Driver;
+using Trading.Common.Enums;
 using Trading.Domain.Entities;
 using Trading.Domain.IRepositories;
 
@@ -19,7 +20,7 @@ public class StrategyRepository : BaseRepository<Strategy>, IStrategyRepository
 
     public async Task<Dictionary<string, Strategy>> InitializeActiveStrategies()
     {
-        var data = await _collection.Find(x => x.Status == StateStatus.Running).ToListAsync();
+        var data = await _collection.Find(x => x.Status == Status.Running).ToListAsync();
         return data.ToDictionary(config => $"{config.Symbol}{config.Id}{config.AccountType}", config => config);
     }
 
@@ -32,13 +33,13 @@ public class StrategyRepository : BaseRepository<Strategy>, IStrategyRepository
 
     public async Task<Dictionary<string, Strategy>?> InitializeFutureStrategies()
     {
-        var data = await _collection.Find(x => x.AccountType == AccountType.Future && x.Status == StateStatus.Running).ToListAsync();
+        var data = await _collection.Find(x => x.AccountType == AccountType.Future && x.Status == Status.Running).ToListAsync();
         return data.ToDictionary(config => config.Symbol, config => config);
     }
 
     public async Task<Dictionary<string, Strategy>?> InitializeSpotStrategies()
     {
-        var data = await _collection.Find(x => x.AccountType == AccountType.Spot && x.Status == StateStatus.Running).ToListAsync();
+        var data = await _collection.Find(x => x.AccountType == AccountType.Spot && x.Status == Status.Running).ToListAsync();
         return data.ToDictionary(config => config.Symbol, config => config);
     }
 
@@ -49,11 +50,11 @@ public class StrategyRepository : BaseRepository<Strategy>, IStrategyRepository
 
     public async Task<List<Strategy>> Find(string symbol,
                                            string interval,
-                                            StrategyType strategyType,
+                                           StrategyType strategyType,
                                            CancellationToken cancellationToken = default)
     {
         var data = await _collection.Find(x => x.Symbol == symbol
-                                               && x.Status == StateStatus.Running
+                                               && x.Status == Status.Running
                                                && x.StrategyType == strategyType
                                                && x.Interval == interval).ToListAsync(cancellationToken: cancellationToken);
         return data;

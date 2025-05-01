@@ -7,8 +7,8 @@ using Telegram.Bot.Requests;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 using Trading.Application.Commands;
+using Trading.Common.Enums;
 using Trading.Common.Models;
-using Trading.Domain.Entities;
 using Trading.Domain.Events;
 using Trading.Domain.IRepositories;
 
@@ -69,12 +69,6 @@ public class StrategyCommandHandler : ICommandHandler
         }
     }
 
-    private static (string emoji, string status) GetStatusInfo(Strategy strategy) => strategy.Status switch
-    {
-        StateStatus.Running => ("🟢", "运行中"),
-        StateStatus.Paused => ("🔴", "已暂停"),
-        _ => ("⚠️", "未知状态")
-    };
     private async Task HandleDefault()
     {
         var strategies = await _strategyRepository.GetAllStrategies();
@@ -86,7 +80,7 @@ public class StrategyCommandHandler : ICommandHandler
 
         foreach (var strategy in strategies)
         {
-            var (emoji, status) = GetStatusInfo(strategy);
+            var (emoji, status) = strategy.Status.GetStatusInfo();
             var text = $"""
             📊 <b>策略状态报告</b> ({DateTime.UtcNow.AddHours(8):yyyy-MM-dd HH:mm:ss})
             <pre>{emoji} [{strategy.AccountType}-{strategy.StrategyType}-{strategy.Symbol}]: {status}
@@ -96,8 +90,8 @@ public class StrategyCommandHandler : ICommandHandler
             """;
             var buttons = strategy.Status switch
             {
-                StateStatus.Running => [InlineKeyboardButton.WithCallbackData("⏸️ 暂停", $"strategy_pause_{strategy.Id}")],
-                StateStatus.Paused => new[] { InlineKeyboardButton.WithCallbackData("▶️ 启用", $"strategy_resume_{strategy.Id}") },
+                Status.Running => [InlineKeyboardButton.WithCallbackData("⏸️ 暂停", $"strategy_pause_{strategy.Id}")],
+                Status.Paused => new[] { InlineKeyboardButton.WithCallbackData("▶️ 启用", $"strategy_resume_{strategy.Id}") },
                 _ => throw new InvalidOperationException()
             };
             buttons = [.. buttons, InlineKeyboardButton.WithCallbackData("🗑️ 删除", $"strategy_delete_{strategy.Id}")];
@@ -150,7 +144,7 @@ public class StrategyCommandHandler : ICommandHandler
             _logger.LogError("未找到策略 ID: {Id}", id);
             return;
         }
-        strategy.Status = StateStatus.Paused;
+        strategy.Status = Status.Paused;
         strategy.UpdatedAt = DateTime.UtcNow;
         await _strategyRepository.UpdateAsync(id, strategy);
         await _mediator.Publish(new StrategyPausedEvent(id));
@@ -166,7 +160,7 @@ public class StrategyCommandHandler : ICommandHandler
             _logger.LogError("未找到策略 ID: {Id}", id);
             return;
         }
-        strategy.Status = StateStatus.Running;
+        strategy.Status = Status.Running;
         strategy.UpdatedAt = DateTime.UtcNow;
         await _strategyRepository.UpdateAsync(id, strategy);
         await _mediator.Publish(new StrategyResumedEvent(strategy));

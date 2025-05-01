@@ -1,3 +1,4 @@
+using Trading.Common.Enums;
 using Trading.Domain.Entities;
 
 namespace Trading.Domain.IRepositories;

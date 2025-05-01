@@ -8,6 +8,8 @@ using Trading.Application.Services.Trading.Account;
 using Trading.Application.Services.Trading.Executors;
 using Trading.Domain.Entities;
 using Trading.Domain.IRepositories;
+using AccountType = Trading.Common.Enums.AccountType;
+using StrategyType = Trading.Common.Enums.StrategyType;
 
 namespace Trading.Application.Tests.Services.Trading.Executors;
 
@@ -78,7 +80,7 @@ public class CloseBuyExecutorTests
         await _executor.Handle(notification, _ct);
 
         // Assert
-        _mockAccountProcessorFactory.Verify(x => x.GetAccountProcessor(It.IsAny<Domain.Entities.AccountType>()), Times.Never);
+        _mockAccountProcessorFactory.Verify(x => x.GetAccountProcessor(It.IsAny<AccountType>()), Times.Never);
         _mockStrategyRepository.Verify(x => x.UpdateAsync(It.IsAny<string>(), It.IsAny<Strategy>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -112,7 +114,7 @@ public class CloseBuyExecutorTests
             It.IsAny<CancellationToken>()
         )).ReturnsAsync([strategy]);
 
-        _mockAccountProcessorFactory.Setup(x => x.GetAccountProcessor(It.IsAny<Domain.Entities.AccountType>()))
+        _mockAccountProcessorFactory.Setup(x => x.GetAccountProcessor(It.IsAny<AccountType>()))
             .Returns(_mockAccountProcessor.Object);
 
         SetupSuccessfulSymbolFilterResponse();
@@ -170,7 +172,7 @@ public class CloseBuyExecutorTests
             It.IsAny<CancellationToken>()
         )).ReturnsAsync(new List<Strategy> { strategy });
 
-        _mockAccountProcessorFactory.Setup(x => x.GetAccountProcessor(It.IsAny<Domain.Entities.AccountType>()))
+        _mockAccountProcessorFactory.Setup(x => x.GetAccountProcessor(It.IsAny<AccountType>()))
             .Returns(null as IAccountProcessor);
 
         // Act
@@ -214,7 +216,7 @@ public class CloseBuyExecutorTests
             It.IsAny<CancellationToken>()
         )).ReturnsAsync(new List<Strategy> { strategy });
 
-        _mockAccountProcessorFactory.Setup(x => x.GetAccountProcessor(It.IsAny<Domain.Entities.AccountType>()))
+        _mockAccountProcessorFactory.Setup(x => x.GetAccountProcessor(It.IsAny<AccountType>()))
             .Returns(_mockAccountProcessor.Object);
 
         SetupSuccessfulSymbolFilterResponse();

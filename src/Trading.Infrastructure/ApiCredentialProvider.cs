@@ -1,6 +1,7 @@
 using System.Text;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
+using Trading.Common.Helpers;
 using Trading.Common.Models;
 using Trading.Domain.IRepositories;
 using Trading.Exchange.Abstraction;

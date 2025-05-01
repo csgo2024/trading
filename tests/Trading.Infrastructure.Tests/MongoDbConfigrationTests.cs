@@ -1,4 +1,5 @@
 using MongoDB.Bson;
+using Trading.Common.Enums;
 using Trading.Domain.Entities;
 using Xunit;
 

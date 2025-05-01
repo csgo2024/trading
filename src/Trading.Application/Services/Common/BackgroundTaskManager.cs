@@ -1,35 +1,30 @@
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
+using Trading.Common.Enums;
 
 namespace Trading.Application.Services.Common;
 
-public static class TaskCategories
-{
-    public const string Alert = "Alert";
-    public const string Strategy = "Strategy";
-}
-
 public interface IBackgroundTaskManager : IAsyncDisposable
 {
-    Task StartAsync(string category, string taskId, Func<CancellationToken, Task> executionFunc, CancellationToken cancellationToken);
-    Task StopAsync(string category, string taskId);
-    Task StopAsync(string category);
+    Task StartAsync(TaskCategory category, string taskId, Func<CancellationToken, Task> executionFunc, CancellationToken cancellationToken);
+    Task StopAsync(TaskCategory category, string taskId);
+    Task StopAsync(TaskCategory category);
     Task StopAsync();
-    string[] GetActiveTaskIds(string category);
+    string[] GetActiveTaskIds(TaskCategory category);
 }
 
 public class BackgroundTaskManager : IBackgroundTaskManager
 {
     private readonly ILogger<BackgroundTaskManager> _logger;
     private readonly SemaphoreSlim _taskLock = new(1, 1);
-    private static readonly ConcurrentDictionary<(string category, string taskId), (CancellationTokenSource cts, Task task)> _monitoringTasks = new();
+    private static readonly ConcurrentDictionary<(TaskCategory category, string taskId), (CancellationTokenSource cts, Task task)> _monitoringTasks = new();
 
     public BackgroundTaskManager(ILogger<BackgroundTaskManager> logger)
     {
         _logger = logger;
     }
 
-    public virtual Task StartAsync(string category, string taskId, Func<CancellationToken, Task> executionFunc, CancellationToken cancellationToken)
+    public virtual Task StartAsync(TaskCategory category, string taskId, Func<CancellationToken, Task> executionFunc, CancellationToken cancellationToken)
     {
         var key = (category, taskId);
         if (_monitoringTasks.ContainsKey(key))
@@ -44,7 +39,7 @@ public class BackgroundTaskManager : IBackgroundTaskManager
         return Task.CompletedTask;
     }
 
-    public virtual async Task StopAsync(string category, string taskId)
+    public virtual async Task StopAsync(TaskCategory category, string taskId)
     {
         await _taskLock.WaitAsync();
         try
@@ -68,7 +63,7 @@ public class BackgroundTaskManager : IBackgroundTaskManager
         }
     }
 
-    public virtual async Task StopAsync(string category)
+    public virtual async Task StopAsync(TaskCategory category)
     {
         await _taskLock.WaitAsync();
         try
@@ -91,7 +86,7 @@ public class BackgroundTaskManager : IBackgroundTaskManager
         }
     }
 
-    public string[] GetActiveTaskIds(string category) =>
+    public string[] GetActiveTaskIds(TaskCategory category) =>
         _monitoringTasks.Keys
             .Where(k => k.category == category)
             .Select(k => k.taskId)

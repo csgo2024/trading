@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using Telegram.Bot;
-using Trading.Application.Helpers;
+using Trading.Application.JavaScript;
 using Trading.Application.Services.Alerts;
 using Trading.Application.Services.Common;
 using Trading.Application.Telegram;

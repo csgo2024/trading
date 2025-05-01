@@ -1,3 +1,5 @@
+using Trading.Common.Enums;
+
 namespace Trading.Domain.Entities;
 
 public class Strategy : BaseEntity
@@ -18,7 +20,7 @@ public class Strategy : BaseEntity
 
     public StrategyType StrategyType { get; set; }
 
-    public StateStatus Status { get; set; }
+    public Status Status { get; set; }
     public string? Interval { get; set; }
 
 }

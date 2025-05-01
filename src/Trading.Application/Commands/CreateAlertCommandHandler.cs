@@ -1,10 +1,12 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.RegularExpressions;
 using MediatR;
-using Trading.Application.Helpers;
+using Trading.Application.JavaScript;
+using Trading.Common.Enums;
 using Trading.Domain.Entities;
 using Trading.Domain.Events;
 using Trading.Domain.IRepositories;
+using Trading.Exchange.Binance.Helpers;
 
 namespace Trading.Application.Commands;
 
@@ -34,7 +36,7 @@ public class CreateAlertCommandHandler : IRequestHandler<CreateAlertCommand, Ale
             var errorMessage = string.Join("; ", validationResults.Select(r => r.ErrorMessage));
             throw new ValidationException(errorMessage);
         }
-        CommonHelper.ConvertToKlineInterval(request.Interval);
+        BinanceHelper.ConvertToKlineInterval(request.Interval);
         // Validate JavaScript expression
         if (!_javaScriptEvaluator.ValidateExpression(request.Expression, out var message))
         {
@@ -45,7 +47,7 @@ public class CreateAlertCommandHandler : IRequestHandler<CreateAlertCommand, Ale
             Symbol = request.Symbol.ToUpper(),
             Interval = request.Interval,
             Expression = Regex.Replace(request.Expression, @"\s+", ""),
-            Status = StateStatus.Running,
+            Status = Status.Running,
             LastNotification = DateTime.UtcNow,
         };
         await _alertRepository.AddAsync(alert, cancellationToken);

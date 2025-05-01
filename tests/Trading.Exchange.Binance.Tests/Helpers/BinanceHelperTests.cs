@@ -1,16 +1,16 @@
 using Binance.Net.Objects.Models.Spot;
-using Trading.Application.Helpers;
+using Trading.Exchange.Binance.Helpers;
 
-namespace Trading.Application.Tests.Helpers;
+namespace Trading.Exchange.Binance.Tests.Helpers;
 
-public class CommonHelperTests
+public class BinanceHelperTests
 {
     [Fact]
     public void AdjustPriceByStepSize_WhenFilterIsNull_ShouldThrowArgumentNullException()
     {
         // Arrange & Act & Assert
         var exception = Assert.Throws<ArgumentNullException>(() =>
-            CommonHelper.AdjustPriceByStepSize(100m, null));
+            BinanceHelper.AdjustPriceByStepSize(100m, null));
 
         Assert.Equal("filter", exception.ParamName);
     }
@@ -32,7 +32,7 @@ public class CommonHelperTests
         };
 
         // Act
-        var result = CommonHelper.AdjustPriceByStepSize(price, filter);
+        var result = BinanceHelper.AdjustPriceByStepSize(price, filter);
 
         // Assert
         Assert.Equal(expected, result);
@@ -54,7 +54,7 @@ public class CommonHelperTests
 
         // Act & Assert
         var exception = Assert.Throws<InvalidOperationException>(() =>
-            CommonHelper.AdjustPriceByStepSize(price, filter));
+            BinanceHelper.AdjustPriceByStepSize(price, filter));
         Assert.Equal(expectedMessage, exception.Message);
     }
 
@@ -63,7 +63,7 @@ public class CommonHelperTests
     {
         // Arrange & Act & Assert
         var exception = Assert.Throws<ArgumentNullException>(() =>
-            CommonHelper.AdjustQuantityBystepSize(100m, null));
+            BinanceHelper.AdjustQuantityBystepSize(100m, null));
 
         Assert.Equal("filter", exception.ParamName);
     }
@@ -85,7 +85,7 @@ public class CommonHelperTests
         };
 
         // Act
-        var result = CommonHelper.AdjustQuantityBystepSize(quantity, filter);
+        var result = BinanceHelper.AdjustQuantityBystepSize(quantity, filter);
 
         // Assert
         Assert.Equal(expected, result);
@@ -107,21 +107,7 @@ public class CommonHelperTests
 
         // Act & Assert
         var exception = Assert.Throws<InvalidOperationException>(() =>
-            CommonHelper.AdjustQuantityBystepSize(quantity, filter));
+            BinanceHelper.AdjustQuantityBystepSize(quantity, filter));
         Assert.Equal(expectedMessage, exception.Message);
-    }
-
-    [Theory]
-    [InlineData(10.100000, 10.1)]
-    [InlineData(10.000000, 10)]
-    [InlineData(10.123000, 10.123)]
-    [InlineData(10.120000, 10.12)]
-    public void TrimEndZero_ShouldTrimCorrectly(decimal input, decimal expected)
-    {
-        // Act
-        var result = CommonHelper.TrimEndZero(input);
-
-        // Assert
-        Assert.Equal(expected, result);
     }
 }

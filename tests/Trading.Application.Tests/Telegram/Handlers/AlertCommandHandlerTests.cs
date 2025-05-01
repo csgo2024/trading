@@ -9,6 +9,7 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Trading.Application.Commands;
 using Trading.Application.Telegram.Handlers;
+using Trading.Common.Enums;
 using Trading.Common.Models;
 using Trading.Domain.Entities;
 using Trading.Domain.Events;
@@ -44,9 +45,9 @@ public class AlertCommandHandlerTests
     }
 
     [Theory]
-    [InlineData(StateStatus.Running, "运行中")]
-    [InlineData(StateStatus.Paused, "已暂停")]
-    public async Task HandleAsync_WithEmptyParameters_ReturnAlertInformation(StateStatus status, string displayText)
+    [InlineData(Status.Running, "运行中")]
+    [InlineData(Status.Paused, "已暂停")]
+    public async Task HandleAsync_WithEmptyParameters_ReturnAlertInformation(Status status, string displayText)
     {
         // arrange
         _alertRepositoryMock.Setup(x => x.GetAllAlerts())
@@ -175,7 +176,7 @@ public class AlertCommandHandlerTests
     {
         // Arrange
         var alertId = "test-alert-id";
-        var alert = new Alert { Id = alertId, Status = StateStatus.Running };
+        var alert = new Alert { Id = alertId, Status = Status.Running };
 
         _alertRepositoryMock
             .Setup(x => x.GetByIdAsync(alertId, It.IsAny<CancellationToken>()))
@@ -187,7 +188,7 @@ public class AlertCommandHandlerTests
         // Assert
         _alertRepositoryMock.Verify(x => x.UpdateAsync(
             alertId,
-            It.Is<Alert>(a => a.Status == StateStatus.Paused),
+            It.Is<Alert>(a => a.Status == Status.Paused),
             It.IsAny<CancellationToken>()), Times.Once);
         _mediatorMock.Verify(x => x.Publish(
             It.Is<AlertPausedEvent>(e => e.AlertId == alertId),
@@ -199,7 +200,7 @@ public class AlertCommandHandlerTests
     {
         // Arrange
         var alertId = "test-alert-id";
-        var alert = new Alert { Id = alertId, Status = StateStatus.Paused };
+        var alert = new Alert { Id = alertId, Status = Status.Paused };
 
         _alertRepositoryMock
             .Setup(x => x.GetByIdAsync(alertId, It.IsAny<CancellationToken>()))
@@ -236,9 +237,9 @@ public class AlertCommandHandlerTests
     }
 
     [Theory]
-    [InlineData("pause", StateStatus.Running)]
-    [InlineData("resume", StateStatus.Paused)]
-    public async Task HandleCallbackAsync_WithValidCallback_PauseOrResumeAlert(string action, StateStatus status)
+    [InlineData("pause", Status.Running)]
+    [InlineData("resume", Status.Paused)]
+    public async Task HandleCallbackAsync_WithValidCallback_PauseOrResumeAlert(string action, Status status)
     {
         // Arrange
         var alertId = "test-alert-id";

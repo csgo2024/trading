@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using Trading.Common.Enums;
 using Trading.Domain.Entities;
 using Trading.Domain.Events;
 using Trading.Domain.IRepositories;
@@ -49,7 +50,7 @@ public class CreateStrategyCommandHandler : IRequestHandler<CreateStrategyComman
             Symbol = request.Symbol.ToUpper(),
             Amount = request.Amount,
             Leverage = request.Leverage,
-            Status = StateStatus.Running,
+            Status = Status.Running,
             StrategyType = request.StrategyType,
             Interval = request.Interval,
         };

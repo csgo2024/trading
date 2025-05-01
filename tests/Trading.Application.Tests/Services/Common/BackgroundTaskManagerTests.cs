@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Moq;
 using Trading.Application.Services.Common;
+using Trading.Common.Enums;
 
 namespace Trading.Application.Tests.Services.Common;
 
@@ -26,7 +27,7 @@ public class BackgroundTaskManagerTests : IAsyncDisposable
 
         // Act
         await _taskManager.StartAsync(
-            TaskCategories.Strategy,
+            TaskCategory.Strategy,
             taskId,
             async ct =>
             {
@@ -39,7 +40,7 @@ public class BackgroundTaskManagerTests : IAsyncDisposable
 
         // Assert
         Assert.True(executed);
-        Assert.Contains(taskId, _taskManager.GetActiveTaskIds(TaskCategories.Strategy));
+        Assert.Contains(taskId, _taskManager.GetActiveTaskIds(TaskCategory.Strategy));
         await _taskManager.StopAsync();
     }
 
@@ -52,7 +53,7 @@ public class BackgroundTaskManagerTests : IAsyncDisposable
 
         // Act
         await _taskManager.StartAsync(
-            TaskCategories.Strategy,
+            TaskCategory.Strategy,
             taskId,
             async ct =>
             {
@@ -62,7 +63,7 @@ public class BackgroundTaskManagerTests : IAsyncDisposable
             _cts.Token);
 
         await _taskManager.StartAsync(
-            TaskCategories.Strategy,
+            TaskCategory.Strategy,
             taskId,
             async ct =>
             {
@@ -86,7 +87,7 @@ public class BackgroundTaskManagerTests : IAsyncDisposable
         var cancellationRequested = false;
 
         await _taskManager.StartAsync(
-            TaskCategories.Strategy,
+            TaskCategory.Strategy,
             taskId,
             async ct =>
             {
@@ -103,11 +104,11 @@ public class BackgroundTaskManagerTests : IAsyncDisposable
             _cts.Token);
 
         // Act
-        await _taskManager.StopAsync(TaskCategories.Strategy, taskId);
+        await _taskManager.StopAsync(TaskCategory.Strategy, taskId);
 
         // Assert
         Assert.True(cancellationRequested);
-        Assert.Empty(_taskManager.GetActiveTaskIds(TaskCategories.Strategy));
+        Assert.Empty(_taskManager.GetActiveTaskIds(TaskCategory.Strategy));
         await _taskManager.StopAsync();
     }
 
@@ -121,7 +122,7 @@ public class BackgroundTaskManagerTests : IAsyncDisposable
         foreach (var taskId in taskIds)
         {
             await _taskManager.StartAsync(
-                TaskCategories.Strategy,
+                TaskCategory.Strategy,
                 taskId,
                 async ct =>
                 {
@@ -141,11 +142,11 @@ public class BackgroundTaskManagerTests : IAsyncDisposable
         await Task.Delay(2000); // Wait for tasks to start
 
         // Act
-        await _taskManager.StopAsync(TaskCategories.Strategy);
+        await _taskManager.StopAsync(TaskCategory.Strategy);
 
         // Assert
         Assert.Equal(0, executingTasks);
-        Assert.Empty(_taskManager.GetActiveTaskIds(TaskCategories.Strategy));
+        Assert.Empty(_taskManager.GetActiveTaskIds(TaskCategory.Strategy));
     }
 
     [Fact]
@@ -156,20 +157,20 @@ public class BackgroundTaskManagerTests : IAsyncDisposable
         var alertTaskId = "alert-task";
 
         await _taskManager.StartAsync(
-            TaskCategories.Strategy,
+            TaskCategory.Strategy,
             strategyTaskId,
             ct => Task.Delay(1000, ct),
             _cts.Token);
 
         await _taskManager.StartAsync(
-            TaskCategories.Alert,
+            TaskCategory.Alert,
             alertTaskId,
             ct => Task.Delay(1000, ct),
             _cts.Token);
 
         // Act
-        var strategyTasks = _taskManager.GetActiveTaskIds(TaskCategories.Strategy);
-        var alertTasks = _taskManager.GetActiveTaskIds(TaskCategories.Alert);
+        var strategyTasks = _taskManager.GetActiveTaskIds(TaskCategory.Strategy);
+        var alertTasks = _taskManager.GetActiveTaskIds(TaskCategory.Alert);
 
         // Assert
         Assert.Single(strategyTasks);
@@ -185,8 +186,8 @@ public class BackgroundTaskManagerTests : IAsyncDisposable
         var executingTasks = 0;
         var tasks = new[]
         {
-            (TaskCategories.Strategy, "strategy-task"),
-            (TaskCategories.Alert, "alert-task")
+            (TaskCategory.Strategy, "strategy-task"),
+            (TaskCategory.Alert, "alert-task")
         };
 
         foreach (var (category, taskId) in tasks)
@@ -216,8 +217,8 @@ public class BackgroundTaskManagerTests : IAsyncDisposable
 
         // Assert
         Assert.Equal(0, executingTasks);
-        Assert.Empty(_taskManager.GetActiveTaskIds(TaskCategories.Strategy));
-        Assert.Empty(_taskManager.GetActiveTaskIds(TaskCategories.Alert));
+        Assert.Empty(_taskManager.GetActiveTaskIds(TaskCategory.Strategy));
+        Assert.Empty(_taskManager.GetActiveTaskIds(TaskCategory.Alert));
     }
 
     public async ValueTask DisposeAsync()

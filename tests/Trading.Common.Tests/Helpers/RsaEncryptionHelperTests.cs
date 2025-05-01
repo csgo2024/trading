@@ -1,4 +1,5 @@
 using System.Text;
+using Trading.Common.Helpers;
 
 namespace Trading.Common.Tests.Helpers;
 

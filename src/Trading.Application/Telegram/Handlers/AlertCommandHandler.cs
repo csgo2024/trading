@@ -7,9 +7,9 @@ using Telegram.Bot.Requests;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 using Trading.Application.Commands;
+using Trading.Common.Enums;
 using Trading.Common.Extensions;
 using Trading.Common.Models;
-using Trading.Domain.Entities;
 using Trading.Domain.Events;
 using Trading.Domain.IRepositories;
 
@@ -76,13 +76,6 @@ public class AlertCommandHandler : ICommandHandler
         }
     }
 
-    private static (string emoji, string status) GetStatusInfo(Alert alert) => alert.Status switch
-    {
-        StateStatus.Running => ("🟢", "运行中"),
-        StateStatus.Paused => ("🔴", "已暂停"),
-        _ => ("⚠️", "未知状态")
-    };
-
     private async Task HandleDefault()
     {
         var alerts = await _alertRepository.GetAllAlerts();
@@ -93,7 +86,7 @@ public class AlertCommandHandler : ICommandHandler
         }
         foreach (var alert in alerts)
         {
-            var (emoji, status) = GetStatusInfo(alert);
+            var (emoji, status) = alert.Status.GetStatusInfo();
             var safeExpression = alert.Expression.ToTelegramSafeString();
             var text = $"""
             ⏰ <b>警报状态</b> ({DateTime.UtcNow.AddHours(8):yyyy-MM-dd HH:mm:ss})
@@ -102,8 +95,8 @@ public class AlertCommandHandler : ICommandHandler
             """;
             var buttons = alert.Status switch
             {
-                StateStatus.Running => [InlineKeyboardButton.WithCallbackData("⏸️ 暂停", $"alert_pause_{alert.Id}")],
-                StateStatus.Paused => new[] { InlineKeyboardButton.WithCallbackData("▶️ 启用", $"alert_resume_{alert.Id}") },
+                Status.Running => [InlineKeyboardButton.WithCallbackData("⏸️ 暂停", $"alert_pause_{alert.Id}")],
+                Status.Paused => new[] { InlineKeyboardButton.WithCallbackData("▶️ 启用", $"alert_resume_{alert.Id}") },
                 _ => throw new InvalidOperationException()
             };
             buttons = [.. buttons, InlineKeyboardButton.WithCallbackData("🗑️ 删除", $"alert_delete_{alert.Id}")];
@@ -153,7 +146,7 @@ public class AlertCommandHandler : ICommandHandler
             _logger.LogError("未找到报警 ID: {AlertId}", id);
             return;
         }
-        alert.Status = StateStatus.Paused;
+        alert.Status = Status.Paused;
         alert.UpdatedAt = DateTime.UtcNow;
         await _alertRepository.UpdateAsync(id, alert);
         await _mediator.Publish(new AlertPausedEvent(id));
@@ -169,7 +162,7 @@ public class AlertCommandHandler : ICommandHandler
             _logger.LogError("未找到报警 ID: {AlertId}", id);
             return;
         }
-        alert.Status = StateStatus.Running;
+        alert.Status = Status.Running;
         alert.UpdatedAt = DateTime.UtcNow;
         await _alertRepository.UpdateAsync(id, alert);
         await _mediator.Publish(new AlertResumedEvent(alert));

@@ -1,9 +1,10 @@
 using Binance.Net.Enums;
 using Microsoft.Extensions.Logging;
-using Trading.Application.Helpers;
 using Trading.Application.Services.Trading.Account;
+using Trading.Common.Helpers;
 using Trading.Domain.Entities;
 using Trading.Domain.IRepositories;
+using Trading.Exchange.Binance.Helpers;
 
 namespace Trading.Application.Services.Trading.Executors;
 
@@ -58,8 +59,8 @@ public class BottomBuyExecutor : BaseExecutor
         {
             var openPrice = CommonHelper.TrimEndZero(kLines.Data.First().OpenPrice);
             var filterData = await accountProcessor.GetSymbolFilterData(strategy, ct);
-            strategy.TargetPrice = CommonHelper.AdjustPriceByStepSize(openPrice * (1 - strategy.Volatility), filterData.Item1);
-            strategy.Quantity = CommonHelper.AdjustQuantityBystepSize(strategy.Amount / strategy.TargetPrice, filterData.Item2);
+            strategy.TargetPrice = BinanceHelper.AdjustPriceByStepSize(openPrice * (1 - strategy.Volatility), filterData.Item1);
+            strategy.Quantity = BinanceHelper.AdjustQuantityBystepSize(strategy.Amount / strategy.TargetPrice, filterData.Item2);
             strategy.LastTradeDate = currentDate;
             strategy.IsTradedToday = false;
             strategy.HasOpenOrder = false;

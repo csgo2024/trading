@@ -2,8 +2,9 @@ using Binance.Net.Enums;
 using Binance.Net.Objects.Models;
 using CryptoExchange.Net.Objects;
 using Microsoft.Extensions.Logging;
-using Trading.Application.Helpers;
 using Trading.Application.Services.Trading.Account;
+using Trading.Common.Enums;
+using Trading.Common.Helpers;
 using Trading.Domain.Entities;
 
 namespace Trading.Application.Services.Trading.Executors;

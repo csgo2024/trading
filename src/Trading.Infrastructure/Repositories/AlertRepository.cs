@@ -1,4 +1,5 @@
 using MongoDB.Driver;
+using Trading.Common.Enums;
 using Trading.Domain.Entities;
 using Trading.Domain.IRepositories;
 
@@ -12,11 +13,11 @@ public class AlertRepository : BaseRepository<Alert>, IAlertRepository
 
     public async Task<IEnumerable<Alert>> GetActiveAlertsAsync(CancellationToken cancellationToken)
     {
-        return await _collection.Find(x => x.Status == StateStatus.Running).ToListAsync(cancellationToken);
+        return await _collection.Find(x => x.Status == Status.Running).ToListAsync(cancellationToken);
     }
     public IEnumerable<Alert> GetActiveAlerts(string symbol)
     {
-        return _collection.Find(x => x.Status == StateStatus.Running && x.Symbol == symbol).ToList();
+        return _collection.Find(x => x.Status == Status.Running && x.Symbol == symbol).ToList();
     }
 
     public IEnumerable<Alert> GetAlertsById(string[] ids)
@@ -27,7 +28,7 @@ public class AlertRepository : BaseRepository<Alert>, IAlertRepository
 
     public async Task<bool> DeactivateAlertAsync(string alertId, CancellationToken cancellationToken)
     {
-        var update = Builders<Alert>.Update.Set(x => x.Status, StateStatus.Paused);
+        var update = Builders<Alert>.Update.Set(x => x.Status, Status.Paused);
         var result = await _collection.UpdateOneAsync(x => x.Id == alertId, update, cancellationToken: cancellationToken);
         return result.ModifiedCount > 0;
     }
@@ -51,13 +52,13 @@ public class AlertRepository : BaseRepository<Alert>, IAlertRepository
     public async Task<List<string>> ResumeAlertAsync(string symbol, string Interval, CancellationToken cancellationToken)
     {
         var idsToUpdate = await _collection
-            .Find(x => x.Symbol == symbol && x.Interval == Interval && x.Status == StateStatus.Paused)
+            .Find(x => x.Symbol == symbol && x.Interval == Interval && x.Status == Status.Paused)
             .Project(x => x.Id)
             .ToListAsync(cancellationToken);
 
-        var update = Builders<Alert>.Update.Set(x => x.Status, StateStatus.Running);
+        var update = Builders<Alert>.Update.Set(x => x.Status, Status.Running);
         var result = await _collection.UpdateManyAsync(
-            x => x.Symbol == symbol && x.Interval == Interval && x.Status == StateStatus.Paused,
+            x => x.Symbol == symbol && x.Interval == Interval && x.Status == Status.Paused,
             update,
             cancellationToken: cancellationToken);
 

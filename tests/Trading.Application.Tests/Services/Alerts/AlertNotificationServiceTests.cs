@@ -6,9 +6,10 @@ using Telegram.Bot;
 using Telegram.Bot.Requests;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
-using Trading.Application.Helpers;
+using Trading.Application.JavaScript;
 using Trading.Application.Services.Alerts;
 using Trading.Application.Services.Common;
+using Trading.Common.Enums;
 using Trading.Common.Models;
 using Trading.Domain.Entities;
 using Trading.Domain.Events;
@@ -87,7 +88,7 @@ public class AlertNotificationServiceTests
 
         _taskManagerMock
             .Setup(x => x.StartAsync(
-                It.Is<string>(category => category == TaskCategories.Alert),
+                It.Is<TaskCategory>(category => category == TaskCategory.Alert),
                 It.IsAny<string>(),
                 It.IsAny<Func<CancellationToken, Task>>(),
                 It.IsAny<CancellationToken>()))
@@ -99,7 +100,7 @@ public class AlertNotificationServiceTests
         // Assert
         _taskManagerMock.Verify(
             x => x.StartAsync(
-                It.Is<string>(category => category == TaskCategories.Alert),
+                It.Is<TaskCategory>(category => category == TaskCategory.Alert),
                 alert.Id,
                 It.IsAny<Func<CancellationToken, Task>>(),
                 It.IsAny<CancellationToken>()),
@@ -116,13 +117,13 @@ public class AlertNotificationServiceTests
             Symbol = "BTCUSDT",
             Interval = "1h",
             Expression = "close > open",
-            Status = StateStatus.Running,
+            Status = Status.Running,
         };
         var notification = new AlertResumedEvent(alert);
 
         _taskManagerMock
             .Setup(x => x.StartAsync(
-                TaskCategories.Alert,
+                TaskCategory.Alert,
                 alert.Id,
                 It.IsAny<Func<CancellationToken, Task>>(),
                 It.IsAny<CancellationToken>()))
@@ -135,7 +136,7 @@ public class AlertNotificationServiceTests
         // Verify the task was started
         _taskManagerMock.Verify(
             x => x.StartAsync(
-                TaskCategories.Alert,
+                TaskCategory.Alert,
                 alert.Id,
                 It.IsAny<Func<CancellationToken, Task>>(),
                 It.IsAny<CancellationToken>()),
@@ -150,7 +151,7 @@ public class AlertNotificationServiceTests
 
         _taskManagerMock
             .Setup(x => x.StopAsync(
-                It.Is<string>(category => category == TaskCategories.Alert),
+                It.Is<TaskCategory>(category => category == TaskCategory.Alert),
                 It.IsAny<string>()))
             .Returns(Task.CompletedTask);
 
@@ -158,7 +159,7 @@ public class AlertNotificationServiceTests
         await _service.Handle(notification, _cts.Token);
 
         // Assert
-        _taskManagerMock.Verify(x => x.StopAsync(TaskCategories.Alert, alertId), Times.Once);
+        _taskManagerMock.Verify(x => x.StopAsync(TaskCategory.Alert, alertId), Times.Once);
     }
 
     [Fact]
@@ -170,7 +171,7 @@ public class AlertNotificationServiceTests
 
         _taskManagerMock
             .Setup(x => x.StopAsync(
-                It.Is<string>(category => category == TaskCategories.Alert),
+                It.Is<TaskCategory>(category => category == TaskCategory.Alert),
                 It.IsAny<string>()))
             .Returns(Task.CompletedTask);
 
@@ -178,7 +179,7 @@ public class AlertNotificationServiceTests
         await _service.Handle(notification, _cts.Token);
 
         // Assert
-        _taskManagerMock.Verify(x => x.StopAsync(TaskCategories.Alert, alertId), Times.Once);
+        _taskManagerMock.Verify(x => x.StopAsync(TaskCategory.Alert, alertId), Times.Once);
     }
 
     [Fact]
@@ -264,7 +265,7 @@ public class AlertNotificationServiceTests
 
         _taskManagerMock
             .Setup(x => x.StartAsync(
-                It.Is<string>(category => category == TaskCategories.Alert),
+                It.Is<TaskCategory>(category => category == TaskCategory.Alert),
                 It.IsAny<string>(),
                 It.IsAny<Func<CancellationToken, Task>>(),
                 It.IsAny<CancellationToken>()))
@@ -276,7 +277,7 @@ public class AlertNotificationServiceTests
         // Assert
         _taskManagerMock.Verify(
             x => x.StartAsync(
-                It.Is<string>(category => category == TaskCategories.Alert),
+                It.Is<TaskCategory>(category => category == TaskCategory.Alert),
                 It.IsAny<string>(),
                 It.IsAny<Func<CancellationToken, Task>>(),
                 It.IsAny<CancellationToken>()),

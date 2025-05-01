@@ -9,6 +9,8 @@ using Trading.Application.Services.Trading.Account;
 using Trading.Application.Services.Trading.Executors;
 using Trading.Domain.Entities;
 using Trading.Domain.IRepositories;
+using AccountType = Trading.Common.Enums.AccountType;
+using StrategyType = Trading.Common.Enums.StrategyType;
 
 namespace Trading.Application.Tests.Services.Trading.Executors;
 
@@ -259,7 +261,7 @@ public class TopSellExecutorTests
         {
             Id = "test-id",
             Symbol = "BTCUSDT",
-            AccountType = Domain.Entities.AccountType.Future,
+            AccountType = AccountType.Future,
             StrategyType = StrategyType.TopSell,
             Amount = 1000,
             Volatility = 0.01m,

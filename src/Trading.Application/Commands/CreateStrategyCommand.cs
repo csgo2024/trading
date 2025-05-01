@@ -1,6 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 using MediatR;
+using Trading.Common.Enums;
 using Trading.Domain.Entities;
+using Trading.Exchange.Binance.Attributes;
 
 namespace Trading.Application.Commands;
 
@@ -22,5 +24,6 @@ public class CreateStrategyCommand : IRequest<Strategy>
 
     public StrategyType StrategyType { get; set; } = StrategyType.BottomBuy;
 
+    [Interval]
     public string? Interval { get; set; }
 }

@@ -37,6 +37,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trading.Exchange.Abstractio
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trading.Exchange.Binance", "src\Trading.Exchange.Binance\Trading.Exchange.Binance.csproj", "{35C964BA-599B-4880-82E7-8D84920E466E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trading.Exchange.Binance.Tests", "tests\Trading.Exchange.Binance.Tests\Trading.Exchange.Binance.Tests.csproj", "{7360417E-4978-47DA-9A1C-78F199D0DF18}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -179,6 +181,18 @@ Global
 		{35C964BA-599B-4880-82E7-8D84920E466E}.Release|x64.Build.0 = Release|Any CPU
 		{35C964BA-599B-4880-82E7-8D84920E466E}.Release|x86.ActiveCfg = Release|Any CPU
 		{35C964BA-599B-4880-82E7-8D84920E466E}.Release|x86.Build.0 = Release|Any CPU
+		{7360417E-4978-47DA-9A1C-78F199D0DF18}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7360417E-4978-47DA-9A1C-78F199D0DF18}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7360417E-4978-47DA-9A1C-78F199D0DF18}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{7360417E-4978-47DA-9A1C-78F199D0DF18}.Debug|x64.Build.0 = Debug|Any CPU
+		{7360417E-4978-47DA-9A1C-78F199D0DF18}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{7360417E-4978-47DA-9A1C-78F199D0DF18}.Debug|x86.Build.0 = Debug|Any CPU
+		{7360417E-4978-47DA-9A1C-78F199D0DF18}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7360417E-4978-47DA-9A1C-78F199D0DF18}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7360417E-4978-47DA-9A1C-78F199D0DF18}.Release|x64.ActiveCfg = Release|Any CPU
+		{7360417E-4978-47DA-9A1C-78F199D0DF18}.Release|x64.Build.0 = Release|Any CPU
+		{7360417E-4978-47DA-9A1C-78F199D0DF18}.Release|x86.ActiveCfg = Release|Any CPU
+		{7360417E-4978-47DA-9A1C-78F199D0DF18}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -195,5 +209,6 @@ Global
 		{D034A153-5775-48B6-BA79-37E5F852BA89} = {6DCED638-232D-454B-9235-EB325E60C173}
 		{3019BA32-66BE-44CB-B3A8-698B86D2691F} = {4DF6F243-A8E9-4C0D-AC15-AB7F187D27C4}
 		{35C964BA-599B-4880-82E7-8D84920E466E} = {4DF6F243-A8E9-4C0D-AC15-AB7F187D27C4}
+		{7360417E-4978-47DA-9A1C-78F199D0DF18} = {6DCED638-232D-454B-9235-EB325E60C173}
 	EndGlobalSection
 EndGlobal

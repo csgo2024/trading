@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Trading.Application.Commands;
 using Trading.Application.Queries;
+using Trading.Common.Enums;
 using Trading.Common.Models;
 using Trading.Domain.Entities;
 

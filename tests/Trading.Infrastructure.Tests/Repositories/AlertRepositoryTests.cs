@@ -1,4 +1,5 @@
 using MongoDB.Driver;
+using Trading.Common.Enums;
 using Trading.Domain.Entities;
 using Trading.Infrastructure.Repositories;
 using Xunit;
@@ -19,8 +20,8 @@ public class AlertRepositoryTests : IClassFixture<MongoDbFixture>
     public async Task GetActiveAlertsAsync_ShouldReturnOnlyActiveAlerts()
     {
         // Arrange
-        var activeAlert = new Alert { Id = "1", Symbol = "BTCUSDT", Status = StateStatus.Running };
-        var inactiveAlert = new Alert { Id = "2", Symbol = "ETHUSDT", Status = StateStatus.Paused };
+        var activeAlert = new Alert { Id = "1", Symbol = "BTCUSDT", Status = Status.Running };
+        var inactiveAlert = new Alert { Id = "2", Symbol = "ETHUSDT", Status = Status.Paused };
         await _repository.AddAsync(activeAlert);
         await _repository.AddAsync(inactiveAlert);
 
@@ -39,8 +40,8 @@ public class AlertRepositoryTests : IClassFixture<MongoDbFixture>
         await _repository.EmptyAsync();
         // Arrange
         var symbol = "BTCUSDT";
-        var matchingAlert = new Alert { Id = "1", Symbol = symbol, Status = StateStatus.Running };
-        var differentSymbolAlert = new Alert { Id = "2", Symbol = "ETHUSDT", Status = StateStatus.Running };
+        var matchingAlert = new Alert { Id = "1", Symbol = symbol, Status = Status.Running };
+        var differentSymbolAlert = new Alert { Id = "2", Symbol = "ETHUSDT", Status = Status.Running };
         await _repository.AddAsync(matchingAlert);
         await _repository.AddAsync(differentSymbolAlert);
 
@@ -82,7 +83,7 @@ public class AlertRepositoryTests : IClassFixture<MongoDbFixture>
     {
         await _repository.EmptyAsync();
         // Arrange
-        var alert = new Alert { Symbol = "BTCUSDT", Status = StateStatus.Running };
+        var alert = new Alert { Symbol = "BTCUSDT", Status = Status.Running };
         await _repository.AddAsync(alert);
 
         // Act
@@ -91,7 +92,7 @@ public class AlertRepositoryTests : IClassFixture<MongoDbFixture>
         // Assert
         Assert.True(result);
         var deactivatedAlert = await _repository.GetByIdAsync(alert.Id);
-        Assert.True(deactivatedAlert!.Status == StateStatus.Paused);
+        Assert.True(deactivatedAlert!.Status == Status.Paused);
     }
 
     [Fact]

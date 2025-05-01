@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\Trading.Exchange.Abstraction\Trading.Exchange.Abstraction.csproj" />
+    <ProjectReference Include="../Trading.Exchange.Abstraction/Trading.Exchange.Abstraction.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Binance.Net" Version="10.8.0" />

@@ -9,6 +9,7 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Trading.Application.Commands;
 using Trading.Application.Telegram.Handlers;
+using Trading.Common.Enums;
 using Trading.Common.Models;
 using Trading.Domain.Entities;
 using Trading.Domain.Events;
@@ -70,9 +71,9 @@ public class StrategyCommandHandlerTests
     }
 
     [Theory]
-    [InlineData(StateStatus.Running, "运行中")]
-    [InlineData(StateStatus.Paused, "已暂停")]
-    public async Task HandleAsync_WithEmptyParameters_ShouldReturnStrategyInformation(StateStatus status, string statusText)
+    [InlineData(Status.Running, "运行中")]
+    [InlineData(Status.Paused, "已暂停")]
+    public async Task HandleAsync_WithEmptyParameters_ShouldReturnStrategyInformation(Status status, string statusText)
     {
         // arrange
         _strategyRepositoryMock.Setup(x => x.GetAllStrategies())
@@ -221,7 +222,7 @@ public class StrategyCommandHandlerTests
         _strategyRepositoryMock.Verify(
             x => x.UpdateAsync(
                 strategyId,
-                It.Is<Strategy>(x => x.Status == StateStatus.Paused),
+                It.Is<Strategy>(x => x.Status == Status.Paused),
                 It.IsAny<CancellationToken>()),
             Times.Once);
 
@@ -257,7 +258,7 @@ public class StrategyCommandHandlerTests
         _strategyRepositoryMock.Verify(
             x => x.UpdateAsync(
                 strategyId,
-                It.Is<Strategy>(x => x.Status == StateStatus.Running),
+                It.Is<Strategy>(x => x.Status == Status.Running),
                 It.IsAny<CancellationToken>()),
             Times.Once);
 

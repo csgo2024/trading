@@ -6,9 +6,10 @@ using Moq;
 using Trading.Application.Services.Alerts;
 using Trading.Application.Services.Trading.Account;
 using Trading.Application.Services.Trading.Executors;
+using Trading.Common.Enums;
 using Trading.Domain.Entities;
 using Trading.Domain.IRepositories;
-using AccountType = Trading.Domain.Entities.AccountType;
+using AccountType = Trading.Common.Enums.AccountType;
 
 namespace Trading.Application.Tests.Services.Trading.Executors;
 
@@ -78,7 +79,7 @@ public class CloseSellExecutorTests
         await _executor.Handle(notification, _ct);
 
         // Assert
-        _mockAccountProcessorFactory.Verify(x => x.GetAccountProcessor(It.IsAny<Domain.Entities.AccountType>()), Times.Never);
+        _mockAccountProcessorFactory.Verify(x => x.GetAccountProcessor(It.IsAny<AccountType>()), Times.Never);
         _mockStrategyRepository.Verify(x => x.UpdateAsync(
             It.IsAny<string>(),
             It.IsAny<Strategy>(),

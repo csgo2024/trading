@@ -1,6 +1,8 @@
 using System.Security.Cryptography;
 using System.Text;
 
+namespace Trading.Common.Helpers;
+
 public static class RsaEncryptionHelper
 {
 
@@ -11,8 +13,8 @@ public static class RsaEncryptionHelper
         {
             rsa.FromXmlString(publicKey);
 
-            byte[] dataBytes = Encoding.UTF8.GetBytes(data);
-            byte[] encryptedData = rsa.Encrypt(dataBytes, false); // false 表示不使用 OAEP
+            var dataBytes = Encoding.UTF8.GetBytes(data);
+            var encryptedData = rsa.Encrypt(dataBytes, false); // false 表示不使用 OAEP
             return encryptedData;
         }
     }
@@ -23,7 +25,7 @@ public static class RsaEncryptionHelper
         {
             rsa.FromXmlString(privateKey);
 
-            byte[] decryptedData = rsa.Decrypt(encryptedBytes, false); // false 表示不使用 OAEP
+            var decryptedData = rsa.Decrypt(encryptedBytes, false); // false 表示不使用 OAEP
             return decryptedData;
         }
     }
@@ -35,9 +37,9 @@ public static class RsaEncryptionHelper
         {
             rsa.FromXmlString(publicKey);
 
-            byte[] dataBytes = Encoding.UTF8.GetBytes(data);
-            byte[] encryptedBytes = rsa.Encrypt(dataBytes, false); // false 表示不使用 OAEP
-            string encrypted64Str = Convert.ToBase64String(encryptedBytes);
+            var dataBytes = Encoding.UTF8.GetBytes(data);
+            var encryptedBytes = rsa.Encrypt(dataBytes, false); // false 表示不使用 OAEP
+            var encrypted64Str = Convert.ToBase64String(encryptedBytes);
             return encrypted64Str;
         }
     }
@@ -47,9 +49,9 @@ public static class RsaEncryptionHelper
         using (var rsa = new RSACryptoServiceProvider())
         {
             rsa.FromXmlString(privateKey);
-            byte[] encrypted64Bytes = Convert.FromBase64String(encrypted64Str);
-            byte[] decryptedBytes = rsa.Decrypt(encrypted64Bytes, false); // false 表示不使用 OAEP
-            string decryptedStr = Encoding.UTF8.GetString(decryptedBytes);
+            var encrypted64Bytes = Convert.FromBase64String(encrypted64Str);
+            var decryptedBytes = rsa.Decrypt(encrypted64Bytes, false); // false 表示不使用 OAEP
+            var decryptedStr = Encoding.UTF8.GetString(decryptedBytes);
 
             return decryptedStr;
         }
@@ -63,7 +65,7 @@ public static class RsaEncryptionHelper
 
         using (var rsa = new RSACryptoServiceProvider(2048))
         {
-            string publicKey = rsa.ToXmlString(false);
+            var publicKey = rsa.ToXmlString(false);
             privateKey = rsa.ToXmlString(true);
 
             encryptedKey = EncryptData(apiKey, publicKey);

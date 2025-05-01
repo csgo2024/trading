@@ -37,10 +37,9 @@ public class ExceptionHandlingMiddleware
     private readonly ILogger<ExceptionHandlingMiddleware> _logger;
     private readonly IErrorMessageResolver _errorMessageResolver;
 
-    public ExceptionHandlingMiddleware(
-        RequestDelegate next,
-        ILogger<ExceptionHandlingMiddleware> logger,
-        IErrorMessageResolver errorMessageResolver)
+    public ExceptionHandlingMiddleware(RequestDelegate next,
+                                       ILogger<ExceptionHandlingMiddleware> logger,
+                                       IErrorMessageResolver errorMessageResolver)
     {
         _next = next;
         _logger = logger;

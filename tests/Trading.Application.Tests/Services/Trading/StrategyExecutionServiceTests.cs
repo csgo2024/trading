@@ -8,9 +8,12 @@ using Trading.Application.Services.Common;
 using Trading.Application.Services.Trading;
 using Trading.Application.Services.Trading.Account;
 using Trading.Application.Services.Trading.Executors;
+using Trading.Common.Enums;
 using Trading.Domain.Entities;
 using Trading.Domain.Events;
 using Trading.Domain.IRepositories;
+using AccountType = Trading.Common.Enums.AccountType;
+using StrategyType = Trading.Common.Enums.StrategyType;
 
 namespace Trading.Application.Tests.Services.Trading;
 
@@ -80,7 +83,7 @@ public class StrategyExecutionServiceTests
 
         _backgroundTaskManagerMock
             .Setup(x => x.StartAsync(
-                It.IsAny<string>(),
+                It.IsAny<TaskCategory>(),
                 It.IsAny<string>(),
                 It.IsAny<Func<CancellationToken, Task>>(),
                 It.IsAny<CancellationToken>()))
@@ -100,7 +103,7 @@ public class StrategyExecutionServiceTests
         // Assert
         _backgroundTaskManagerMock.Verify(
             x => x.StartAsync(
-                TaskCategories.Strategy,
+                TaskCategory.Strategy,
                 strategy.Id,
                 It.IsAny<Func<CancellationToken, Task>>(),
                 _cts.Token),
@@ -119,7 +122,7 @@ public class StrategyExecutionServiceTests
 
         // Assert
         _backgroundTaskManagerMock.Verify(
-            x => x.StopAsync(TaskCategories.Strategy, "test-id"),
+            x => x.StopAsync(TaskCategory.Strategy, "test-id"),
             Times.Once);
     }
 
@@ -135,7 +138,7 @@ public class StrategyExecutionServiceTests
 
         // Assert
         _backgroundTaskManagerMock.Verify(
-            x => x.StopAsync(TaskCategories.Strategy, "test-id"),
+            x => x.StopAsync(TaskCategory.Strategy, "test-id"),
             Times.Once);
 
         _accountProcessorMock.Verify(
@@ -154,7 +157,7 @@ public class StrategyExecutionServiceTests
 
         // Assert
         _backgroundTaskManagerMock.Verify(
-            x => x.StopAsync(TaskCategories.Strategy, "test-id"),
+            x => x.StopAsync(TaskCategory.Strategy, "test-id"),
             Times.Once);
     }
 
@@ -171,7 +174,7 @@ public class StrategyExecutionServiceTests
         // Assert
         _backgroundTaskManagerMock.Verify(
             x => x.StartAsync(
-                TaskCategories.Strategy,
+                TaskCategory.Strategy,
                 strategy.Id,
                 It.IsAny<Func<CancellationToken, Task>>(),
                 _cts.Token),
@@ -198,7 +201,7 @@ public class StrategyExecutionServiceTests
         // Assert
         _backgroundTaskManagerMock.Verify(
             x => x.StartAsync(
-                TaskCategories.Strategy,
+                TaskCategory.Strategy,
                 It.IsAny<string>(),
                 It.IsAny<Func<CancellationToken, Task>>(),
                 _cts.Token),
@@ -246,7 +249,7 @@ public class StrategyExecutionServiceTests
         // VerifyLogError($"Failed to get executor or account processor for strategy {strategy.Id}");
         _backgroundTaskManagerMock.Verify(
             x => x.StartAsync(
-                It.IsAny<string>(),
+                It.IsAny<TaskCategory>(),
                 It.IsAny<string>(),
                 It.IsAny<Func<CancellationToken, Task>>(),
                 It.IsAny<CancellationToken>()),

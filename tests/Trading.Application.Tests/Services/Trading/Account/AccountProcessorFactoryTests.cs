@@ -3,7 +3,7 @@ using Binance.Net.Interfaces.Clients.UsdFuturesApi;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Trading.Application.Services.Trading.Account;
-using Trading.Domain.Entities;
+using Trading.Common.Enums;
 using Trading.Exchange.Binance.Wrappers.Clients;
 
 namespace Trading.Application.Tests.Services.Trading.Account;

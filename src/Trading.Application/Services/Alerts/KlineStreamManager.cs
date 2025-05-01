@@ -4,8 +4,8 @@ using CryptoExchange.Net.Objects;
 using CryptoExchange.Net.Objects.Sockets;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using Trading.Application.Helpers;
 using Trading.Domain.Events;
+using Trading.Exchange.Binance.Helpers;
 using Trading.Exchange.Binance.Wrappers.Clients;
 
 namespace Trading.Application.Services.Alerts;
@@ -68,7 +68,7 @@ public class KlineStreamManager : IKlineStreamManager
         mergedIntervals.UnionWith(intervals);
         var result = await _usdFutureSocketClient.ExchangeData.SubscribeToKlineUpdatesAsync(
             mergedSymbols,
-            mergedIntervals.Select(CommonHelper.ConvertToKlineInterval),
+            mergedIntervals.Select(BinanceHelper.ConvertToKlineInterval),
             HandlePriceUpdate,
             ct: ct);
 

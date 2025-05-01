@@ -8,6 +8,7 @@ using Moq;
 using Trading.Application.Services.Trading.Account;
 using Trading.Domain.Entities;
 using Trading.Exchange.Binance.Wrappers.Clients;
+using AccountType = Trading.Common.Enums.AccountType;
 
 namespace Trading.Application.Tests.Services.Trading.Account;
 
@@ -237,7 +238,7 @@ public class SpotProcessorTests
     public async Task GetSymbolFilterData_WhenSuccessful_ShouldReturnFilters()
     {
         // Arrange
-        var strategy = new Strategy { Symbol = "BTCUSDT", AccountType = Domain.Entities.AccountType.Spot };
+        var strategy = new Strategy { Symbol = "BTCUSDT", AccountType = AccountType.Spot };
         var expectedPriceFilter = new BinanceSymbolPriceFilter
         {
             TickSize = 0.01m,
@@ -300,8 +301,8 @@ public class SpotProcessorTests
     public async Task GetSymbolFilterData_WhenSymbolNotFound_ShouldThrowException()
     {
         // Arrange
-        var strategy = new Strategy { Symbol = "UNKNOWN", AccountType = Domain.Entities.AccountType.Spot };
-        var exchangeInfo = new BinanceExchangeInfo { Symbols = Array.Empty<BinanceSymbol>() };
+        var strategy = new Strategy { Symbol = "UNKNOWN", AccountType = AccountType.Spot };
+        var exchangeInfo = new BinanceExchangeInfo { Symbols = [] };
 
         _mockExchangeData
             .Setup(x => x.GetExchangeInfoAsync(
