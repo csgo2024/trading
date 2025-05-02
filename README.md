@@ -1,49 +1,104 @@
 # Trading Service Documentation
 
-## Telegram 命令列表
+## 目录
+- [基础命令](#基础命令)
+- [策略管理](#策略管理)
+  - [策略类型说明](#策略类型说明)
+  - [策略示例](#策略示例)
+- [警报管理](#警报管理)
+- [部署说明](#部署说明)
 
-### 基础命令
+## 基础命令
 
-#### `/help`
-显示帮助信息
+| 命令 | 说明 | 子命令 |
+|------|------|--------|
+| `/help` | 显示帮助信息 | - |
+| `/strategy` | 策略管理 | create, delete, pause, resume |
+| `/alert` | 警报管理 | create, delete, empty, pause, resume |
 
-#### `/strategy`
-策略管理命令，支持以下操作：
-- create：创建策略
-- delete：删除策略
-- pause：暂停策略
-- resume：恢复策略
+## 策略管理
 
-示例：
+### 策略类型说明
 
-1. 创建策略：
+#### RestClient 策略
+- **BottomBuy** 和 **TopSell**: 基于当天开盘价格执行的策略
+- 特点：不需要等待收盘，第二天自动管理
+- 适用：日线级别交易
+
+#### WebSocket 策略
+- **CloseBuy** 和 **CloseSell**: 基于指定周期收盘价格执行的策略
+- ⚠️ 注意：必须等待当前周期收盘后才会执行下单
+- 适用：更灵活的周期选择
+
+### 策略示例
+
+#### 1. 现货做多策略 (BottomBuy)
 ```json
 /strategy create {
     "Symbol": "BTCUSDT",
     "Amount": 1000,
     "Volatility": 0.2,
+    "Interval": "1d",
     "Leverage": 5,
     "AccountType": "Spot",
     "StrategyType": "BottomBuy"
 }
 ```
 
-2. 删除策略：
+#### 2. 合约做空策略 (TopSell)
+```json
+/strategy create {
+    "Symbol": "BTCUSDT",
+    "Amount": 1000,
+    "Volatility": 0.2,
+    "Interval": "1d",
+    "Leverage": 5,
+    "AccountType": "Future",
+    "StrategyType": "TopSell"
+}
 ```
-/strategy delete 12345
+
+#### 3. WebSocket合约做空策略 (CloseSell)
+```json
+/strategy create {
+    "Symbol": "BTCUSDT",
+    "Amount": 1000,
+    "Volatility": 0.002,
+    "Interval": "4h",
+    "AccountType": "Future",
+    "StrategyType": "CloseSell"
+}
 ```
 
-#### `/alert`
-警报管理命令，支持以下操作：
-- create：创建警报
-- delete：删除警报
-- empty：清空所有警报
-- pause：暂停警报
-- resume：恢复警报
+#### 4. WebSocket合约做多策略 (CloseBuy)
+```json
+/strategy create {
+    "Symbol": "BTCUSDT",
+    "Amount": 1000,
+    "Volatility": 0.002,
+    "Interval": "4h",
+    "AccountType": "Future",
+    "StrategyType": "CloseBuy"
+}
+```
 
-示例：
+#### 删除策略
+```
+/strategy delete <Id>
+```
 
-1. 创建警报（支持间隔: 5m,15m,1h,4h,1d）：
+## 警报管理
+
+### 支持的时间间隔
+- 5m (5分钟)
+- 15m (15分钟)
+- 1h (1小时)
+- 4h (4小时)
+- 1d (1天)
+
+### 警报示例
+
+#### 1. 价格波动警报
 ```json
 /alert create {
     "Symbol": "BTCUSDT",
@@ -52,12 +107,21 @@
 }
 ```
 
-2. 删除警报：
-```
-/alert delete 12345
+#### 2. 价格阈值警报
+```json
+/alert create {
+    "Symbol": "BTCUSDT",
+    "Interval": "4h",
+    "Expression": "close > 20000"
+}
 ```
 
-3. 清空所有警报：
+#### 删除指定警报
+```
+/alert delete <Id>
+```
+
+#### 清空所有警报
 ```
 /alert empty
 ```
