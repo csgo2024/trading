@@ -6,7 +6,7 @@ public class BinanceSocketClientWrapper
     public readonly BinanceSocketClientUsdFuturesApiWrapper UsdFuturesApi;
 
     public BinanceSocketClientWrapper(BinanceSocketClientSpotApiWrapper spotApi,
-                                    BinanceSocketClientUsdFuturesApiWrapper usdFuturesApi)
+                                      BinanceSocketClientUsdFuturesApiWrapper usdFuturesApi)
     {
         SpotApi = spotApi;
         UsdFuturesApi = usdFuturesApi;

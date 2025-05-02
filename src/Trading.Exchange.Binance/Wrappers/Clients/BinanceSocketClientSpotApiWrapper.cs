@@ -17,8 +17,8 @@ public class BinanceSocketClientSpotApiWrapper
     public IBinanceSocketClientSpotApiTrading Trading { get; }
 
     public BinanceSocketClientSpotApiWrapper(IBinanceSocketClientSpotApiAccount account,
-                                                   IBinanceSocketClientSpotApiExchangeData exchangeData,
-                                                   IBinanceSocketClientSpotApiTrading trading)
+                                             IBinanceSocketClientSpotApiExchangeData exchangeData,
+                                             IBinanceSocketClientSpotApiTrading trading)
     {
         Account = account;
         ExchangeData = exchangeData;
