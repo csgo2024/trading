@@ -147,6 +147,33 @@ public class StrategyRepositoryTests : IClassFixture<MongoDbFixture>
     }
 
     [Fact]
+    public async Task InitializeActiveStrategies_ShouldReturnAllActivestrategies()
+    {
+        // Arrange
+        await _repository.EmptyAsync();
+        var strategies = new List<Strategy>
+        {
+            new() { Symbol = "S1", AccountType = AccountType.Spot, Status = Status.Running },
+            new() { Symbol = "S2", AccountType = AccountType.Spot, Status = Status.Paused },
+            new() { Symbol = "F1", AccountType = AccountType.Future, Status = Status.Running }
+        };
+
+        foreach (var strategy in strategies)
+        {
+            await _repository.Add(strategy);
+        }
+
+        // Act
+        var result = await _repository.InitializeActiveStrategies();
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(2, result.Keys.Count);
+        Assert.Single(result.Keys, x => x.Contains("S1") && x.Contains(AccountType.Spot.ToString()));
+        Assert.Single(result.Keys, x => x.Contains("F1") && x.Contains(AccountType.Future.ToString()));
+    }
+
+    [Fact]
     public async Task UpdateOrderStatusAsync_ShouldUpdateStrategySuccessfully()
     {
         // Arrange
@@ -171,5 +198,35 @@ public class StrategyRepositoryTests : IClassFixture<MongoDbFixture>
         var updatedStrategy = await _repository.GetByIdAsync(addedStrategy.Id);
         Assert.NotNull(updatedStrategy);
         Assert.Equal(Status.Paused, updatedStrategy.Status);
+    }
+    [Fact]
+    public async Task Find_ShouldReturnRunningAndExactMatchedStrategies()
+    {
+        // Arrange
+        await _repository.EmptyAsync();
+        var strategies = new List<Strategy>
+        {
+            new() { Symbol = "S1", Interval = "5m", StrategyType = StrategyType.TopSell, Status = Status.Running },
+            new() { Symbol = "S1", Interval = "5m", StrategyType = StrategyType.TopSell, Status = Status.Running },
+            new() { Symbol = "S1", Interval = "15m", StrategyType = StrategyType.TopSell, Status = Status.Running },
+            new() { Symbol = "S1", Interval = "5m", StrategyType = StrategyType.TopSell, Status = Status.Paused },
+            new() { Symbol = "S1", Interval = "5m", StrategyType = StrategyType.BottomBuy, Status = Status.Running },
+        };
+
+        foreach (var strategy in strategies)
+        {
+            await _repository.Add(strategy);
+        }
+
+        // Act
+        var result = await _repository.Find("S1", "5m", StrategyType.TopSell, default);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(2, result.Count);
+        Assert.All(result, s => Assert.Equal("S1", s.Symbol));
+        Assert.All(result, s => Assert.Equal("5m", s.Interval));
+        Assert.All(result, s => Assert.Equal(StrategyType.TopSell, s.StrategyType));
+        Assert.All(result, s => Assert.Equal(Status.Running, s.Status));
     }
 }

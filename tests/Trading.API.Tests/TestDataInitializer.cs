@@ -53,7 +53,8 @@ public class TestDataInitializer
                 Status = Status.Paused,
                 CreatedAt = DateTime.UtcNow,
                 Leverage = 2
-            }        };
+            }
+        };
 
         await _strategies.InsertManyAsync(strategies);
     }
