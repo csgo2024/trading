@@ -82,7 +82,7 @@ public class KlineStreamManager : IKlineStreamManager
         _subscription = result.Data;
         _lastConnectionTime = DateTime.UtcNow;
 
-        SubscribeToEvents(_subscription);
+        // SubscribeToEvents(_subscription);
         _logger.LogInformation("Subscribed to {Count} symbols: {@Symbols} intervals: {@Intervals}",
                                _listenedSymbols.Count,
                                _listenedSymbols,
@@ -100,81 +100,13 @@ public class KlineStreamManager : IKlineStreamManager
         Task.Run(() => _mediator.Publish(new KlineClosedEvent(data.Data.Symbol, data.Data.Data.Interval, data.Data.Data)));
     }
 
-    private void OnConnectionLost()
-    {
-        _logger.LogInformation("WebSocket connection lost for symbols: {@Symbols}", _listenedSymbols);
-    }
-
-    private void OnConnectionRestored(TimeSpan timeSpan)
-    {
-        _logger.LogInformation("Connection restored after {Delay}ms for symbols: {@Symbols}",
-            timeSpan.TotalMilliseconds,
-            _listenedSymbols);
-    }
-
-    private void OnConnectionClosed()
-    {
-        _logger.LogInformation("Connection closed for symbols: {@Symbols}", _listenedSymbols);
-    }
-
-    private void OnResubscribingFailed(Error error)
-    {
-        _logger.LogInformation("Resubscribing failed for symbols: {@Symbols}, Error: {@Error}",
-            _listenedSymbols,
-            error);
-    }
-
-    private void OnActivityPaused()
-    {
-        _logger.LogInformation("Connection activity paused for symbols: {@Symbols}", _listenedSymbols);
-    }
-
-    private void OnActivityUnpaused()
-    {
-        _logger.LogInformation("Connection activity resumed for symbols: {@Symbols}", _listenedSymbols);
-    }
-
-    private void OnException(Exception exception)
-    {
-        _logger.LogInformation(exception, "Exception occurred for symbols: {@Symbols}", _listenedSymbols);
-    }
-
-    private void SubscribeToEvents(UpdateSubscription subscription)
-    {
-        if (subscription == null)
-        {
-            return;
-        }
-        subscription.ConnectionLost += OnConnectionLost;
-        subscription.ConnectionRestored += OnConnectionRestored;
-        subscription.ConnectionClosed += OnConnectionClosed;
-        subscription.ResubscribingFailed += OnResubscribingFailed;
-        subscription.ActivityPaused += OnActivityPaused;
-        subscription.ActivityUnpaused += OnActivityUnpaused;
-        subscription.Exception += OnException;
-    }
-
-    private void UnsubscribeEvents(UpdateSubscription subscription)
-    {
-        if (subscription == null)
-        {
-            return;
-        }
-        subscription.ConnectionLost -= OnConnectionLost;
-        subscription.ConnectionRestored -= OnConnectionRestored;
-        subscription.ConnectionClosed -= OnConnectionClosed;
-        subscription.ResubscribingFailed -= OnResubscribingFailed;
-        subscription.ActivityPaused -= OnActivityPaused;
-        subscription.ActivityUnpaused -= OnActivityUnpaused;
-        subscription.Exception -= OnException;
-    }
     private async Task CloseExistingSubscription()
     {
         if (_subscription != null)
         {
             try
             {
-                UnsubscribeEvents(_subscription);
+                // UnsubscribeEvents(_subscription);
                 await _subscription.CloseAsync();
                 _subscription = null;
             }
