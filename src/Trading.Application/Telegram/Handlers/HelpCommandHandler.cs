@@ -15,37 +15,47 @@ public class HelpCommandHandler : ICommandHandler
     public static string Command => "/help";
 
     private readonly string _helpText = @"
-
 *基础命令:*
 /help \- 显示此帮助信息
 /strategy \- [create\|delete\|pause\|resume] 策略管理
 /alert \- [create\|delete\|empty\|pause\|resume] 警报相关
 
-1\. *策略管理:*
-*StrategyType* 类型说明
+*策略管理*
 
-*BottomBuy、TopSell是基于RestClient的根据当天开盘价格\(不需要收盘\)的策略，第二天可以自动管理。*
+*策略类型说明*
 
-做多策略\(现货\)
+1\. RestClient策略
+\- *BottomBuy* 和 *TopSell*: 基于当天开盘价格执行的策略
+\- 特点：不需要等待收盘，第二天自动管理
+
+2\. WebSocket策略
+\- *CloseBuy* 和 *CloseSell*: 基于指定周期收盘价格执行的策略
+\- ⚠️ 注意：必须等待当前周期收盘后才会执行下单
+
+*策略示例*
+
+1\. 现货做多策略 \(BottomBuy\)
 `/strategy create {""Symbol"":""BTCUSDT"",""Amount"":1000,""Volatility"":0.2,""Interval"":""1d"",""Leverage"":5,""AccountType"":""Spot"",""StrategyType"":""BottomBuy""}`
 
-做空策略\(合约\)
+2\. 合约做空策略 \(TopSell\)
 `/strategy create {""Symbol"":""BTCUSDT"",""Amount"":1000,""Volatility"":0.2,""Interval"":""1d"",""Leverage"":5,""AccountType"":""Future"",""StrategyType"":""TopSell""}`
 
-*CloseBuy、CloseSell是基于SocketClient收盘价格执行的策略，必须收盘后才会进行下单！！！！。*
+3\. WebSocket合约做空策略 \(CloseSell\)
+`/strategy create {""Symbol"":""BTCUSDT"",""Amount"":1000,""Volatility"":0.002,""Interval"":""4h"",""AccountType"":""Future"",""StrategyType"":""CloseSell""}`
 
-做空策略\(合约基于配置周期收盘价格\) WebSocket
-`/strategy create {""Symbol"":""BTCUSDT"",""Amount"":1000,""Volatility"":0.0002,""Interval"":""4h"",""AccountType"":""Future"",""StrategyType"":""CloseSell""}`
-
-做多策略\(合约基于配置周期收盘价格\) WebSocket
-`/strategy create {""Symbol"":""BTCUSDT"",""Amount"":1000,""Volatility"":0.0002,""Interval"":""4h"",""AccountType"":""Future"",""StrategyType"":""CloseBuy""}`
+4\. WebSocket合约做多策略 \(CloseBuy\)
+`/strategy create {""Symbol"":""BTCUSDT"",""Amount"":1000,""Volatility"":0.002,""Interval"":""4h"",""AccountType"":""Future"",""StrategyType"":""CloseBuy""}`
 
 删除策略:
 `/strategy delete <Id>`
 
-2\. *警报管理:*
+*警报管理*
 创建警报\(支持间隔: 5m,15m,1h,4h,1d\):
+
+1\. 价格波动警报
 `/alert create {""Symbol"":""BTCUSDT"",""Interval"":""4h"",""Expression"":""Math\.abs\(\(close \- open\) / open\) \>\= 0\.02""}`
+
+2\. 价格阈值警报
 `/alert create {""Symbol"":""BTCUSDT"",""Interval"":""4h"",""Expression"":""close \> 20000""}`
 
 删除警报:
