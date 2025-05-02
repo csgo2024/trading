@@ -1,6 +1,5 @@
 using Binance.Net.Enums;
 using Binance.Net.Interfaces;
-using CryptoExchange.Net.Objects;
 using CryptoExchange.Net.Objects.Sockets;
 using MediatR;
 using Microsoft.Extensions.Logging;

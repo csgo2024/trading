@@ -114,7 +114,7 @@ public class FutureProcessorTests
     }
 
     [Fact]
-    public async Task PlaceOrder_WhenSuccessful_ShouldReturnOrder()
+    public async Task PlaceLongOrder_WhenSuccessful_ShouldReturnOrder()
     {
         // Arrange
         var expectedOrder = new BinanceUsdFuturesOrder
@@ -171,6 +171,81 @@ public class FutureProcessorTests
                 1.0m,                          // quantity
                 50000m,                        // price
                 PositionSide.Long,             // positionSide
+                TimeInForce.GoodTillCanceled,  // timeInForce
+                null,                          // reduceOnly
+                null,                          // newClientOrderId
+                null,                          // stopPrice
+                null,                          // activationPrice
+                null,                          // callbackRate
+                null,                          // workingType
+                null,                          // closePosition
+                null,                          // orderResponseType
+                null,                          // priceProtect
+                null,                          // priceMatch
+                null,                          // selfTradePreventionMode
+                null,                          // goodTillDate
+                null,                          // receiveWindow
+                It.IsAny<CancellationToken>()), // ct
+          Times.Once);
+    }
+    [Fact]
+    public async Task PlaceShortOrder_WhenSuccessful_ShouldReturnOrder()
+    {
+        // Arrange
+        var expectedOrder = new BinanceUsdFuturesOrder
+        {
+            Id = 12345,
+            Status = OrderStatus.New
+        };
+
+        _mockTrading
+            .Setup(m => m.PlaceOrderAsync(
+                It.IsAny<string>(),
+                It.IsAny<OrderSide>(),
+                It.IsAny<FuturesOrderType>(),
+                It.IsAny<decimal?>(),
+                It.IsAny<decimal?>(),
+                It.IsAny<PositionSide?>(),
+                It.IsAny<TimeInForce?>(),
+                It.IsAny<bool?>(),
+                It.IsAny<string?>(),
+                It.IsAny<decimal?>(),
+                It.IsAny<decimal?>(),
+                It.IsAny<decimal?>(),
+                It.IsAny<WorkingType?>(),
+                It.IsAny<bool?>(),
+                It.IsAny<OrderResponseType?>(),
+                It.IsAny<bool?>(),
+                It.IsAny<PriceMatch?>(),
+                It.IsAny<SelfTradePreventionMode?>(),
+                It.IsAny<DateTime?>(),
+                It.IsAny<int?>(),
+                It.IsAny<CancellationToken>()
+            )).ReturnsAsync(new WebCallResult<BinanceUsdFuturesOrder>(
+                null, null, TimeSpan.Zero, null, null, null, null, null, null, null,
+                ResultDataSource.Server, expectedOrder, null));
+
+        // Act
+        var result = await _processor.PlaceShortOrderAsync(
+            "BTCUSDT",
+            1.0m,
+            50000m,
+            TimeInForce.GoodTillCanceled,
+            CancellationToken.None);
+
+        // Assert
+        Assert.True(result.Success);
+        Assert.Equal(expectedOrder.Id, result.Data.Id);
+        Assert.Equal(expectedOrder.Status, result.Data.Status);
+
+        // Verify correct parameters were passed
+        _mockTrading.Verify(x => x.PlaceOrderAsync(
+                "BTCUSDT",                      // symbol
+                OrderSide.Sell,                  // side
+                FuturesOrderType.Limit,         // type
+                1.0m,                          // quantity
+                50000m,                        // price
+                PositionSide.Short,             // positionSide
                 TimeInForce.GoodTillCanceled,  // timeInForce
                 null,                          // reduceOnly
                 null,                          // newClientOrderId
