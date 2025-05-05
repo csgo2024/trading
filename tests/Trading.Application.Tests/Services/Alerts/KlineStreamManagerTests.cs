@@ -58,6 +58,7 @@ public class KlineStreamManagerTests
                 It.IsAny<IEnumerable<string>>(),
                 It.IsAny<IEnumerable<KlineInterval>>(),
                 It.IsAny<Action<DataEvent<IBinanceStreamKlineData>>>(),
+                It.IsAny<bool>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new CallResult<UpdateSubscription>(null, null, null));
 
@@ -71,6 +72,7 @@ public class KlineStreamManagerTests
                 It.Is<IEnumerable<string>>(s => s.Contains("BTCUSDT")),
                 It.Is<IEnumerable<KlineInterval>>(i => i.Contains(KlineInterval.FiveMinutes)),
                 It.IsAny<Action<DataEvent<IBinanceStreamKlineData>>>(),
+                It.IsAny<bool>(),
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }
@@ -92,6 +94,7 @@ public class KlineStreamManagerTests
                 It.IsAny<IEnumerable<string>>(),
                 It.IsAny<IEnumerable<KlineInterval>>(),
                 It.IsAny<Action<DataEvent<IBinanceStreamKlineData>>>(),
+                It.IsAny<bool>(),
                 It.IsAny<CancellationToken>()),
             Times.Never);
     }
@@ -108,6 +111,7 @@ public class KlineStreamManagerTests
                 It.IsAny<IEnumerable<string>>(),
                 It.IsAny<IEnumerable<KlineInterval>>(),
                 It.IsAny<Action<DataEvent<IBinanceStreamKlineData>>>(),
+                It.IsAny<bool>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new CallResult<UpdateSubscription>(null, null, new CantConnectError()));
 
@@ -138,6 +142,7 @@ public class KlineStreamManagerTests
                 It.IsAny<IEnumerable<string>>(),
                 It.IsAny<IEnumerable<KlineInterval>>(),
                 It.IsAny<Action<DataEvent<IBinanceStreamKlineData>>>(),
+                It.IsAny<bool>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new CallResult<UpdateSubscription>(null, null, null));
 
@@ -150,6 +155,7 @@ public class KlineStreamManagerTests
                 It.Is<IEnumerable<string>>(s => s.Contains("ETHUSDT")),
                 It.Is<IEnumerable<KlineInterval>>(i => i.Contains(KlineInterval.OneHour)),
                 It.IsAny<Action<DataEvent<IBinanceStreamKlineData>>>(),
+                It.IsAny<bool>(),
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }
@@ -166,6 +172,7 @@ public class KlineStreamManagerTests
                 It.IsAny<IEnumerable<string>>(),
                 It.IsAny<IEnumerable<KlineInterval>>(),
                 It.IsAny<Action<DataEvent<IBinanceStreamKlineData>>>(),
+                It.IsAny<bool>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new CallResult<UpdateSubscription>(null, null, null));
 
@@ -178,6 +185,7 @@ public class KlineStreamManagerTests
                 It.Is<IEnumerable<string>>(s => s.Contains("ETHUSDT")),
                 It.Is<IEnumerable<KlineInterval>>(i => i.Contains(KlineInterval.OneHour)),
                 It.IsAny<Action<DataEvent<IBinanceStreamKlineData>>>(),
+                It.IsAny<bool>(),
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }

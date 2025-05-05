@@ -4,7 +4,6 @@ using Trading.Application.Middlerwares;
 using Trading.Application.Queries;
 using Trading.Application.Services;
 using Trading.Application.Telegram;
-using Trading.Exchange.Binance;
 using Trading.Infrastructure;
 
 namespace Trading.API;
@@ -51,7 +50,7 @@ public class Startup
         services.AddHostedService<AlertHostService>();
         services.AddHostedService<TradingHostService>();
         services.AddTradingServices();
-        services.AddBinance(Configuration);
+        Exchange.Binance.ServiceCollectionExtensions.AddBinance(services, Configuration);
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
