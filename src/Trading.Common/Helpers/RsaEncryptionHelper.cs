@@ -3,81 +3,121 @@ using System.Text;
 
 namespace Trading.Common.Helpers;
 
+/// <summary>
+/// Provides RSA encryption and decryption functionality
+/// </summary>
 public static class RsaEncryptionHelper
 {
+    private const int MinimumKeySize = 2048;
 
-    #region V1
-    public static byte[] EncryptDataV1(string data, string publicKey)
+    /// <summary>
+    /// Encrypts data using RSA public key
+    /// </summary>
+    /// <param name="data">Data to encrypt</param>
+    /// <param name="publicKey">RSA public key in XML format</param>
+    /// <returns>Encrypted bytes</returns>
+    public static byte[] EncryptToBytes(string data, string publicKey)
     {
-        using (var rsa = new RSACryptoServiceProvider())
-        {
-            rsa.FromXmlString(publicKey);
+        ArgumentNullException.ThrowIfNull(data);
+        ArgumentNullException.ThrowIfNull(publicKey);
 
-            var dataBytes = Encoding.UTF8.GetBytes(data);
-            var encryptedData = rsa.Encrypt(dataBytes, false); // false 表示不使用 OAEP
-            return encryptedData;
-        }
+        using var rsa = new RSACryptoServiceProvider(MinimumKeySize);
+        rsa.FromXmlString(publicKey);
+
+        var dataBytes = Encoding.UTF8.GetBytes(data);
+        return rsa.Encrypt(dataBytes, false);
     }
 
-    public static byte[] DecryptDataV1(byte[] encryptedBytes, string privateKey)
+    /// <summary>
+    /// Decrypts data using RSA private key
+    /// </summary>
+    /// <param name="encryptedBytes">Encrypted data</param>
+    /// <param name="privateKey">RSA private key in XML format</param>
+    /// <returns>Decrypted string</returns>
+    public static string DecryptFromBytes(byte[] encryptedBytes, string privateKey)
     {
-        using (var rsa = new RSACryptoServiceProvider())
-        {
-            rsa.FromXmlString(privateKey);
+        ArgumentNullException.ThrowIfNull(encryptedBytes);
+        ArgumentNullException.ThrowIfNull(privateKey);
 
-            var decryptedData = rsa.Decrypt(encryptedBytes, false); // false 表示不使用 OAEP
-            return decryptedData;
-        }
-    }
-    #endregion
+        using var rsa = new RSACryptoServiceProvider(MinimumKeySize);
+        rsa.FromXmlString(privateKey);
 
-    private static string EncryptData(string data, string publicKey)
-    {
-        using (var rsa = new RSACryptoServiceProvider())
-        {
-            rsa.FromXmlString(publicKey);
-
-            var dataBytes = Encoding.UTF8.GetBytes(data);
-            var encryptedBytes = rsa.Encrypt(dataBytes, false); // false 表示不使用 OAEP
-            var encrypted64Str = Convert.ToBase64String(encryptedBytes);
-            return encrypted64Str;
-        }
+        var bytes = rsa.Decrypt(encryptedBytes, false);
+        return Encoding.UTF8.GetString(bytes);
     }
 
-    private static string DecryptData(string encrypted64Str, string privateKey)
+    /// <summary>
+    /// Encrypts a string to Base64 encoded string using RSA public key
+    /// </summary>
+    public static string EncryptToBase64(string data, string publicKey)
     {
-        using (var rsa = new RSACryptoServiceProvider())
-        {
-            rsa.FromXmlString(privateKey);
-            var encrypted64Bytes = Convert.FromBase64String(encrypted64Str);
-            var decryptedBytes = rsa.Decrypt(encrypted64Bytes, false); // false 表示不使用 OAEP
-            var decryptedStr = Encoding.UTF8.GetString(decryptedBytes);
-
-            return decryptedStr;
-        }
+        var encryptedBytes = EncryptToBytes(data, publicKey);
+        return Convert.ToBase64String(encryptedBytes);
     }
 
-    public static (string EncryptedKey, string EncryptedSecret, string privateKey) EncryptApiCredential(string apiKey, string apiSecret)
+    /// <summary>
+    /// Decrypts a Base64 encoded string using RSA private key
+    /// </summary>
+    public static string DecryptFromBase64(string encryptedBase64String, string privateKey)
     {
-        var encryptedKey = "";
-        var encryptedSecret = "";
-        var privateKey = "";
+        ArgumentNullException.ThrowIfNull(encryptedBase64String);
 
-        using (var rsa = new RSACryptoServiceProvider(2048))
-        {
-            var publicKey = rsa.ToXmlString(false);
-            privateKey = rsa.ToXmlString(true);
+        var encryptedBytes = Convert.FromBase64String(encryptedBase64String);
+        var result = DecryptFromBytes(encryptedBytes, privateKey);
+        return result;
+    }
 
-            encryptedKey = EncryptData(apiKey, publicKey);
-            encryptedSecret = EncryptData(apiSecret, publicKey);
-        }
+    /// <summary>
+    /// Generates RSA key pair and encrypts API credentials
+    /// </summary>
+    public static (string EncryptedKey, string EncryptedSecret, string PrivateKey) EncryptApiCredentialToBase64(string apiKey,
+                                                                                                                string apiSecret)
+    {
+        var (key, secret, privateKey) = EncryptApiCredentialToBytes(apiKey, apiSecret);
+        var encryptedKey = Convert.ToBase64String(key);
+        var encryptedSecret = Convert.ToBase64String(secret);
         return (encryptedKey, encryptedSecret, privateKey);
     }
 
-    public static (string ApiKey, string ApiSecret) DecryptApiCredential(string encryptedKey, string encryptedSecret, string privateKey)
+    /// <summary>
+    /// Decrypts API credentials using RSA private key
+    /// </summary>
+    public static (string ApiKey, string ApiSecret) DecryptApiCredentialFromBase64(string encryptedKey,
+                                                                                   string encryptedSecret,
+                                                                                   string privateKey)
     {
-        var ApiKey = DecryptData(encryptedKey, privateKey);
-        var ApiSecret = DecryptData(encryptedSecret, privateKey);
-        return (ApiKey, ApiSecret);
+        var apiKey = DecryptFromBase64(encryptedKey, privateKey);
+        var apiSecret = DecryptFromBase64(encryptedSecret, privateKey);
+        return (apiKey, apiSecret);
+    }
+    /// <summary>
+    /// Generates RSA key pair and encrypts API credentials
+    /// </summary>
+    public static (byte[] EncryptedKey, byte[] EncryptedSecret, string PrivateKey) EncryptApiCredentialToBytes(string apiKey,
+                                                                                                               string apiSecret)
+    {
+        ArgumentNullException.ThrowIfNull(apiKey);
+        ArgumentNullException.ThrowIfNull(apiSecret);
+
+        using var rsa = new RSACryptoServiceProvider(MinimumKeySize);
+        var publicKey = rsa.ToXmlString(false);
+        var privateKey = rsa.ToXmlString(true);
+
+        var encryptedKey = EncryptToBytes(apiKey, publicKey);
+        var encryptedSecret = EncryptToBytes(apiSecret, publicKey);
+
+        return (encryptedKey, encryptedSecret, privateKey);
+    }
+
+    /// <summary>
+    /// Decrypts API credentials using RSA private key
+    /// </summary>
+    public static (string ApiKey, string ApiSecret) DecryptApiCredentialFromBytes(byte[] encryptedKey,
+                                                                                  byte[] encryptedSecret,
+                                                                                  string privateKey)
+    {
+        var apiKey = DecryptFromBytes(encryptedKey, privateKey);
+        var apiSecret = DecryptFromBytes(encryptedSecret, privateKey);
+        return (apiKey, apiSecret);
     }
 }

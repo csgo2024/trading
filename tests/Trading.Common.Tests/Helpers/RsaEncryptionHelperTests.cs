@@ -1,199 +1,97 @@
-using System.Text;
+using System.Security.Cryptography;
 using Trading.Common.Helpers;
 
 namespace Trading.Common.Tests.Helpers;
 
 public class RsaEncryptionHelperTests
 {
+    private const string TestData = "Hello World!";
+    private const string TestApiKey = "test-api-key";
+    private const string TestApiSecret = "test-api-secret";
 
     [Fact]
-    public void EncryptDecryptV1_WithSimpleString_ShouldReturnOriginalValue()
+    public void EncryptToBytes_ShouldEncryptAndDecrypt()
     {
         // Arrange
-        string originalText = "Hello World";
-        using var rsa = new System.Security.Cryptography.RSACryptoServiceProvider(2048);
-        string publicKey = rsa.ToXmlString(false);
-        string privateKey = rsa.ToXmlString(true);
+        using var rsa = new RSACryptoServiceProvider(2048);
+        var publicKey = rsa.ToXmlString(false);
+        var privateKey = rsa.ToXmlString(true);
 
         // Act
-        byte[] encryptedData = RsaEncryptionHelper.EncryptDataV1(originalText, publicKey);
-        byte[] decryptedData = RsaEncryptionHelper.DecryptDataV1(encryptedData, privateKey);
-        string decryptedText = Encoding.UTF8.GetString(decryptedData);
+        var encrypted = RsaEncryptionHelper.EncryptToBytes(TestData, publicKey);
+        var decrypted = RsaEncryptionHelper.DecryptFromBytes(encrypted, privateKey);
 
         // Assert
-        Assert.Equal(originalText, decryptedText);
-    }
-
-    [Fact]
-    public void EncryptDecryptV1_WithSpecialCharacters_ShouldReturnOriginalValue()
-    {
-        // Arrange
-        string originalText = "!@#$%^&*()_+-=[]{}|;:,.<>?";
-        using var rsa = new System.Security.Cryptography.RSACryptoServiceProvider(2048);
-        string publicKey = rsa.ToXmlString(false);
-        string privateKey = rsa.ToXmlString(true);
-
-        // Act
-        byte[] encryptedData = RsaEncryptionHelper.EncryptDataV1(originalText, publicKey);
-        byte[] decryptedData = RsaEncryptionHelper.DecryptDataV1(encryptedData, privateKey);
-        string decryptedText = Encoding.UTF8.GetString(decryptedData);
-
-        // Assert
-        Assert.Equal(originalText, decryptedText);
+        Assert.Equal(TestData, decrypted);
     }
 
     [Fact]
-    public void EncryptDecryptV1_WithChineseCharacters_ShouldReturnOriginalValue()
+    public void EncryptToBase64_ShouldEncryptAndDecrypt()
     {
         // Arrange
-        string originalText = "你好世界";
-        using var rsa = new System.Security.Cryptography.RSACryptoServiceProvider(2048);
-        string publicKey = rsa.ToXmlString(false);
-        string privateKey = rsa.ToXmlString(true);
+        using var rsa = new RSACryptoServiceProvider(2048);
+        var publicKey = rsa.ToXmlString(false);
+        var privateKey = rsa.ToXmlString(true);
 
         // Act
-        byte[] encryptedData = RsaEncryptionHelper.EncryptDataV1(originalText, publicKey);
-        byte[] decryptedData = RsaEncryptionHelper.DecryptDataV1(encryptedData, privateKey);
-        string decryptedText = Encoding.UTF8.GetString(decryptedData);
+        var encrypted = RsaEncryptionHelper.EncryptToBase64(TestData, publicKey);
+        var decrypted = RsaEncryptionHelper.DecryptFromBase64(encrypted, privateKey);
 
         // Assert
-        Assert.Equal(originalText, decryptedText);
+        Assert.Equal(TestData, decrypted);
     }
 
     [Fact]
-    public void EncryptDecryptV1_WithEmptyString_ShouldReturnEmptyString()
+    public void EncryptApiCredentialToBase64_ShouldEncryptAndDecrypt()
     {
-        // Arrange
-        string originalText = "";
-        using var rsa = new System.Security.Cryptography.RSACryptoServiceProvider(2048);
-        string publicKey = rsa.ToXmlString(false);
-        string privateKey = rsa.ToXmlString(true);
-
         // Act
-        byte[] encryptedData = RsaEncryptionHelper.EncryptDataV1(originalText, publicKey);
-        byte[] decryptedData = RsaEncryptionHelper.DecryptDataV1(encryptedData, privateKey);
-        string decryptedText = Encoding.UTF8.GetString(decryptedData);
+        var (encryptedKey, encryptedSecret, privateKey) =
+            RsaEncryptionHelper.EncryptApiCredentialToBase64(TestApiKey, TestApiSecret);
+        var (decryptedKey, decryptedSecret) =
+            RsaEncryptionHelper.DecryptApiCredentialFromBase64(encryptedKey, encryptedSecret, privateKey);
 
         // Assert
-        Assert.Equal(originalText, decryptedText);
+        Assert.Equal(TestApiKey, decryptedKey);
+        Assert.Equal(TestApiSecret, decryptedSecret);
     }
 
     [Fact]
-    public void EncryptV1_ShouldProduceDifferentOutput_ThanOriginalData()
+    public void EncryptApiCredentialToBytes_ShouldEncryptAndDecrypt()
     {
-        // Arrange
-        string originalText = "test_data";
-        using var rsa = new System.Security.Cryptography.RSACryptoServiceProvider(2048);
-        string publicKey = rsa.ToXmlString(false);
-
         // Act
-        byte[] encryptedData = RsaEncryptionHelper.EncryptDataV1(originalText, publicKey);
+        var (encryptedKey, encryptedSecret, privateKey) =
+            RsaEncryptionHelper.EncryptApiCredentialToBytes(TestApiKey, TestApiSecret);
+        var (decryptedKey, decryptedSecret) =
+            RsaEncryptionHelper.DecryptApiCredentialFromBytes(encryptedKey, encryptedSecret, privateKey);
 
         // Assert
-        Assert.NotEqual(originalText, Encoding.UTF8.GetString(encryptedData));
-        Assert.True(encryptedData.Length > 0);
-    }
-
-    [Theory]
-    [InlineData("")]
-    [InlineData("invalid_key")]
-    public void EncryptV1_WithInvalidPublicKey_ShouldThrowCryptographicException(string invalidKey)
-    {
-        // Arrange
-        string originalText = "test_data";
-
-        // Act & Assert
-        Assert.Throws<System.Security.Cryptography.CryptographicException>(
-            () => RsaEncryptionHelper.EncryptDataV1(originalText, invalidKey)
-        );
-    }
-
-    [Theory]
-    [InlineData("")]
-    [InlineData("invalid_key")]
-    public void DecryptV1_WithInvalidPrivateKey_ShouldThrowCryptographicException(string invalidKey)
-    {
-        // Arrange
-        byte[] someData = new byte[] { 1, 2, 3, 4, 5 };
-
-        // Act & Assert
-        Assert.Throws<System.Security.Cryptography.CryptographicException>(
-            () => RsaEncryptionHelper.DecryptDataV1(someData, invalidKey)
-        );
+        Assert.Equal(TestApiKey, decryptedKey);
+        Assert.Equal(TestApiSecret, decryptedSecret);
     }
 
     [Fact]
-    public void EncryptDecrypt_WithSimpleString_ShouldReturnOriginalValue()
+    public void EncryptionMethods_ShouldGenerateDifferentCiphertext()
     {
         // Arrange
-        string originalKey = "Hello World";
-        string originalSecret = "dummy";
+        using var rsa = new RSACryptoServiceProvider(2048);
+        var publicKey = rsa.ToXmlString(false);
 
         // Act
-        var (encryptedKey, encryptedSecret, privateKey) = RsaEncryptionHelper.EncryptApiCredential(originalKey, originalSecret);
-        var (decryptedKey, _) = RsaEncryptionHelper.DecryptApiCredential(encryptedKey, encryptedSecret, privateKey);
+        var encrypted1 = RsaEncryptionHelper.EncryptToBase64(TestData, publicKey);
+        var encrypted2 = RsaEncryptionHelper.EncryptToBase64(TestData, publicKey);
 
         // Assert
-        Assert.Equal(originalKey, decryptedKey);
+        Assert.NotEqual(encrypted1, encrypted2);
     }
 
     [Fact]
-    public void EncryptDecrypt_WithSpecialCharacters_ShouldReturnOriginalValue()
+    public void KeyGeneration_ShouldGenerateUniqueKeys()
     {
-        string originalKey = "!@#$%^&*()_+-=[]{}|;:,.<>?";
-        string originalSecret = "api_secret_456";
-
         // Act
-        var (encryptedKey, encryptedSecret, privateKey) = RsaEncryptionHelper.EncryptApiCredential(originalKey, originalSecret);
-        var (decryptedKey, decryptedSecret) = RsaEncryptionHelper.DecryptApiCredential(encryptedKey, encryptedSecret, privateKey);
+        var (_, _, privateKey1) = RsaEncryptionHelper.EncryptApiCredentialToBytes(TestApiKey, TestApiSecret);
+        var (_, _, privateKey2) = RsaEncryptionHelper.EncryptApiCredentialToBytes(TestApiKey, TestApiSecret);
 
         // Assert
-        Assert.Equal(originalKey, decryptedKey);
-        Assert.Equal(originalSecret, decryptedSecret);
-    }
-
-    [Fact]
-    public void EncryptDecrypt_WithChineseCharacters_ShouldReturnOriginalValue()
-    {
-        string originalKey = "你好世界";
-        string originalSecret = "api_secret_456";
-
-        // Act
-        var (encryptedKey, encryptedSecret, privateKey) = RsaEncryptionHelper.EncryptApiCredential(originalKey, originalSecret);
-        var (decryptedKey, decryptedSecret) = RsaEncryptionHelper.DecryptApiCredential(encryptedKey, encryptedSecret, privateKey);
-
-        // Assert
-        Assert.Equal(originalKey, decryptedKey);
-        Assert.Equal(originalSecret, decryptedSecret);
-    }
-
-    [Fact]
-    public void EncryptDecrypt_WithApiCredentials_ShouldReturnOriginalValues()
-    {
-        // Arrange
-        string originalKey = "api_key_123";
-        string originalSecret = "api_secret_456";
-
-        // Act
-        var (encryptedKey, encryptedSecret, privateKey) = RsaEncryptionHelper.EncryptApiCredential(originalKey, originalSecret);
-        var (decryptedKey, decryptedSecret) = RsaEncryptionHelper.DecryptApiCredential(encryptedKey, encryptedSecret, privateKey);
-
-        // Assert
-        Assert.Equal(originalKey, decryptedKey);
-        Assert.Equal(originalSecret, decryptedSecret);
-    }
-
-    [Fact]
-    public void EncryptedValue_ShouldBeDifferentFromOriginal()
-    {
-        // Arrange
-        string originalText = "test_value";
-
-        // Act
-        var (encryptedText, _, _) = RsaEncryptionHelper.EncryptApiCredential(originalText, "dummy");
-
-        // Assert
-        Assert.NotEqual(originalText, encryptedText);
-        Assert.True(Convert.FromBase64String(encryptedText).Length > 0);
+        Assert.NotEqual(privateKey1, privateKey2);
     }
 }

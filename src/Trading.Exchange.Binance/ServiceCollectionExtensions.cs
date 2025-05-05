@@ -1,4 +1,3 @@
-using System.ComponentModel.DataAnnotations;
 using Binance.Net.Clients;
 using CryptoExchange.Net.Authentication;
 using Microsoft.Extensions.Configuration;
@@ -17,7 +16,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton(provider =>
         {
             var credentialProvider = provider.GetRequiredService<IApiCredentialProvider>();
-            var settings = credentialProvider.GetBinanceSettingsV1() ?? throw new ValidationException("Binance settings not found");
+            var settings = credentialProvider.GetBinanceSettingsV1();
             return settings;
         });
         services.AddSingleton(provider =>

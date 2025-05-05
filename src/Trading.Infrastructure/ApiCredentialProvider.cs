@@ -1,4 +1,3 @@
-using System.Text;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using Trading.Common.Helpers;
@@ -28,29 +27,27 @@ public class ApiCredentialProvider : IApiCredentialProvider
 
     public BinanceSettings GetBinanceSettingsV1()
     {
+        var result = new BinanceSettings();
         var privateKey = _configuration.GetSection("PrivateKey")?.Value ?? string.Empty;
         var settings = _credentialSettingRepository.GetEncryptedRawSetting();
-        var apiKey = "your-api-key";
-        if (settings?.ApiKey != null)
+        if (settings == null)
         {
-            apiKey = Encoding.UTF8.GetString(RsaEncryptionHelper.DecryptDataV1(settings.ApiKey, privateKey));
+            return result;
         }
-        var apiSecret = "your-secret";
-        if (settings?.ApiSecret != null)
-        {
-            apiSecret = Encoding.UTF8.GetString(RsaEncryptionHelper.DecryptDataV1(settings.ApiSecret, privateKey));
-        }
-        return new BinanceSettings
-        {
-            ApiKey = apiKey,
-            ApiSecret = apiSecret
-        };
+
+        var (apiKey, apiSecret) = RsaEncryptionHelper.DecryptApiCredentialFromBytes(settings.ApiKey,
+                                                                                    settings.ApiSecret,
+                                                                                    privateKey);
+
+        result.ApiKey = apiKey;
+        result.ApiSecret = apiSecret;
+        return result;
     }
     public BinanceSettings GetBinanceSettingsV2()
     {
-        var (apiKey, apiSecret) = RsaEncryptionHelper.DecryptApiCredential(_credentialSetting.Value.ApiKey,
-                                                                           _credentialSetting.Value.ApiSecret,
-                                                                           _credentialSetting.Value.PrivateKey);
+        var (apiKey, apiSecret) = RsaEncryptionHelper.DecryptApiCredentialFromBase64(_credentialSetting.Value.ApiKey,
+                                                                                     _credentialSetting.Value.ApiSecret,
+                                                                                     _credentialSetting.Value.PrivateKey);
         return new BinanceSettings
         {
             ApiKey = apiKey,
