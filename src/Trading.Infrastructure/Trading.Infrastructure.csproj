@@ -7,7 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="../Trading.Exchange.Abstraction/Trading.Exchange.Abstraction.csproj" />
+      <ProjectReference Include="..\Trading.Exchange.Abstraction\Trading.Exchange.Abstraction.csproj" />
       <ProjectReference Include="..\Trading.Domain\Trading.Domain.csproj" />
     </ItemGroup>
     <ItemGroup>
