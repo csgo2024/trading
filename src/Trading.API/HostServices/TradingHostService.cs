@@ -14,19 +14,19 @@ public class TradingHostService : BackgroundService
         _strategyExecutionService = strategyExecutionService;
     }
 
-    protected override async Task ExecuteAsync(CancellationToken cancellationToken)
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        while (!cancellationToken.IsCancellationRequested)
+        while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
-                await _strategyExecutionService.ExecuteAsync(cancellationToken);
+                await _strategyExecutionService.DispatchAsync(stoppingToken);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error initializing trading service");
             }
-            await SimulateDelay(TimeSpan.FromMinutes(1), cancellationToken);
+            await SimulateDelay(TimeSpan.FromMinutes(10), stoppingToken);
         }
     }
     public virtual Task SimulateDelay(TimeSpan delay, CancellationToken cancellationToken)

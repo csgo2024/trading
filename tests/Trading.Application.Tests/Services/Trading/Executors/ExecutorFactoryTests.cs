@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Trading.Application.JavaScript;
 using Trading.Application.Services.Trading.Executors;
 using Trading.Common.Enums;
 using Trading.Domain.IRepositories;
@@ -31,6 +32,7 @@ public class ExecutorFactoryTests
         services.AddScoped<BottomBuyExecutor>();
         services.AddScoped<DCABuyExecutor>();
         services.AddScoped<TopSellExecutor>();
+        services.AddScoped<JavaScriptEvaluator>();
 
         _serviceProvider = services.BuildServiceProvider();
         _factory = new ExecutorFactory(_serviceProvider);

@@ -1,9 +1,9 @@
-using System.ComponentModel.DataAnnotations;
 using Binance.Net.Objects.Models;
 using Binance.Net.Objects.Models.Spot;
 using CryptoExchange.Net.Objects;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Trading.Application.JavaScript;
 using Trading.Application.Services.Common;
 using Trading.Application.Services.Trading;
 using Trading.Application.Services.Trading.Account;
@@ -26,6 +26,7 @@ public class StrategyExecutionServiceTests
     private readonly Mock<IStrategyRepository> _strategyRepositoryMock;
     private readonly Mock<IAccountProcessor> _accountProcessorMock;
     private readonly Mock<BaseExecutor> _executorMock;
+    private readonly Mock<JavaScriptEvaluator> _mockJavaScriptEvaluator;
     private readonly StrategyExecutionService _service;
     private readonly CancellationTokenSource _cts;
 
@@ -37,7 +38,8 @@ public class StrategyExecutionServiceTests
         _backgroundTaskManagerMock = new Mock<IBackgroundTaskManager>();
         _strategyRepositoryMock = new Mock<IStrategyRepository>();
         _accountProcessorMock = new Mock<IAccountProcessor>();
-        _executorMock = new Mock<BaseExecutor>(_loggerMock.Object, _strategyRepositoryMock.Object);
+        _mockJavaScriptEvaluator = new Mock<JavaScriptEvaluator>(Mock.Of<ILogger<JavaScriptEvaluator>>());
+        _executorMock = new Mock<BaseExecutor>(_loggerMock.Object, _strategyRepositoryMock.Object, _mockJavaScriptEvaluator.Object);
         _cts = new CancellationTokenSource();
 
         _service = new StrategyExecutionService(
@@ -94,8 +96,13 @@ public class StrategyExecutionServiceTests
     public async Task Handle_StrategyCreatedEvent_ShouldStartExecution()
     {
         // Arrange
-        var strategy = new Strategy { Id = "test-id", AccountType = AccountType.Spot };
+        var strategy = new Strategy { Id = "test-id", StrategyType = StrategyType.CloseSell, AccountType = AccountType.Spot };
         var notification = new StrategyCreatedEvent(strategy);
+
+        _strategyRepositoryMock.Setup(x => x.FindActiveStrategyByType(
+            It.Is<StrategyType>(x => x.Equals(StrategyType.CloseSell)),
+            It.IsAny<CancellationToken>()
+        )).ReturnsAsync([strategy]);
 
         // Act
         await _service.Handle(notification, _cts.Token);
@@ -116,6 +123,10 @@ public class StrategyExecutionServiceTests
         // Arrange
         var strategy = new Strategy { Id = "test-id", AccountType = AccountType.Spot };
         var notification = new StrategyDeletedEvent(strategy);
+        _strategyRepositoryMock.Setup(x => x.FindActiveStrategyByType(
+            It.IsAny<StrategyType>(),
+            It.IsAny<CancellationToken>()
+        )).ReturnsAsync([]);
 
         // Act
         await _service.Handle(notification, _cts.Token);
@@ -153,7 +164,13 @@ public class StrategyExecutionServiceTests
     public async Task Handle_StrategyPausedEvent_ShouldStopExecution()
     {
         // Arrange
-        var notification = new StrategyPausedEvent("test-id");
+        var strategy = new Strategy { Id = "test-id", AccountType = AccountType.Spot, OrderId = 1234L };
+        var notification = new StrategyPausedEvent(strategy);
+
+        _strategyRepositoryMock.Setup(x => x.FindActiveStrategyByType(
+            It.IsAny<StrategyType>(),
+            It.IsAny<CancellationToken>()
+        )).ReturnsAsync([]);
 
         // Act
         await _service.Handle(notification, _cts.Token);
@@ -168,8 +185,13 @@ public class StrategyExecutionServiceTests
     public async Task Handle_StrategyResumedEvent_ShouldRestartExecution()
     {
         // Arrange
-        var strategy = new Strategy { Id = "test-id", AccountType = AccountType.Spot };
+        var strategy = new Strategy { Id = "test-id", AccountType = AccountType.Spot, StrategyType = StrategyType.CloseBuy };
         var notification = new StrategyResumedEvent(strategy);
+
+        _strategyRepositoryMock.Setup(x => x.FindActiveStrategyByType(
+            It.Is<StrategyType>(x => x.Equals(StrategyType.CloseBuy)),
+            It.IsAny<CancellationToken>()
+        )).ReturnsAsync([strategy]);
 
         // Act
         await _service.Handle(notification, _cts.Token);
@@ -188,18 +210,18 @@ public class StrategyExecutionServiceTests
     public async Task ExecuteAsync_ShouldInitializeAllActiveStrategies()
     {
         // Arrange
-        var strategies = new Dictionary<string, Strategy>
-        {
-            { "test-1", new Strategy { Id = "test-1" } },
-            { "test-2", new Strategy { Id = "test-2" } }
-        };
+        _strategyRepositoryMock.Setup(x => x.FindActiveStrategyByType(
+            It.Is<StrategyType>(x => x.Equals(StrategyType.CloseBuy)),
+            It.IsAny<CancellationToken>()
+        )).ReturnsAsync([new Strategy { Id = "test-1", StrategyType = StrategyType.CloseBuy, AccountType = AccountType.Spot }]);
 
-        _strategyRepositoryMock
-            .Setup(x => x.InitializeActiveStrategies())
-            .ReturnsAsync(strategies);
+        _strategyRepositoryMock.Setup(x => x.FindActiveStrategyByType(
+            It.Is<StrategyType>(x => x.Equals(StrategyType.CloseSell)),
+            It.IsAny<CancellationToken>()
+        )).ReturnsAsync([new Strategy { Id = "test-2", StrategyType = StrategyType.CloseSell, AccountType = AccountType.Spot }]);
 
         // Act
-        await _service.ExecuteAsync(_cts.Token);
+        await _service.DispatchAsync(_cts.Token);
 
         // Assert
         _backgroundTaskManagerMock.Verify(
@@ -209,22 +231,6 @@ public class StrategyExecutionServiceTests
                 It.IsAny<Func<CancellationToken, Task>>(),
                 _cts.Token),
             Times.Exactly(2));
-    }
-
-    [Fact]
-    public async Task ExecuteAsync_WhenInitializationFails_ShouldLogError()
-    {
-        // Arrange
-        var expectedException = new ValidationException("Test exception");
-        _strategyRepositoryMock
-            .Setup(x => x.InitializeActiveStrategies())
-            .ThrowsAsync(expectedException);
-
-        // Act
-        await _service.ExecuteAsync(_cts.Token);
-
-        // Assert
-        VerifyLogError("Failed to initialize strategies", expectedException);
     }
 
     [Fact]
@@ -238,7 +244,7 @@ public class StrategyExecutionServiceTests
         };
 
         _strategyRepositoryMock
-            .Setup(x => x.InitializeActiveStrategies())
+            .Setup(x => x.FindActiveStrategies())
             .ReturnsAsync(strategies);
 
         _accountProcessorFactoryMock
@@ -246,7 +252,7 @@ public class StrategyExecutionServiceTests
             .Returns(null as IAccountProcessor);
 
         // Act
-        await _service.ExecuteAsync(_cts.Token);
+        await _service.DispatchAsync(_cts.Token);
 
         // Assert
         // VerifyLogError($"Failed to get executor or account processor for strategy {strategy.Id}");
@@ -258,17 +264,4 @@ public class StrategyExecutionServiceTests
                 It.IsAny<CancellationToken>()),
             Times.Never);
     }
-
-    private void VerifyLogError(string expectedMessage, Exception? exception = null)
-    {
-        _loggerMock.Verify(
-            x => x.Log(
-                LogLevel.Error,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((o, t) => o.ToString()!.Contains(expectedMessage)),
-                exception,
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
-    }
-
 }

@@ -19,6 +19,8 @@ public class ExecutorFactory : IExecutorFactory
         {
             {StrategyType.TopSell, typeof(TopSellExecutor)},
             {StrategyType.BottomBuy, typeof(BottomBuyExecutor)},
+            {StrategyType.CloseBuy, typeof(CloseBuyExecutor)},
+            {StrategyType.CloseSell, typeof(CloseSellExecutor)},
             {StrategyType.DCA, typeof(DCABuyExecutor)},
         };
     }

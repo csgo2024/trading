@@ -95,33 +95,7 @@ public class StrategyRepositoryTests : IClassFixture<MongoDbFixture>
     }
 
     [Fact]
-    public async Task InitializeFutureStrategies_ShouldReturnOnlyRunningFutureStrategies()
-    {
-        // Arrange
-        await _repository.EmptyAsync();
-        var strategies = new List<Strategy>
-        {
-            new() { Symbol = "F1", AccountType = AccountType.Future, Status = Status.Running },
-            new() { Symbol = "F2", AccountType = AccountType.Future, Status = Status.Paused },
-            new() { Symbol = "S1", AccountType = AccountType.Spot, Status = Status.Running }
-        };
-
-        foreach (var strategy in strategies)
-        {
-            await _repository.Add(strategy);
-        }
-
-        // Act
-        var result = await _repository.InitializeFutureStrategies();
-
-        // Assert
-        Assert.NotNull(result);
-        Assert.Single(result);
-        Assert.True(result.ContainsKey("F1"));
-    }
-
-    [Fact]
-    public async Task InitializeSpotStrategies_ShouldReturnOnlyRunningSpotStrategies()
+    public async Task FindActiveStrategies_ShouldReturnAllActivestrategies()
     {
         // Arrange
         await _repository.EmptyAsync();
@@ -138,33 +112,7 @@ public class StrategyRepositoryTests : IClassFixture<MongoDbFixture>
         }
 
         // Act
-        var result = await _repository.InitializeSpotStrategies();
-
-        // Assert
-        Assert.NotNull(result);
-        Assert.Single(result);
-        Assert.True(result.ContainsKey("S1"));
-    }
-
-    [Fact]
-    public async Task InitializeActiveStrategies_ShouldReturnAllActivestrategies()
-    {
-        // Arrange
-        await _repository.EmptyAsync();
-        var strategies = new List<Strategy>
-        {
-            new() { Symbol = "S1", AccountType = AccountType.Spot, Status = Status.Running },
-            new() { Symbol = "S2", AccountType = AccountType.Spot, Status = Status.Paused },
-            new() { Symbol = "F1", AccountType = AccountType.Future, Status = Status.Running }
-        };
-
-        foreach (var strategy in strategies)
-        {
-            await _repository.Add(strategy);
-        }
-
-        // Act
-        var result = await _repository.InitializeActiveStrategies();
+        var result = await _repository.FindActiveStrategies();
 
         // Assert
         Assert.NotNull(result);
@@ -200,7 +148,7 @@ public class StrategyRepositoryTests : IClassFixture<MongoDbFixture>
         Assert.Equal(Status.Paused, updatedStrategy.Status);
     }
     [Fact]
-    public async Task Find_ShouldReturnRunningAndExactMatchedStrategies()
+    public async Task FindActiveStrategyByType_ShouldReturnRunningAndExactMatchedStrategies()
     {
         // Arrange
         await _repository.EmptyAsync();
@@ -219,13 +167,12 @@ public class StrategyRepositoryTests : IClassFixture<MongoDbFixture>
         }
 
         // Act
-        var result = await _repository.Find("S1", "5m", StrategyType.TopSell, default);
+        var result = await _repository.FindActiveStrategyByType(StrategyType.TopSell, default);
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(2, result.Count);
+        Assert.Equal(3, result.Count);
         Assert.All(result, s => Assert.Equal("S1", s.Symbol));
-        Assert.All(result, s => Assert.Equal("5m", s.Interval));
         Assert.All(result, s => Assert.Equal(StrategyType.TopSell, s.StrategyType));
         Assert.All(result, s => Assert.Equal(Status.Running, s.Status));
     }

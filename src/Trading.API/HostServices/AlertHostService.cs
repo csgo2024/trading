@@ -25,16 +25,16 @@ public class AlertHostService : BackgroundService
         _strategyRepository = strategyRepository;
     }
 
-    protected override async Task ExecuteAsync(CancellationToken cancellationToken)
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         bool isSubscribed = false;
 
-        while (!cancellationToken.IsCancellationRequested)
+        while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
-                var alerts = await _alertRepository.GetActiveAlertsAsync(cancellationToken);
-                var strategyDict = await _strategyRepository.InitializeActiveStrategies();
+                var alerts = await _alertRepository.GetActiveAlertsAsync(stoppingToken);
+                var strategyDict = await _strategyRepository.FindActiveStrategies();
 
                 var symbols = alerts.Select(x => x.Symbol)
                     .Concat(strategyDict.Values.Select(x => x.Symbol))
@@ -45,12 +45,12 @@ public class AlertHostService : BackgroundService
                     .Select(x => x.Interval!))
                     .ToHashSet();
 
-                await _sendAlertService.InitWithAlerts(alerts, cancellationToken);
+                await _sendAlertService.InitWithAlerts(alerts, stoppingToken);
                 var needReconnect = _klineStreamManager.NeedsReconnection();
 
                 if (!isSubscribed && symbols.Count > 0)
                 {
-                    isSubscribed = await _klineStreamManager.SubscribeSymbols(symbols, intervals, cancellationToken);
+                    isSubscribed = await _klineStreamManager.SubscribeSymbols(symbols, intervals, stoppingToken);
                     if (isSubscribed)
                     {
                         _logger.LogInformation("Initial subscription completed successfully");
@@ -58,7 +58,7 @@ public class AlertHostService : BackgroundService
                 }
                 if (needReconnect && symbols.Count > 0)
                 {
-                    isSubscribed = await _klineStreamManager.SubscribeSymbols(symbols, intervals, cancellationToken);
+                    isSubscribed = await _klineStreamManager.SubscribeSymbols(symbols, intervals, stoppingToken);
                     if (isSubscribed)
                     {
                         _logger.LogInformation("Reconnection completed successfully");
@@ -74,7 +74,7 @@ public class AlertHostService : BackgroundService
                 _logger.LogError(ex, errorMessage);
             }
 
-            await SimulateDelay(TimeSpan.FromMinutes(1), cancellationToken);
+            await SimulateDelay(TimeSpan.FromMinutes(1), stoppingToken);
         }
     }
 

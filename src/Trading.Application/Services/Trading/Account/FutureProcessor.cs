@@ -190,4 +190,79 @@ public class FutureProcessor : IAccountProcessor
                                                          error: webCallResult.Error);
         return result;
     }
+
+    public async Task<WebCallResult<BinanceOrderBase>> StopLongOrderAsync(string symbol,
+                                                                          decimal quantity,
+                                                                          decimal price,
+                                                                          CancellationToken ct)
+    {
+        var webCallResult = await _usdFutureRestClient.Trading.PlaceOrderAsync(
+            symbol: symbol,
+            side: OrderSide.Sell,
+            type: FuturesOrderType.StopMarket,
+            positionSide: PositionSide.Short,
+            quantity: quantity,
+            reduceOnly: true,
+            timeInForce: TimeInForce.GoodTillCanceled,
+            ct: ct);
+        if (!webCallResult.Success)
+        {
+            return new WebCallResult<BinanceOrderBase>(webCallResult.Error);
+        }
+        var data = new BinanceOrderBase
+        {
+            Id = webCallResult.Data.Id,
+            Status = webCallResult.Data.Status,
+        };
+        var result = new WebCallResult<BinanceOrderBase>(null,
+                                                         null,
+                                                         null,
+                                                         null,
+                                                         null,
+                                                         null,
+                                                         null,
+                                                         null,
+                                                         null,
+                                                         null,
+                                                         dataSource: ResultDataSource.Server,
+                                                         data: data,
+                                                         error: webCallResult.Error);
+        return result;
+    }
+
+    public async Task<WebCallResult<BinanceOrderBase>> StopShortOrderAsync(string symbol, decimal quantity, decimal price, CancellationToken ct)
+    {
+        var webCallResult = await _usdFutureRestClient.Trading.PlaceOrderAsync(
+            symbol: symbol,
+            side: OrderSide.Buy,
+            type: FuturesOrderType.StopMarket,
+            positionSide: PositionSide.Long,
+            quantity: quantity,
+            reduceOnly: true,
+            timeInForce: TimeInForce.GoodTillCanceled,
+            ct: ct);
+        if (!webCallResult.Success)
+        {
+            return new WebCallResult<BinanceOrderBase>(webCallResult.Error);
+        }
+        var data = new BinanceOrderBase
+        {
+            Id = webCallResult.Data.Id,
+            Status = webCallResult.Data.Status,
+        };
+        var result = new WebCallResult<BinanceOrderBase>(null,
+                                                         null,
+                                                         null,
+                                                         null,
+                                                         null,
+                                                         null,
+                                                         null,
+                                                         null,
+                                                         null,
+                                                         null,
+                                                         dataSource: ResultDataSource.Server,
+                                                         data: data,
+                                                         error: webCallResult.Error);
+        return result;
+    }
 }

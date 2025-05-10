@@ -207,6 +207,7 @@ public class StrategyCommandHandlerTests
             .Setup(x => x.GetByIdAsync(strategyId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Strategy()
             {
+                Id = strategyId,
                 Symbol = "BTCUSDT",
                 AccountType = AccountType.Spot,
             });
@@ -228,7 +229,7 @@ public class StrategyCommandHandlerTests
 
         _mediatorMock.Verify(
             x => x.Publish(
-                It.Is<StrategyPausedEvent>(e => e.Id == strategyId),
+                It.Is<StrategyPausedEvent>(e => e.Strategy.Id == strategyId),
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }
