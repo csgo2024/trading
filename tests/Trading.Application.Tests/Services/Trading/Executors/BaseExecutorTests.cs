@@ -7,19 +7,20 @@ using Moq;
 using Trading.Application.Services.Trading.Account;
 using Trading.Application.Services.Trading.Executors;
 using Trading.Domain.Entities;
+using Trading.Domain.IRepositories;
 using StrategyType = Trading.Common.Enums.StrategyType;
 
 namespace Trading.Application.Tests.Services.Trading.Executors;
 
 public class TestExecutor : BaseExecutor
 {
-    public TestExecutor(ILogger logger) : base(logger)
+    public TestExecutor(ILogger logger, IStrategyRepository strategyRepository) : base(logger, strategyRepository)
     {
     }
 
-    public override Task Execute(IAccountProcessor accountProcessor, Strategy strategy, CancellationToken ct)
+    public override async Task Execute(IAccountProcessor accountProcessor, Strategy strategy, CancellationToken ct)
     {
-        return Task.CompletedTask;
+        await base.Execute(accountProcessor, strategy, ct);
     }
 }
 
@@ -27,6 +28,7 @@ public class BaseExecutorTests
 {
     private readonly Mock<ILogger<TestExecutor>> _mockLogger;
     private readonly Mock<IAccountProcessor> _mockAccountProcessor;
+    private readonly Mock<IStrategyRepository> _mockStrategyRepository;
     private readonly TestExecutor _executor;
     private readonly CancellationToken _ct;
 
@@ -34,8 +36,32 @@ public class BaseExecutorTests
     {
         _mockLogger = new Mock<ILogger<TestExecutor>>();
         _mockAccountProcessor = new Mock<IAccountProcessor>();
-        _executor = new TestExecutor(_mockLogger.Object);
+        _mockStrategyRepository = new Mock<IStrategyRepository>();
+        _executor = new TestExecutor(_mockLogger.Object, _mockStrategyRepository.Object);
         _ct = CancellationToken.None;
+    }
+    [Fact]
+    public async Task Execute_ShouldCheckOrderStatusAndUpdateStrategy()
+    {
+        // Arrange
+        var strategy = new Strategy
+        {
+            OrderId = 12345,
+            HasOpenOrder = true,
+            OrderPlacedTime = DateTime.UtcNow
+        };
+        SetupSuccessfulPlaceOrderResponse(12345L);
+        SetupOrderStatusResponse(OrderStatus.New);
+        _mockStrategyRepository.Setup(x => x.UpdateAsync(It.IsAny<string>(), It.IsAny<Strategy>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        // Act
+        await _executor.Execute(_mockAccountProcessor.Object, strategy, CancellationToken.None);
+
+        // Assert
+        Assert.True(strategy.HasOpenOrder); // True since order status is new.
+        Assert.NotNull(strategy.OrderId);
+        _mockStrategyRepository.Verify(x => x.UpdateAsync(It.IsAny<string>(), It.IsAny<Strategy>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -128,10 +154,9 @@ public class BaseExecutorTests
         await _executor.CheckOrderStatus(_mockAccountProcessor.Object, strategy, _ct);
 
         // Assert
-        Assert.True(strategy.IsTradedToday);
         Assert.False(strategy.HasOpenOrder);
-        Assert.Null(strategy.OrderId);
-        Assert.Null(strategy.OrderPlacedTime);
+        Assert.Equal(strategy.OrderId, 12345); // Order ID should remain the same
+        Assert.NotNull(strategy.OrderPlacedTime);
     }
 
     [Theory]
@@ -162,33 +187,6 @@ public class BaseExecutorTests
     [Theory]
     [InlineData(OrderStatus.New)]
     [InlineData(OrderStatus.PartiallyFilled)]
-    public async Task CheckOrderStatus_WithActiveOrder_FromPreviousDay_ShouldCancelOrder(OrderStatus status)
-    {
-        // Arrange
-        var strategy = new Strategy
-        {
-            OrderId = 12345,
-            HasOpenOrder = true,
-            OrderPlacedTime = DateTime.UtcNow.AddDays(-1)
-        };
-
-        SetupOrderStatusResponse(status);
-        SetupSuccessfulCancelOrderResponse();
-
-        // Act
-        await _executor.CheckOrderStatus(_mockAccountProcessor.Object, strategy, _ct);
-
-        // Assert
-        _mockAccountProcessor.Verify(x => x.CancelOrder(
-            It.IsAny<string>(),
-            It.IsAny<long>(),
-            It.IsAny<CancellationToken>()
-        ), Times.Once);
-    }
-
-    [Theory]
-    [InlineData(OrderStatus.New)]
-    [InlineData(OrderStatus.PartiallyFilled)]
     public async Task CheckOrderStatus_WithActiveOrder_FromSameDay_ShouldNotCancelOrder(OrderStatus status)
     {
         // Arrange
@@ -210,6 +208,54 @@ public class BaseExecutorTests
             It.IsAny<long>(),
             It.IsAny<CancellationToken>()
         ), Times.Never);
+    }
+    [Fact]
+    public async Task CheckOrderStatus_WithFailed_ShouldLogError()
+    {
+        // Arrange
+        var strategy = new Strategy
+        {
+            OrderId = 12345,
+            HasOpenOrder = true,
+            OrderPlacedTime = DateTime.UtcNow
+        };
+
+        var error = "Failed to get order status";
+        SetupFailedGetOrderResponse(error);
+
+        // Act
+        await _executor.CheckOrderStatus(_mockAccountProcessor.Object, strategy, _ct);
+
+        // Assert
+        VerifyErrorLogging($"Failed to check order status, Error: {error}");
+    }
+
+    [Fact]
+    public async Task TryPlaceOrder_WhenOrderIdExists_ShouldDoNothing()
+    {
+        // Arrange
+        var strategy = new Strategy
+        {
+            Symbol = "BTCUSDT",
+            StrategyType = StrategyType.BottomBuy,
+            Quantity = 1.0m,
+            OrderId = 12345L,
+            OrderPlacedTime = DateTime.UtcNow,
+            TargetPrice = 50000m
+        };
+
+        // Act
+        await _executor.TryPlaceOrder(_mockAccountProcessor.Object, strategy, _ct);
+
+        // Assert
+        // Assert
+        _mockAccountProcessor.Verify(x => x.PlaceLongOrderAsync(
+                It.IsAny<string>(),
+                It.IsAny<decimal>(),
+                It.IsAny<decimal>(),
+                It.IsAny<TimeInForce>(),
+                It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
     [Fact]
@@ -287,6 +333,17 @@ public class BaseExecutorTests
                 ResultDataSource.Server, null, new ServerError(0, error)));
     }
 
+    private void SetupFailedGetOrderResponse(string error)
+    {
+        _mockAccountProcessor
+            .Setup(x => x.GetOrder(
+                It.IsAny<string>(),
+                It.IsAny<long>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new WebCallResult<BinanceOrderBase>(
+                null, null, null, 0, null, 0, null, null, null, null,
+                ResultDataSource.Server, null, new ServerError(0, error)));
+    }
     private void SetupOrderStatusResponse(OrderStatus status)
     {
         _mockAccountProcessor

@@ -10,45 +10,27 @@ namespace Trading.Application.Services.Trading.Executors;
 
 public class TopSellExecutor : BaseExecutor
 {
-    private readonly IStrategyRepository _strategyRepository;
     public TopSellExecutor(ILogger<TopSellExecutor> logger,
-                           IStrategyRepository strategyRepository) : base(logger)
+                           IStrategyRepository strategyRepository) : base(logger, strategyRepository)
     {
-        _strategyRepository = strategyRepository;
     }
 
     public override async Task Execute(IAccountProcessor accountProcessor, Strategy strategy, CancellationToken ct)
     {
         var currentDate = DateTime.UtcNow.Date;
-        if (strategy.LastTradeDate?.Date != currentDate)
+        if (strategy.HasOpenOrder && strategy.OrderPlacedTime.HasValue && strategy.OrderPlacedTime.Value.Date != currentDate)
         {
-            if (strategy.HasOpenOrder && strategy.OrderPlacedTime.HasValue)
-            {
-                _logger.LogInformation("[{AccountType}-{Symbol}] Previous day's order not filled, cancelling order before reset.",
-                    strategy.AccountType, strategy.Symbol);
-                await CancelExistingOrder(accountProcessor, strategy, ct);
-            }
+            _logger.LogInformation("[{AccountType}-{Symbol}] Previous day's order not filled, cancelling order before reset.",
+                                   strategy.AccountType,
+                                   strategy.Symbol);
+            await CancelExistingOrder(accountProcessor, strategy, ct);
+        }
+        if (strategy.OrderId is null)
+        {
             await ResetDailyStrategy(accountProcessor, strategy, currentDate, ct);
+            await TryPlaceOrder(accountProcessor, strategy, ct);
         }
-
-        if (!strategy.IsTradedToday)
-        {
-            if (strategy.HasOpenOrder)
-            {
-                await CheckOrderStatus(accountProcessor, strategy, ct);
-            }
-            else
-            {
-                await TryPlaceOrder(accountProcessor, strategy, ct);
-            }
-        }
-
-        strategy.UpdatedAt = DateTime.Now;
-        var success = await _strategyRepository.UpdateAsync(strategy.Id, strategy, ct);
-        if (!success)
-        {
-            throw new InvalidOperationException("Failed to update strategy order.");
-        }
+        await base.Execute(accountProcessor, strategy, ct);
     }
 
     public async Task ResetDailyStrategy(IAccountProcessor accountProcessor, Strategy strategy, DateTime currentDate, CancellationToken ct)
@@ -60,23 +42,16 @@ public class TopSellExecutor : BaseExecutor
             var filterData = await accountProcessor.GetSymbolFilterData(strategy, ct);
             strategy.TargetPrice = BinanceHelper.AdjustPriceByStepSize(openPrice * (1 + strategy.Volatility), filterData.Item1);
             strategy.Quantity = BinanceHelper.AdjustQuantityBystepSize(strategy.Amount / strategy.TargetPrice, filterData.Item2);
-            strategy.LastTradeDate = currentDate;
-            strategy.IsTradedToday = false;
             strategy.HasOpenOrder = false;
             strategy.OrderId = null;
             strategy.OrderPlacedTime = null;
-            _logger.LogInformation("[{AccountType}-{Symbol}] New day started, Open price: {OpenPrice}, Target price: {TargetPrice}.",
-                                   strategy.AccountType,
-                                   strategy.Symbol,
-                                   openPrice,
-                                   strategy.TargetPrice);
         }
         else
         {
             _logger.LogErrorWithAlert("[{AccountType}-{Symbol}] Failed to get daily open price. Error: {ErrorMessage}.",
-                             strategy.AccountType,
-                             strategy.Symbol,
-                             kLines.Error?.Message);
+                                      strategy.AccountType,
+                                      strategy.Symbol,
+                                      kLines.Error?.Message);
         }
     }
 

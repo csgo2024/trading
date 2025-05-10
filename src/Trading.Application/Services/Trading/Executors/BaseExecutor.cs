@@ -6,18 +6,26 @@ using Trading.Application.Services.Trading.Account;
 using Trading.Common.Enums;
 using Trading.Common.Helpers;
 using Trading.Domain.Entities;
+using Trading.Domain.IRepositories;
 
 namespace Trading.Application.Services.Trading.Executors;
 
 public abstract class BaseExecutor
 {
     protected readonly ILogger _logger;
-    public BaseExecutor(ILogger logger)
+    protected readonly IStrategyRepository _strategyRepository;
+    public BaseExecutor(ILogger logger, IStrategyRepository strategyRepository)
     {
+        _strategyRepository = strategyRepository;
         _logger = logger;
     }
 
-    public abstract Task Execute(IAccountProcessor accountProcessor, Strategy strategy, CancellationToken ct);
+    public virtual async Task Execute(IAccountProcessor accountProcessor, Strategy strategy, CancellationToken ct)
+    {
+        await CheckOrderStatus(accountProcessor, strategy, ct);
+        strategy.UpdatedAt = DateTime.Now;
+        await _strategyRepository.UpdateAsync(strategy.Id, strategy, ct);
+    }
     private static Task<WebCallResult<BinanceOrderBase>> PlaceOrderAsync(IAccountProcessor accountProcessor,
                                                                          Strategy strategy,
                                                                          CancellationToken ct)
@@ -25,22 +33,20 @@ public abstract class BaseExecutor
         if (strategy.StrategyType == StrategyType.TopSell ||
             strategy.StrategyType == StrategyType.CloseSell)
         {
-            return accountProcessor.PlaceShortOrderAsync(
-                strategy.Symbol,
-                strategy.Quantity,
-                strategy.TargetPrice,
-                TimeInForce.GoodTillCanceled,
-                ct);
+            return accountProcessor.PlaceShortOrderAsync(strategy.Symbol,
+                                                         strategy.Quantity,
+                                                         strategy.TargetPrice,
+                                                         TimeInForce.GoodTillCanceled,
+                                                         ct);
         }
         else if (strategy.StrategyType == StrategyType.BottomBuy ||
                  strategy.StrategyType == StrategyType.CloseBuy)
         {
-            return accountProcessor.PlaceLongOrderAsync(
-                strategy.Symbol,
-                strategy.Quantity,
-                strategy.TargetPrice,
-                TimeInForce.GoodTillCanceled,
-                ct);
+            return accountProcessor.PlaceLongOrderAsync(strategy.Symbol,
+                                                        strategy.Quantity,
+                                                        strategy.TargetPrice,
+                                                        TimeInForce.GoodTillCanceled,
+                                                        ct);
         }
         else
         {
@@ -59,7 +65,9 @@ public abstract class BaseExecutor
         if (cancelResult.Success)
         {
             _logger.LogInformation("[{AccountType}-{Symbol}] Successfully cancelled order, OrderId: {OrderId}",
-                strategy.AccountType, strategy.Symbol, strategy.OrderId);
+                                   strategy.AccountType,
+                                   strategy.Symbol,
+                                   strategy.OrderId);
             strategy.HasOpenOrder = false;
             strategy.OrderId = null;
             strategy.OrderPlacedTime = null;
@@ -67,60 +75,66 @@ public abstract class BaseExecutor
         else
         {
             _logger.LogError("[{AccountType}-{Symbol}] Failed to cancel order. Error: {ErrorMessage}",
-                strategy.AccountType, strategy.Symbol, cancelResult.Error?.Message);
+                             strategy.AccountType,
+                             strategy.Symbol,
+                             cancelResult.Error?.Message);
         }
     }
 
     public virtual async Task CheckOrderStatus(IAccountProcessor accountProcessor, Strategy strategy, CancellationToken ct)
     {
-        if (strategy.OrderId is null)
+        // NO open order skip check.
+        if (strategy.HasOpenOrder == false || strategy.OrderId is null)
         {
             strategy.HasOpenOrder = false;
             return;
         }
 
-        var orderStatus = await accountProcessor.GetOrder(strategy.Symbol, strategy.OrderId.Value, ct);
-        if (orderStatus.Success)
+        var orderResult = await accountProcessor.GetOrder(strategy.Symbol, strategy.OrderId.Value, ct);
+        if (orderResult.Success)
         {
-            switch (orderStatus.Data.Status)
+            switch (orderResult.Data.Status)
             {
                 case OrderStatus.Filled:
-                    _logger.LogInformation("[{AccountType}-{Symbol}] Order filled successfully at price: {Price}.",
-                        strategy.AccountType, strategy.Symbol, strategy.TargetPrice);
-                    strategy.IsTradedToday = true;
+                    _logger.LogInformationWithAlert("[{AccountType}-{Symbol}] Order filled successfully at price: {Price}.",
+                                                    strategy.AccountType,
+                                                    strategy.Symbol,
+                                                    strategy.TargetPrice);
                     strategy.HasOpenOrder = false;
-                    strategy.OrderId = null;
-                    strategy.OrderPlacedTime = null;
+                    // Once Order filled, replace executed quantity of the order.
+                    strategy.Quantity = orderResult.Data.QuantityFilled;
                     break;
 
                 case OrderStatus.Canceled:
                 case OrderStatus.Expired:
                 case OrderStatus.Rejected:
                     _logger.LogInformation("[{AccountType}-{Symbol}] Order {Status}. Will try to place new order.",
-                        strategy.AccountType, strategy.Symbol, orderStatus.Data.Status);
+                                           strategy.AccountType,
+                                           strategy.Symbol,
+                                           orderResult.Data.Status);
                     strategy.HasOpenOrder = false;
                     strategy.OrderId = null;
                     strategy.OrderPlacedTime = null;
                     break;
-
                 default:
-                    if (strategy.OrderPlacedTime.HasValue && strategy.OrderPlacedTime.Value.Date != DateTime.UtcNow.Date)
-                    {
-                        _logger.LogInformation("[{AccountType}-{Symbol}] Order from previous day detected, initiating cancellation.",
-                            strategy.AccountType, strategy.Symbol);
-                        await CancelExistingOrder(accountProcessor, strategy, ct);
-                    }
                     break;
             }
         }
         else
         {
-            _logger.LogInformation("[{AccountType}-{Symbol}] Failed to check order status, Error: {ErrorMessage}.",
-                strategy.AccountType, strategy.Symbol, orderStatus.Error?.Message);
+            _logger.LogError("[{AccountType}-{Symbol}] Failed to check order status, Error: {ErrorMessage}.",
+                             strategy.AccountType,
+                             strategy.Symbol,
+                             orderResult.Error?.Message);
         }
     }
     public virtual async Task TryPlaceOrder(IAccountProcessor accountProcessor, Strategy strategy, CancellationToken ct)
     {
+        // OrderId is not null, no need to place order.
+        if (strategy.OrderId is not null)
+        {
+            return;
+        }
         var quantity = CommonHelper.TrimEndZero(strategy.Quantity);
         var price = CommonHelper.TrimEndZero(strategy.TargetPrice);
         strategy.TargetPrice = price;
@@ -137,7 +151,7 @@ public abstract class BaseExecutor
 
                 if (orderResult.Success)
                 {
-                    _logger.LogInformationWithAlert("[{StrategyType}-{AccountType}-{Symbol}] Order placed successfully. Quantity: {Quantity}, Price: {Price}.",
+                    _logger.LogInformation("[{StrategyType}-{AccountType}-{Symbol}] Order placed successfully. Quantity: {Quantity}, Price: {Price}.",
                                            strategy.StrategyType,
                                            strategy.AccountType,
                                            strategy.Symbol,

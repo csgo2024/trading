@@ -37,26 +37,6 @@ public class CloseBuyExecutorTests
     }
 
     [Fact]
-    public async Task Execute_ShouldReturnCompletedTask()
-    {
-        // Arrange
-        var strategy = new Strategy();
-
-        // Act
-        await _executor.Execute(_mockAccountProcessor.Object, strategy, _ct);
-
-        // Assert
-        // Execute should just return completed task without doing anything
-        _mockAccountProcessor.Verify(x => x.PlaceLongOrderAsync(
-            It.IsAny<string>(),
-            It.IsAny<decimal>(),
-            It.IsAny<decimal>(),
-            It.IsAny<TimeInForce>(),
-            It.IsAny<CancellationToken>()
-        ), Times.Never);
-    }
-
-    [Fact]
     public async Task Handle_WithNoStrategiesFound_ShouldNotProcessAnything()
     {
         // Arrange

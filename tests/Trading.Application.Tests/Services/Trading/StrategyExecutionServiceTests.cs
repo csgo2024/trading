@@ -37,7 +37,7 @@ public class StrategyExecutionServiceTests
         _backgroundTaskManagerMock = new Mock<IBackgroundTaskManager>();
         _strategyRepositoryMock = new Mock<IStrategyRepository>();
         _accountProcessorMock = new Mock<IAccountProcessor>();
-        _executorMock = new Mock<BaseExecutor>(_loggerMock.Object);
+        _executorMock = new Mock<BaseExecutor>(_loggerMock.Object, _strategyRepositoryMock.Object);
         _cts = new CancellationTokenSource();
 
         _service = new StrategyExecutionService(
@@ -141,8 +141,11 @@ public class StrategyExecutionServiceTests
             x => x.StopAsync(TaskCategory.Strategy, "test-id"),
             Times.Once);
 
-        _accountProcessorMock.Verify(
-            x => x.CancelOrder(It.IsAny<string>(), 1234L, It.IsAny<CancellationToken>()),
+        _executorMock.Verify(
+            x => x.CancelExistingOrder(
+                It.IsAny<IAccountProcessor>(),
+                It.Is<Strategy>(y => y.OrderId == 1234L),
+                It.IsAny<CancellationToken>()),
             Times.Once);
     }
 

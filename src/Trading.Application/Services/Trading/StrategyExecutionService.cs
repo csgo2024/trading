@@ -47,7 +47,8 @@ public class StrategyExecutionService :
         if (strategy.OrderId.HasValue)
         {
             var accountProcessor = _accountProcessorFactory.GetAccountProcessor(strategy.AccountType);
-            await accountProcessor!.CancelOrder(strategy.Symbol, strategy.OrderId.Value, cancellationToken);
+            var executor = _executorFactory.GetExecutor(strategy.StrategyType);
+            await executor!.CancelExistingOrder(accountProcessor!, strategy, cancellationToken);
         }
         await _backgroundTaskManager.StopAsync(TaskCategory.Strategy, strategy.Id);
     }

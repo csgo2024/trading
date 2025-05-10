@@ -30,13 +30,14 @@ public class TopSellExecutorTests
     }
 
     [Fact]
-    public async Task Execute_WithNewDay_ShouldResetStrategy()
+    public async Task Execute_WhenOrderIdNotExist_ShouldResetStrategy()
     {
         // Arrange
-        var strategy = CreateTestStrategy(lastTradeDate: DateTime.UtcNow.AddDays(-1));
+        var strategy = CreateTestStrategy();
         SetupSuccessfulKlineResponse();
         SetupSuccessfulSymbolFilterResponse();
         SetupSuccessfulPlaceOrderResponse(12345L);
+        SetupSuccessfulOrderStatusResponse(OrderStatus.New);
         _mockStrategyRepository.Setup(x => x.UpdateAsync(It.IsAny<string>(), It.IsAny<Strategy>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
@@ -44,7 +45,51 @@ public class TopSellExecutorTests
         await _executor.Execute(_mockAccountProcessor.Object, strategy, CancellationToken.None);
 
         // Assert
-        Assert.Equal(DateTime.UtcNow.Date, strategy.LastTradeDate?.Date);
+        Assert.Equal(DateTime.UtcNow.Date, strategy.OrderPlacedTime?.Date);
+        Assert.True(strategy.HasOpenOrder); // True since order should be placed
+        Assert.Equal(strategy.OrderId, 12345L);
+        _mockStrategyRepository.Verify(x => x.UpdateAsync(It.IsAny<string>(), It.IsAny<Strategy>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+    [Fact]
+    public async Task Execute_WithSameDay_WhenOrderIdExists_ShouldNotResetStrategy()
+    {
+        // Arrange
+        var strategy = CreateTestStrategy(true, 12345, DateTime.UtcNow);
+        SetupSuccessfulOrderStatusResponse(OrderStatus.New);
+        _mockStrategyRepository.Setup(x => x.UpdateAsync(It.IsAny<string>(), It.IsAny<Strategy>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        // Act
+        await _executor.Execute(_mockAccountProcessor.Object, strategy, CancellationToken.None);
+
+        // Assert
+        _mockLogger.Verify(
+            x => x.Log(
+                It.IsAny<LogLevel>(),
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Previous day's order not filled")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task Execute_WithNewDay_ShouldResetStrategy()
+    {
+        // Arrange
+        var strategy = CreateTestStrategy(orderPlacedTime: DateTime.UtcNow.AddDays(-1));
+        SetupSuccessfulKlineResponse();
+        SetupSuccessfulSymbolFilterResponse();
+        SetupSuccessfulPlaceOrderResponse(12345L);
+        SetupSuccessfulOrderStatusResponse(OrderStatus.New);
+        _mockStrategyRepository.Setup(x => x.UpdateAsync(It.IsAny<string>(), It.IsAny<Strategy>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        // Act
+        await _executor.Execute(_mockAccountProcessor.Object, strategy, CancellationToken.None);
+
+        // Assert
+        Assert.Equal(DateTime.UtcNow.Date, strategy.OrderPlacedTime?.Date);
         Assert.True(strategy.HasOpenOrder); // True since order should be placed
         Assert.NotNull(strategy.OrderId); //
         _mockStrategyRepository.Verify(x => x.UpdateAsync(It.IsAny<string>(), It.IsAny<Strategy>(), It.IsAny<CancellationToken>()), Times.Once);
@@ -63,9 +108,8 @@ public class TopSellExecutorTests
         await _executor.Execute(_mockAccountProcessor.Object, strategy, CancellationToken.None);
 
         // Assert
-        Assert.True(strategy.IsTradedToday);
         Assert.False(strategy.HasOpenOrder);
-        Assert.Null(strategy.OrderId);
+        Assert.Equal(strategy.OrderId, 12345); // Order ID should remain the same
     }
 
     [Theory]
@@ -98,7 +142,7 @@ public class TopSellExecutorTests
         var strategy = CreateTestStrategy(
             hasOpenOrder: true,
             orderId: 12345,
-            lastTradeDate: DateTime.UtcNow.AddDays(-1));
+            orderPlacedTime: DateTime.UtcNow.AddDays(-1));
         strategy.OrderPlacedTime = DateTime.UtcNow.AddDays(-1);
 
         SetupSuccessfulKlineResponse(100m);
@@ -127,7 +171,7 @@ public class TopSellExecutorTests
     [Theory]
     [InlineData(OrderStatus.New)]
     [InlineData(OrderStatus.PartiallyFilled)]
-    public async Task Execute_WithActiveOrder_WhenFromPreviousDay_ShouldCancelOrder(OrderStatus status)
+    public async Task Execute_WithActiveOrder_WhenFromPreviousDay_ShouldCancelAndPlaceNewOrder(OrderStatus status)
     {
         // Arrange
         var strategy = CreateTestStrategy(
@@ -150,16 +194,15 @@ public class TopSellExecutorTests
 
         // Assert
         // Verify order cancellation
-        VerifyLoggingSequence(_mockLogger, new[]
-        {
-            $"[{strategy.AccountType}-{strategy.Symbol}] Order from previous day detected, initiating cancellation.",
+        VerifyLoggingSequence(_mockLogger, [
+            $"[{strategy.AccountType}-{strategy.Symbol}] Previous day's order not filled, cancelling order before reset",
             $"[{strategy.AccountType}-{strategy.Symbol}] Successfully cancelled order"
-        });
+        ]);
 
-        // Verify strategy state after cancellation , should reset order stats
-        Assert.False(strategy.HasOpenOrder);
-        Assert.Null(strategy.OrderId);
-        Assert.Null(strategy.OrderPlacedTime);
+        // Verify strategy state after executed, should place new order.
+        Assert.True(strategy.HasOpenOrder);
+        Assert.Equal(strategy.OrderId, 54321);
+        Assert.Equal(strategy.OrderPlacedTime!.Value.Date, DateTime.UtcNow.Date);
     }
 
     [Theory]
@@ -249,13 +292,33 @@ public class TopSellExecutorTests
         Assert.True(strategy.TargetPrice > openPrice); // Short order target price must greater than today open price.
         Assert.NotEqual(0, strategy.Quantity);
         Assert.False(strategy.HasOpenOrder);
-        Assert.False(strategy.IsTradedToday);
+    }
+    [Fact]
+    public async Task ResetDailyStrategy_WhenFailed_ShouldLogError()
+    {
+        // Arrange
+        var strategy = CreateTestStrategy();
+        var openPrice = 100m;
+        SetupFailedKlineResponse(openPrice);
+
+        // Act
+        await _executor.ResetDailyStrategy(_mockAccountProcessor.Object, strategy, DateTime.UtcNow, CancellationToken.None);
+
+        // Assert
+        _mockLogger.Verify(
+            x => x.Log(
+                It.IsAny<LogLevel>(),
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Failed to get daily open price")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
     }
 
     private static Strategy CreateTestStrategy(
         bool hasOpenOrder = false,
         long? orderId = null,
-        DateTime? lastTradeDate = null)
+        DateTime? orderPlacedTime = null)
     {
         return new Strategy
         {
@@ -267,7 +330,7 @@ public class TopSellExecutorTests
             Volatility = 0.01m,
             HasOpenOrder = hasOpenOrder,
             OrderId = orderId,
-            LastTradeDate = lastTradeDate ?? DateTime.UtcNow
+            OrderPlacedTime = orderPlacedTime
         };
     }
 
@@ -296,8 +359,37 @@ public class TopSellExecutorTests
                 null,
                 null,
                 ResultDataSource.Server,
-                new[] { kline.Object },
+                [kline.Object],
                 null)
+            );
+    }
+    private void SetupFailedKlineResponse(decimal openPrice = 100m)
+    {
+        var kline = new Mock<IBinanceKline>();
+        kline.Setup(x => x.OpenPrice).Returns(openPrice);
+
+        _mockAccountProcessor
+            .Setup(x => x.GetKlines(
+                It.IsAny<string>(),
+                It.IsAny<KlineInterval>(),
+                It.IsAny<DateTime?>(),
+                It.IsAny<DateTime?>(),
+                It.IsAny<int?>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new WebCallResult<IEnumerable<IBinanceKline>>(
+                null,
+                null,
+                null,
+                0,
+                null,
+                0,
+                null,
+                null,
+                null,
+                null,
+                ResultDataSource.Server,
+                [kline.Object],
+                new ServerError("Error"))
             );
     }
 

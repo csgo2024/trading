@@ -7,9 +7,7 @@ public class Strategy : BaseEntity
     public string Symbol { get; set; } = string.Empty;
     public decimal TargetPrice { get; set; }
     public long? OrderId { get; set; }
-    public DateTime? LastTradeDate { get; set; }
     public bool HasOpenOrder { get; set; }
-    public bool IsTradedToday { get; set; }
     public DateTime? OrderPlacedTime { get; set; }
     public int Amount { get; set; }
     public decimal Volatility { get; set; }
