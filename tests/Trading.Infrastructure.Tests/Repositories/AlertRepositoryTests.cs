@@ -11,10 +11,12 @@ public class AlertRepositoryTests : IClassFixture<MongoDbFixture>
     private readonly MongoDbFixture _fixture;
     private readonly AlertRepository _repository;
 
+    private readonly IDomainEventDispatcher _domainEventDispatcher;
     public AlertRepositoryTests(MongoDbFixture fixture)
     {
         _fixture = fixture;
-        _repository = new AlertRepository(_fixture.MongoContext!);
+        _domainEventDispatcher = fixture.DomainEventDispatcher;
+        _repository = new AlertRepository(_fixture.MongoContext!, _domainEventDispatcher);
     }
     [Fact]
     public async Task GetActiveAlertsAsync_ShouldReturnOnlyActiveAlerts()

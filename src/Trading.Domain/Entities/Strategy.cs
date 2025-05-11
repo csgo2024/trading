@@ -1,4 +1,5 @@
 using Trading.Common.Enums;
+using Trading.Domain.Events;
 
 namespace Trading.Domain.Entities;
 
@@ -21,4 +22,23 @@ public class Strategy : BaseEntity
     public Status Status { get; set; }
     public string? Interval { get; set; }
     public string? StopLossExpression { get; set; }
+
+    public void Add()
+    {
+        AddDomainEvent(new StrategyCreatedEvent(this));
+    }
+    public void Pause()
+    {
+        Status = Status.Paused;
+        AddDomainEvent(new StrategyPausedEvent(this));
+    }
+    public void Resume()
+    {
+        Status = Status.Running;
+        AddDomainEvent(new StrategyResumedEvent(this));
+    }
+    public void Delete()
+    {
+        AddDomainEvent(new StrategyDeletedEvent(this));
+    }
 }

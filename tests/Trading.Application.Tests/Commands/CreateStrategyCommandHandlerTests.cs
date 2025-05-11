@@ -24,11 +24,11 @@ public class CreateStrategyCommandHandlerTests
         _strategyRepositoryMock = new Mock<IStrategyRepository>();
         _mediatorMock = new Mock<IMediator>();
         _loggerMock = new Mock<ILogger<CreateStrategyCommandHandler>>();
-        _handler = new CreateStrategyCommandHandler(_strategyRepositoryMock.Object, _loggerMock.Object, _mediatorMock.Object);
+        _handler = new CreateStrategyCommandHandler(_strategyRepositoryMock.Object, _loggerMock.Object);
     }
 
     [Fact]
-    public async Task Handle_WithValidCommand_ShouldCreateStrategyAndPublishEvent()
+    public async Task Handle_WithValidCommand_ShouldCreateStrategy()
     {
         // Arrange
         var command = new CreateStrategyCommand
@@ -66,13 +66,6 @@ public class CreateStrategyCommandHandlerTests
         // Verify repository call
         _strategyRepositoryMock.Verify(
             x => x.Add(It.IsAny<Strategy>(), It.IsAny<CancellationToken>()),
-            Times.Once);
-
-        // Verify event publication
-        _mediatorMock.Verify(
-            x => x.Publish(
-                It.Is<StrategyCreatedEvent>(e => e.Strategy == result),
-                It.IsAny<CancellationToken>()),
             Times.Once);
     }
 

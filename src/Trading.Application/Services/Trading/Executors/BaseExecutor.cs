@@ -188,7 +188,6 @@ public abstract class BaseExecutor :
                                                     strategy.Symbol,
                                                     strategy.StrategyType,
                                                     stopPrice);
-                    strategy.Status = Status.Paused;
                     strategy.OrderId = null;
                     strategy.OrderPlacedTime = null;
                     strategy.HasOpenOrder = false;

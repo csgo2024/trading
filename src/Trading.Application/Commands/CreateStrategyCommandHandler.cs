@@ -3,7 +3,6 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using Trading.Common.Enums;
 using Trading.Domain.Entities;
-using Trading.Domain.Events;
 using Trading.Domain.IRepositories;
 
 namespace Trading.Application.Commands;
@@ -11,15 +10,12 @@ namespace Trading.Application.Commands;
 public class CreateStrategyCommandHandler : IRequestHandler<CreateStrategyCommand, Strategy>
 {
     private readonly IStrategyRepository _strategyRepository;
-    private readonly IMediator _mediator;
 
     private readonly ILogger<CreateStrategyCommandHandler> _logger;
 
     public CreateStrategyCommandHandler(IStrategyRepository strategyRepository,
-                                        ILogger<CreateStrategyCommandHandler> logger,
-                                        IMediator mediator)
+                                        ILogger<CreateStrategyCommandHandler> logger)
     {
-        _mediator = mediator;
         _logger = logger;
         _strategyRepository = strategyRepository;
     }
@@ -54,13 +50,12 @@ public class CreateStrategyCommandHandler : IRequestHandler<CreateStrategyComman
             StrategyType = request.StrategyType,
             Interval = request.Interval,
         };
-
+        entity.Add();
         await _strategyRepository.Add(entity, cancellationToken);
         _logger.LogInformation("[{Interval}-{StrategyType}] Strategy created: {StrategyId}",
                                entity.Interval,
                                entity.StrategyType,
                                entity.Id);
-        await _mediator.Publish(new StrategyCreatedEvent(entity), cancellationToken);
         return entity;
     }
 }

@@ -7,7 +7,8 @@ namespace Trading.Infrastructure.Repositories;
 
 public class AlertRepository : BaseRepository<Alert>, IAlertRepository
 {
-    public AlertRepository(IMongoDbContext context) : base(context)
+    public AlertRepository(IMongoDbContext context, IDomainEventDispatcher domainEventDispatcher)
+        : base(context, domainEventDispatcher)
     {
     }
 

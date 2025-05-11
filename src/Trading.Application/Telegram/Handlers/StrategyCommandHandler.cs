@@ -9,7 +9,6 @@ using Telegram.Bot.Types.ReplyMarkups;
 using Trading.Application.Commands;
 using Trading.Common.Enums;
 using Trading.Common.Models;
-using Trading.Domain.Events;
 using Trading.Domain.IRepositories;
 
 namespace Trading.Application.Telegram.Handlers;
@@ -144,10 +143,8 @@ public class StrategyCommandHandler : ICommandHandler
             _logger.LogError("未找到策略 ID: {Id}", id);
             return;
         }
-        strategy.Status = Status.Paused;
-        strategy.UpdatedAt = DateTime.UtcNow;
+        strategy.Pause();
         await _strategyRepository.UpdateAsync(id, strategy);
-        await _mediator.Publish(new StrategyPausedEvent(strategy));
         _logger.LogInformation("Strategy {id} paused successfully.", id);
     }
 
@@ -160,10 +157,8 @@ public class StrategyCommandHandler : ICommandHandler
             _logger.LogError("未找到策略 ID: {Id}", id);
             return;
         }
-        strategy.Status = Status.Running;
-        strategy.UpdatedAt = DateTime.UtcNow;
+        strategy.Resume();
         await _strategyRepository.UpdateAsync(id, strategy);
-        await _mediator.Publish(new StrategyResumedEvent(strategy));
         _logger.LogInformation("Strategy {id} resumed successfully.", id);
     }
 

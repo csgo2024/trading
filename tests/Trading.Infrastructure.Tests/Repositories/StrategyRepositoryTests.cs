@@ -9,11 +9,13 @@ public class StrategyRepositoryTests : IClassFixture<MongoDbFixture>
 {
     private readonly MongoDbFixture _fixture;
     private readonly StrategyRepository _repository;
+    private readonly IDomainEventDispatcher _domainEventDispatcher;
 
     public StrategyRepositoryTests(MongoDbFixture fixture)
     {
         _fixture = fixture;
-        _repository = new StrategyRepository(_fixture.MongoContext!);
+        _domainEventDispatcher = fixture.DomainEventDispatcher;
+        _repository = new StrategyRepository(_fixture.MongoContext!, _domainEventDispatcher);
     }
 
     [Fact]

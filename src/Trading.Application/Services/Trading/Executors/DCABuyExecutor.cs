@@ -26,6 +26,6 @@ public class DCABuyExecutor : BaseExecutor
 
     public override Task Handle(KlineClosedEvent notification, CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        return Task.CompletedTask;
     }
 }

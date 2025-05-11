@@ -146,8 +146,8 @@ public class AlertNotificationServiceTests
     public async Task Handle_AlertPausedEvent_ShouldStopMonitoring()
     {
         // Arrange
-        var alertId = "test-id";
-        var notification = new AlertPausedEvent(alertId);
+        var alert = new Alert { Id = "test-id", };
+        var notification = new AlertPausedEvent(alert);
 
         _taskManagerMock
             .Setup(x => x.StopAsync(
@@ -159,15 +159,15 @@ public class AlertNotificationServiceTests
         await _service.Handle(notification, _cts.Token);
 
         // Assert
-        _taskManagerMock.Verify(x => x.StopAsync(TaskCategory.Alert, alertId), Times.Once);
+        _taskManagerMock.Verify(x => x.StopAsync(TaskCategory.Alert, alert.Id), Times.Once);
     }
 
     [Fact]
     public async Task Handle_AlertDeletedEvent_ShouldStopMonitoring()
     {
         // Arrange
-        var alertId = "test-id";
-        var notification = new AlertDeletedEvent(alertId);
+        var alert = new Alert { Id = "test-id", };
+        var notification = new AlertDeletedEvent(alert);
 
         _taskManagerMock
             .Setup(x => x.StopAsync(
@@ -179,7 +179,7 @@ public class AlertNotificationServiceTests
         await _service.Handle(notification, _cts.Token);
 
         // Assert
-        _taskManagerMock.Verify(x => x.StopAsync(TaskCategory.Alert, alertId), Times.Once);
+        _taskManagerMock.Verify(x => x.StopAsync(TaskCategory.Alert, alert.Id), Times.Once);
     }
 
     [Fact]

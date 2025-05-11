@@ -10,11 +10,12 @@ public class BaseRepositoryIntegrationTests : IClassFixture<MongoDbFixture>
 {
     private readonly MongoDbFixture _fixture;
     private readonly BaseRepository<TestEntity> _repository;
-
+    private readonly IDomainEventDispatcher _domainEventDispatcher;
     public BaseRepositoryIntegrationTests(MongoDbFixture fixture)
     {
         _fixture = fixture;
-        _repository = new BaseRepository<TestEntity>(_fixture.MongoContext!);
+        _domainEventDispatcher = fixture.DomainEventDispatcher;
+        _repository = new BaseRepository<TestEntity>(_fixture.MongoContext!, _domainEventDispatcher);
     }
 
     [Fact]
@@ -105,7 +106,7 @@ public class BaseRepositoryIntegrationTests : IClassFixture<MongoDbFixture>
         var savedEntity = await _repository.AddAsync(entity);
 
         // Act
-        var deleteResult = await _repository.DeleteAsync(savedEntity.Id);
+        var deleteResult = await _repository.DeleteAsync(savedEntity);
         var deletedEntity = await _repository.GetByIdAsync(savedEntity.Id);
 
         // Assert

@@ -12,7 +12,6 @@ using Trading.Application.Telegram.Handlers;
 using Trading.Common.Enums;
 using Trading.Common.Models;
 using Trading.Domain.Entities;
-using Trading.Domain.Events;
 using Trading.Domain.IRepositories;
 
 namespace Trading.Application.Tests.Telegram.Handlers;
@@ -199,7 +198,7 @@ public class StrategyCommandHandlerTests
     }
 
     [Fact]
-    public async Task HandlePause_WithValidId_ShouldUpdateStatusAndPublishEvent()
+    public async Task HandlePause_WithValidId_ShouldUpdateStatus()
     {
         // Arrange
         const string strategyId = "test-id";
@@ -226,16 +225,10 @@ public class StrategyCommandHandlerTests
                 It.Is<Strategy>(x => x.Status == Status.Paused),
                 It.IsAny<CancellationToken>()),
             Times.Once);
-
-        _mediatorMock.Verify(
-            x => x.Publish(
-                It.Is<StrategyPausedEvent>(e => e.Strategy.Id == strategyId),
-                It.IsAny<CancellationToken>()),
-            Times.Once);
     }
 
     [Fact]
-    public async Task HandleResume_WithValidId_ShouldUpdateStatusAndPublishEvent()
+    public async Task HandleResume_WithValidId_ShouldUpdateStatus()
     {
         // Arrange
         const string strategyId = "test-id";
@@ -260,12 +253,6 @@ public class StrategyCommandHandlerTests
             x => x.UpdateAsync(
                 strategyId,
                 It.Is<Strategy>(x => x.Status == Status.Running),
-                It.IsAny<CancellationToken>()),
-            Times.Once);
-
-        _mediatorMock.Verify(
-            x => x.Publish(
-                It.Is<StrategyResumedEvent>(e => e.Strategy == strategy),
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }

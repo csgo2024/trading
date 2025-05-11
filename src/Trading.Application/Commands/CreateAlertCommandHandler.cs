@@ -4,7 +4,6 @@ using MediatR;
 using Trading.Application.JavaScript;
 using Trading.Common.Enums;
 using Trading.Domain.Entities;
-using Trading.Domain.Events;
 using Trading.Domain.IRepositories;
 using Trading.Exchange.Binance.Helpers;
 
@@ -13,14 +12,12 @@ namespace Trading.Application.Commands;
 public class CreateAlertCommandHandler : IRequestHandler<CreateAlertCommand, Alert>
 {
     private readonly IAlertRepository _alertRepository;
-    private readonly IMediator _mediator;
     private readonly JavaScriptEvaluator _javaScriptEvaluator;
 
-    public CreateAlertCommandHandler(IAlertRepository alertRepository,
-                                     JavaScriptEvaluator javaScriptEvaluator,
-                                     IMediator mediator)
+    public CreateAlertCommandHandler(
+        IAlertRepository alertRepository,
+        JavaScriptEvaluator javaScriptEvaluator)
     {
-        _mediator = mediator;
         _javaScriptEvaluator = javaScriptEvaluator;
         _alertRepository = alertRepository;
     }
@@ -50,8 +47,8 @@ public class CreateAlertCommandHandler : IRequestHandler<CreateAlertCommand, Ale
             Status = Status.Running,
             LastNotification = DateTime.UtcNow,
         };
+        alert.Add();
         await _alertRepository.AddAsync(alert, cancellationToken);
-        await _mediator.Publish(new AlertCreatedEvent(alert), cancellationToken);
         return alert;
     }
 }

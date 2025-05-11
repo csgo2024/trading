@@ -30,6 +30,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IAlertRepository, AlertRepository>();
         services.AddSingleton<ICredentialSettingRepository, CredentialSettingRepository>();
         services.AddSingleton<IApiCredentialProvider, ApiCredentialProvider>();
+        services.AddTransient<IDomainEventDispatcher, DomainEventDispatcher>();
         MongoDbConfigration.Configure();
         return services;
     }

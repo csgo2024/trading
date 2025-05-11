@@ -1,4 +1,5 @@
 using MongoDB.Driver;
+using Moq;
 using Testcontainers.MongoDb;
 using Xunit;
 
@@ -8,6 +9,7 @@ public class MongoDbFixture : IAsyncLifetime
 {
     public MongoDbContainer MongoDbContainer { get; }
     public IMongoDbContext? MongoContext { get; private set; }
+    public IDomainEventDispatcher DomainEventDispatcher { get; }
 
     public MongoDbFixture()
     {
@@ -15,6 +17,7 @@ public class MongoDbFixture : IAsyncLifetime
             .WithName($"Trading-Infrastructure-Tests-{Guid.NewGuid()}")
             .WithPortBinding(27017, true)
             .Build();
+        DomainEventDispatcher = new Mock<IDomainEventDispatcher>().Object;
     }
 
     public async Task InitializeAsync()

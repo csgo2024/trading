@@ -190,9 +190,6 @@ public class AlertCommandHandlerTests
             alertId,
             It.Is<Alert>(a => a.Status == Status.Paused),
             It.IsAny<CancellationToken>()), Times.Once);
-        _mediatorMock.Verify(x => x.Publish(
-            It.Is<AlertPausedEvent>(e => e.AlertId == alertId),
-            It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -213,9 +210,6 @@ public class AlertCommandHandlerTests
         _alertRepositoryMock.Verify(
             x => x.UpdateAsync(alert.Id, alert, It.IsAny<CancellationToken>()),
             Times.Once);
-        _mediatorMock.Verify(x => x.Publish(
-            It.Is<AlertResumedEvent>(e => e.Alert == alert),
-            It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Theory]

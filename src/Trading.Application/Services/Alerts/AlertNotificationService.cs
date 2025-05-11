@@ -84,8 +84,8 @@ public class AlertNotificationService :
 
     public async Task Handle(AlertPausedEvent notification, CancellationToken cancellationToken)
     {
-        _activeAlerts.TryRemove(notification.AlertId, out _);
-        await _backgroundTaskManager.StopAsync(TaskCategory.Alert, notification.AlertId);
+        _activeAlerts.TryRemove(notification.Alert.Id, out _);
+        await _backgroundTaskManager.StopAsync(TaskCategory.Alert, notification.Alert.Id);
     }
 
     public async Task Handle(AlertResumedEvent notification, CancellationToken cancellationToken)
@@ -99,8 +99,8 @@ public class AlertNotificationService :
     }
     public async Task Handle(AlertDeletedEvent notification, CancellationToken cancellationToken)
     {
-        _activeAlerts.TryRemove(notification.AlertId, out _);
-        await _backgroundTaskManager.StopAsync(TaskCategory.Alert, notification.AlertId);
+        _activeAlerts.TryRemove(notification.Alert.Id, out _);
+        await _backgroundTaskManager.StopAsync(TaskCategory.Alert, notification.Alert.Id);
     }
     public async Task Handle(AlertEmptyedEvent notification, CancellationToken cancellationToken)
     {

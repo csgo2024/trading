@@ -7,7 +7,8 @@ namespace Trading.Infrastructure.Repositories;
 
 public class StrategyRepository : BaseRepository<Strategy>, IStrategyRepository
 {
-    public StrategyRepository(IMongoDbContext context) : base(context)
+    public StrategyRepository(IMongoDbContext context, IDomainEventDispatcher domainEventDispatcher)
+        : base(context, domainEventDispatcher)
     {
     }
 

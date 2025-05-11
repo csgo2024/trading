@@ -7,14 +7,15 @@ using Trading.Domain.IRepositories;
 
 namespace Trading.Infrastructure.Repositories;
 
-// BaseRepository.cs - 通用仓储实现
 public class BaseRepository<T> : IRepository<T> where T : BaseEntity
 {
     protected readonly IMongoCollection<T> _collection;
+    private readonly IDomainEventDispatcher _domainEventDispatcher;
 
-    public BaseRepository(IMongoDbContext context)
+    public BaseRepository(IMongoDbContext context, IDomainEventDispatcher domainEventDispatcher)
     {
         _collection = context.GetCollection<T>();
+        _domainEventDispatcher = domainEventDispatcher;
     }
 
     public async Task<T?> GetByIdAsync(string id, CancellationToken cancellationToken = default)
@@ -25,18 +26,21 @@ public class BaseRepository<T> : IRepository<T> where T : BaseEntity
     public async Task<T> AddAsync(T entity, CancellationToken cancellationToken = default)
     {
         await _collection.InsertOneAsync(entity, new InsertOneOptions(), cancellationToken);
+        await _domainEventDispatcher.DispatchAsync(entity);
         return entity;
     }
 
     public async Task<bool> UpdateAsync(string id, T entity, CancellationToken cancellationToken = default)
     {
         var result = await _collection.ReplaceOneAsync(x => x.Id == id, entity, cancellationToken: cancellationToken);
+        await _domainEventDispatcher.DispatchAsync(entity);
         return result.IsAcknowledged && result.ModifiedCount > 0;
     }
 
-    public async Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default)
+    public async Task<bool> DeleteAsync(T entity, CancellationToken cancellationToken = default)
     {
-        var result = await _collection.DeleteOneAsync(x => x.Id == id, cancellationToken);
+        var result = await _collection.DeleteOneAsync(x => x.Id == entity.Id, cancellationToken);
+        await _domainEventDispatcher.DispatchAsync(entity);
         return result.IsAcknowledged && result.DeletedCount > 0;
     }
     public async Task<bool> EmptyAsync(CancellationToken cancellationToken = default)

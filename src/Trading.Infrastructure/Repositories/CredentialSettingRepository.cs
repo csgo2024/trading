@@ -6,7 +6,8 @@ namespace Trading.Infrastructure.Repositories;
 
 public class CredentialSettingRepository : BaseRepository<CredentialSetting>, ICredentialSettingRepository
 {
-    public CredentialSettingRepository(IMongoDbContext context) : base(context)
+    public CredentialSettingRepository(IMongoDbContext context, IDomainEventDispatcher domainEventDispatcher)
+        : base(context, domainEventDispatcher)
     {
     }
 

@@ -1,7 +1,6 @@
-using MediatR;
 using Moq;
 using Trading.Application.Commands;
-using Trading.Domain.Events;
+using Trading.Domain.Entities;
 using Trading.Domain.IRepositories;
 
 namespace Trading.Application.Tests.Commands;
@@ -9,32 +8,31 @@ namespace Trading.Application.Tests.Commands;
 public class DeleteStrategyCommandHandlerTests
 {
     private readonly Mock<IStrategyRepository> _strategyRepositoryMock;
-    private readonly Mock<IMediator> _mediatorMock;
     private readonly DeleteStrategyCommandHandler _handler;
 
     public DeleteStrategyCommandHandlerTests()
     {
         _strategyRepositoryMock = new Mock<IStrategyRepository>();
-        _mediatorMock = new Mock<IMediator>();
-        _handler = new DeleteStrategyCommandHandler(_strategyRepositoryMock.Object, _mediatorMock.Object);
+        _handler = new DeleteStrategyCommandHandler(_strategyRepositoryMock.Object);
     }
 
     [Fact]
     public async Task Handle_WhenStrategyExists_ShouldDeleteAndPublishEvent()
     {
         // Arrange
-        var strategyId = "test-strategy-id";
+        var strategy = new Strategy { Id = "test-strategy-id" };
+        var strategyId = strategy.Id;
         var command = new DeleteStrategyCommand
         {
-            Id = strategyId
+            Id = strategy.Id
         };
 
         _strategyRepositoryMock
-            .Setup(x => x.DeleteAsync(strategyId, It.IsAny<CancellationToken>()))
+            .Setup(x => x.DeleteAsync(strategy, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         _strategyRepositoryMock
             .Setup(x => x.GetByIdAsync(strategyId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Domain.Entities.Strategy { Id = strategyId });
+            .ReturnsAsync(strategy);
 
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
@@ -44,29 +42,26 @@ public class DeleteStrategyCommandHandlerTests
 
         // Verify repository call
         _strategyRepositoryMock.Verify(
-            x => x.DeleteAsync(strategyId, It.IsAny<CancellationToken>()),
-            Times.Once);
-
-        // Verify event publication
-        _mediatorMock.Verify(
-            x => x.Publish(
-                It.Is<StrategyDeletedEvent>(e => e.Strategy.Id == strategyId),
-                It.IsAny<CancellationToken>()),
+            x => x.DeleteAsync(strategy, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
     [Fact]
-    public async Task Handle_WhenStrategyDoesNotExist_ShouldReturnFalseAndNotPublishEvent()
+    public async Task Handle_WhenStrategyDoesNotExist_ShouldReturnFalse()
     {
         // Arrange
-        var strategyId = "test-strategy-id";
+        var strategy = new Strategy { Id = "test-strategy-id" };
         var command = new DeleteStrategyCommand
         {
-            Id = strategyId
+            Id = strategy.Id
         };
 
         _strategyRepositoryMock
-            .Setup(x => x.DeleteAsync(strategyId, It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetByIdAsync(strategy.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(null as Strategy);
+
+        _strategyRepositoryMock
+            .Setup(x => x.DeleteAsync(strategy, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         // Act
@@ -77,12 +72,7 @@ public class DeleteStrategyCommandHandlerTests
 
         // Verify repository call
         _strategyRepositoryMock.Verify(
-            x => x.DeleteAsync(strategyId, It.IsAny<CancellationToken>()),
-            Times.Once);
-
-        // Verify no event was published
-        _mediatorMock.Verify(
-            x => x.Publish(It.IsAny<StrategyDeletedEvent>(), It.IsAny<CancellationToken>()),
+            x => x.DeleteAsync(strategy, It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -90,15 +80,19 @@ public class DeleteStrategyCommandHandlerTests
     public async Task Handle_WhenRepositoryThrowsException_ShouldPropagateException()
     {
         // Arrange
-        var strategyId = "test-strategy-id";
+        var strategy = new Strategy { Id = "test-strategy-id" };
         var command = new DeleteStrategyCommand
         {
-            Id = strategyId
+            Id = strategy.Id
         };
         var expectedException = new InvalidOperationException("Database error");
 
         _strategyRepositoryMock
-            .Setup(x => x.DeleteAsync(strategyId, It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetByIdAsync(strategy.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(strategy);
+
+        _strategyRepositoryMock
+            .Setup(x => x.DeleteAsync(strategy, It.IsAny<CancellationToken>()))
             .ThrowsAsync(expectedException);
 
         // Act & Assert
@@ -106,11 +100,6 @@ public class DeleteStrategyCommandHandlerTests
             () => _handler.Handle(command, CancellationToken.None));
 
         Assert.Same(expectedException, exception);
-
-        // Verify no event was published
-        _mediatorMock.Verify(
-            x => x.Publish(It.IsAny<StrategyDeletedEvent>(), It.IsAny<CancellationToken>()),
-            Times.Never);
     }
 
     [Fact]

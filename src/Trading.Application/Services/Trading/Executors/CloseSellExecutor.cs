@@ -47,6 +47,7 @@ public class CloseSellExecutor : BaseExecutor
                 if (ShouldStopLoss(accountProcessor, strategy, notification))
                 {
                     await TryStopOrderAsync(accountProcessor, strategy, notification.Kline.ClosePrice, cancellationToken);
+                    strategy.Pause();
                 }
                 await _strategyRepository.UpdateAsync(strategy.Id, strategy, cancellationToken);
             }

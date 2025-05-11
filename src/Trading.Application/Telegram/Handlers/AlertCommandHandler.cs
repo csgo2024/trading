@@ -146,10 +146,8 @@ public class AlertCommandHandler : ICommandHandler
             _logger.LogError("未找到报警 ID: {AlertId}", id);
             return;
         }
-        alert.Status = Status.Paused;
-        alert.UpdatedAt = DateTime.UtcNow;
+        alert.Pause();
         await _alertRepository.UpdateAsync(id, alert);
-        await _mediator.Publish(new AlertPausedEvent(id));
         _logger.LogInformation("Alert {id} paused successfully.", id);
     }
 
@@ -162,10 +160,8 @@ public class AlertCommandHandler : ICommandHandler
             _logger.LogError("未找到报警 ID: {AlertId}", id);
             return;
         }
-        alert.Status = Status.Running;
-        alert.UpdatedAt = DateTime.UtcNow;
+        alert.Resume();
         await _alertRepository.UpdateAsync(id, alert);
-        await _mediator.Publish(new AlertResumedEvent(alert));
         _logger.LogInformation("Alert {id} resumed successfully.", id);
     }
 

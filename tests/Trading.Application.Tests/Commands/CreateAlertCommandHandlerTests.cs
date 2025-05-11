@@ -1,12 +1,10 @@
 using System.ComponentModel.DataAnnotations;
-using MediatR;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Trading.Application.Commands;
 using Trading.Application.JavaScript;
 using Trading.Common.Enums;
 using Trading.Domain.Entities;
-using Trading.Domain.Events;
 using Trading.Domain.IRepositories;
 
 namespace Trading.Application.Tests.Commands;
@@ -14,19 +12,16 @@ namespace Trading.Application.Tests.Commands;
 public class CreateAlertCommandHandlerTests
 {
     private readonly Mock<IAlertRepository> _alertRepositoryMock;
-    private readonly Mock<IMediator> _mediatorMock;
     private readonly Mock<JavaScriptEvaluator> _jsEvaluatorMock;
     private readonly CreateAlertCommandHandler _handler;
 
     public CreateAlertCommandHandlerTests()
     {
         _alertRepositoryMock = new Mock<IAlertRepository>();
-        _mediatorMock = new Mock<IMediator>();
         _jsEvaluatorMock = new Mock<JavaScriptEvaluator>(Mock.Of<ILogger<JavaScriptEvaluator>>());
         _handler = new CreateAlertCommandHandler(
             _alertRepositoryMock.Object,
-            _jsEvaluatorMock.Object,
-            _mediatorMock.Object);
+            _jsEvaluatorMock.Object);
     }
 
     [Fact]
@@ -69,13 +64,6 @@ public class CreateAlertCommandHandlerTests
         _alertRepositoryMock.Verify(
             x => x.AddAsync(It.IsAny<Alert>(), It.IsAny<CancellationToken>()),
             Times.Once);
-
-        // Verify event publication
-        _mediatorMock.Verify(
-            x => x.Publish(
-                It.Is<AlertCreatedEvent>(e => e.Alert == result),
-                It.IsAny<CancellationToken>()),
-            Times.Once);
     }
 
     [Theory]
@@ -103,9 +91,6 @@ public class CreateAlertCommandHandlerTests
         // Verify no repository calls or events
         _alertRepositoryMock.Verify(
             x => x.AddAsync(It.IsAny<Alert>(), It.IsAny<CancellationToken>()),
-            Times.Never);
-        _mediatorMock.Verify(
-            x => x.Publish(It.IsAny<AlertCreatedEvent>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -137,9 +122,6 @@ public class CreateAlertCommandHandlerTests
         _alertRepositoryMock.Verify(
             x => x.AddAsync(It.IsAny<Alert>(), It.IsAny<CancellationToken>()),
             Times.Never);
-        _mediatorMock.Verify(
-            x => x.Publish(It.IsAny<AlertCreatedEvent>(), It.IsAny<CancellationToken>()),
-            Times.Never);
     }
 
     [Fact]
@@ -165,10 +147,6 @@ public class CreateAlertCommandHandlerTests
         await Assert.ThrowsAsync<InvalidOperationException>(
             () => _handler.Handle(command, CancellationToken.None));
 
-        // Verify no events were published
-        _mediatorMock.Verify(
-            x => x.Publish(It.IsAny<AlertCreatedEvent>(), It.IsAny<CancellationToken>()),
-            Times.Never);
     }
 }
 

@@ -1,5 +1,4 @@
 using MediatR;
-using Trading.Domain.Events;
 using Trading.Domain.IRepositories;
 
 namespace Trading.Application.Commands;
@@ -7,23 +6,23 @@ namespace Trading.Application.Commands;
 public class DeleteAlertCommandHandler : IRequestHandler<DeleteAlertCommand, bool>
 {
     private readonly IAlertRepository _alertRepository;
-    private readonly IMediator _mediator;
 
-    public DeleteAlertCommandHandler(IAlertRepository alertRepository,
-                                        IMediator mediator)
+    public DeleteAlertCommandHandler(IAlertRepository alertRepository)
     {
-        _mediator = mediator;
         _alertRepository = alertRepository;
     }
 
     public async Task<bool> Handle(DeleteAlertCommand request, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
-        var result = await _alertRepository.DeleteAsync(request.Id, cancellationToken);
-        if (result)
+        var strategy = await _alertRepository.GetByIdAsync(request.Id, cancellationToken);
+        var result = false;
+        if (strategy == null)
         {
-            await _mediator.Publish(new AlertDeletedEvent(request.Id), cancellationToken);
+            return result;
         }
+        strategy.Delete();
+        result = await _alertRepository.DeleteAsync(strategy, cancellationToken);
         return result;
     }
 }
