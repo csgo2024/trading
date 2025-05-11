@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using Trading.Application.JavaScript;
 using Trading.Application.Services.Alerts;
 using Trading.Application.Services.Trading.Account;
+using Trading.Common.Enums;
 using Trading.Domain.Entities;
 using Trading.Domain.IRepositories;
 
@@ -11,11 +12,13 @@ public class DCABuyExecutor : BaseExecutor
 {
     public DCABuyExecutor(ILogger<BaseExecutor> logger,
                           IStrategyRepository strategyRepository,
-                          JavaScriptEvaluator javaScriptEvaluator)
-        : base(logger, strategyRepository, javaScriptEvaluator)
+                          JavaScriptEvaluator javaScriptEvaluator,
+                          IStrategyStateManager strategyStateManager)
+        : base(logger, strategyRepository, javaScriptEvaluator, strategyStateManager)
     {
     }
 
+    public override StrategyType StrategyType => StrategyType.DCA;
     public override Task ExecuteAsync(IAccountProcessor accountProcessor, Strategy strategy, CancellationToken ct)
     {
         throw new NotImplementedException();

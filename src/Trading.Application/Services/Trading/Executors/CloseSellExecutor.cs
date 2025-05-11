@@ -14,16 +14,19 @@ public class CloseSellExecutor : BaseExecutor
     public CloseSellExecutor(ILogger<CloseSellExecutor> logger,
                             IAccountProcessorFactory accountProcessorFactory,
                             IStrategyRepository strategyRepository,
-                            JavaScriptEvaluator javaScriptEvaluator)
-        : base(logger, strategyRepository, javaScriptEvaluator)
+                            JavaScriptEvaluator javaScriptEvaluator,
+                            IStrategyStateManager stateManager)
+        : base(logger, strategyRepository, javaScriptEvaluator, stateManager)
     {
         _accountProcessorFactory = accountProcessorFactory;
     }
 
+    public override StrategyType StrategyType => StrategyType.CloseSell;
+
     public override async Task Handle(KlineClosedEvent notification, CancellationToken cancellationToken)
     {
-        var strategies = GetMonitoringStrategy(StrategyType.CloseSell).Where(x => x.Symbol == notification.Symbol
-                                && x.Interval == BinanceHelper.ConvertToIntervalString(notification.Interval));
+        var strategies = GetMonitoringStrategy().Values.Where(x => x.Symbol == notification.Symbol
+                                                                   && x.Interval == BinanceHelper.ConvertToIntervalString(notification.Interval));
         var tasks = strategies.Select(async strategy =>
         {
             if (strategy.AccountType == AccountType.Spot)

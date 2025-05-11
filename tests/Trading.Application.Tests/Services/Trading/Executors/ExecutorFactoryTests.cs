@@ -33,6 +33,7 @@ public class ExecutorFactoryTests
         services.AddScoped<DCABuyExecutor>();
         services.AddScoped<TopSellExecutor>();
         services.AddScoped<JavaScriptEvaluator>();
+        services.AddSingleton<IStrategyStateManager, StrategyStateManager>();
 
         _serviceProvider = services.BuildServiceProvider();
         _factory = new ExecutorFactory(_serviceProvider);

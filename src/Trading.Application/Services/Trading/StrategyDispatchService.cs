@@ -67,8 +67,8 @@ public class StrategyDispatchService :
         var tasks = strategyTypes.Select(async strategyType =>
         {
             var executor = _executorFactory.GetExecutor(strategyType);
-            await executor!.LoadActiveStratey(strategyType, cancellationToken);
-            foreach (var strategy in executor!.GetMonitoringStrategy(strategyType))
+            await executor!.LoadActiveStratey(cancellationToken);
+            foreach (var strategy in executor!.GetMonitoringStrategy().Values)
             {
                 var accountProcessor = _accountProcessorFactory.GetAccountProcessor(strategy.AccountType)!;
                 await _backgroundTaskManager.StartAsync(TaskCategory.Strategy,

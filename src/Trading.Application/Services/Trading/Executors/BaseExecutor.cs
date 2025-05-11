@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using Binance.Net.Enums;
 using Binance.Net.Objects.Models;
 using CryptoExchange.Net.Objects;
@@ -20,17 +19,20 @@ public abstract class BaseExecutor :
     protected readonly ILogger _logger;
     protected readonly IStrategyRepository _strategyRepository;
     protected readonly JavaScriptEvaluator _javaScriptEvaluator;
-    private static readonly ConcurrentDictionary<StrategyType, List<Strategy>> _monitoringStrategyDict = [];
+    protected readonly IStrategyStateManager _stateManager;
 
     public BaseExecutor(ILogger logger,
                         IStrategyRepository strategyRepository,
-                        JavaScriptEvaluator javaScriptEvaluator)
+                        JavaScriptEvaluator javaScriptEvaluator,
+                        IStrategyStateManager strategyStateManager)
     {
         _strategyRepository = strategyRepository;
         _javaScriptEvaluator = javaScriptEvaluator;
         _logger = logger;
+        _stateManager = strategyStateManager;
     }
 
+    public abstract StrategyType StrategyType { get; }
     private static Task<WebCallResult<BinanceOrderBase>> PlaceOrderAsync(IAccountProcessor accountProcessor,
                                                                          Strategy strategy,
                                                                          CancellationToken ct)
@@ -74,32 +76,20 @@ public abstract class BaseExecutor :
                                                        ct);
         }
     }
-    public List<Strategy> GetMonitoringStrategy(StrategyType type)
+    public virtual Dictionary<string, Strategy> GetMonitoringStrategy()
     {
-        var result = _monitoringStrategyDict.TryGetValue(type, out var value) ? value : [];
-        return result ?? [];
+        var strategies = _stateManager.GetState(StrategyType);
+        return strategies ?? [];
     }
     public void RemoveFromMonitoringStrategy(Strategy strategy)
     {
-        if (_monitoringStrategyDict.TryGetValue(strategy.StrategyType, out var strategies) && strategies?.Count > 0)
-        {
-            strategies.RemoveAll(x => x.Id == strategy.Id);
-            _logger.LogInformation("[{AccountType}-{Symbol}-{StrategyType}] Removed strategy from monitoring list.",
-                                   strategy.AccountType,
-                                   strategy.Symbol,
-                                   strategy.StrategyType);
-            if (strategies.Count == 0)
-            {
-                _monitoringStrategyDict.TryRemove(strategy.StrategyType, out _);
-            }
-        }
+        _stateManager.RemoveStrategy(strategy);
     }
 
-    public async Task LoadActiveStratey(StrategyType strategyType, CancellationToken cancellationToken)
+    public virtual async Task LoadActiveStratey(CancellationToken cancellationToken)
     {
-        var strategies = await _strategyRepository.FindActiveStrategyByType(strategyType, cancellationToken);
-        _monitoringStrategyDict.TryRemove(strategyType, out _);
-        _monitoringStrategyDict.TryAdd(strategyType, strategies);
+        var strategies = await _strategyRepository.FindActiveStrategyByType(StrategyType, cancellationToken);
+        _stateManager.SetState(StrategyType, strategies.ToDictionary(x => x.Id));
     }
 
     public virtual bool ShouldStopLoss(IAccountProcessor accountProcessor,

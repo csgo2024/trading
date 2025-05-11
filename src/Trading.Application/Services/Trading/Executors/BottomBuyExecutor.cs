@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Trading.Application.JavaScript;
 using Trading.Application.Services.Alerts;
 using Trading.Application.Services.Trading.Account;
+using Trading.Common.Enums;
 using Trading.Common.Helpers;
 using Trading.Domain.Entities;
 using Trading.Domain.IRepositories;
@@ -12,10 +13,13 @@ namespace Trading.Application.Services.Trading.Executors;
 
 public class BottomBuyExecutor : BaseExecutor
 {
+    public override StrategyType StrategyType => StrategyType.BottomBuy;
+
     public BottomBuyExecutor(ILogger<BottomBuyExecutor> logger,
                              IStrategyRepository strategyRepository,
-                             JavaScriptEvaluator javaScriptEvaluator)
-        : base(logger, strategyRepository, javaScriptEvaluator)
+                             JavaScriptEvaluator javaScriptEvaluator,
+                             IStrategyStateManager strategyStateManager)
+        : base(logger, strategyRepository, javaScriptEvaluator, strategyStateManager)
     {
     }
 

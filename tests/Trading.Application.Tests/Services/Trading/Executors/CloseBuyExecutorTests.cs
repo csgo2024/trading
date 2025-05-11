@@ -21,6 +21,7 @@ public class CloseBuyExecutorTests
     private readonly Mock<IAccountProcessorFactory> _mockAccountProcessorFactory;
     private readonly Mock<IAccountProcessor> _mockAccountProcessor;
     private readonly Mock<JavaScriptEvaluator> _mockJavaScriptEvaluator;
+    private readonly Mock<IStrategyStateManager> _mockStrategyStateManager;
     private readonly CloseBuyExecutor _executor;
     private readonly CancellationToken _ct;
 
@@ -31,11 +32,13 @@ public class CloseBuyExecutorTests
         _mockAccountProcessorFactory = new Mock<IAccountProcessorFactory>();
         _mockAccountProcessor = new Mock<IAccountProcessor>();
         _mockJavaScriptEvaluator = new Mock<JavaScriptEvaluator>(Mock.Of<ILogger<JavaScriptEvaluator>>());
+        _mockStrategyStateManager = new Mock<IStrategyStateManager>();
         _executor = new CloseBuyExecutor(
             _mockLogger.Object,
             _mockAccountProcessorFactory.Object,
             _mockStrategyRepository.Object,
-            _mockJavaScriptEvaluator.Object
+            _mockJavaScriptEvaluator.Object,
+            _mockStrategyStateManager.Object
         );
         _ct = CancellationToken.None;
     }
@@ -90,10 +93,12 @@ public class CloseBuyExecutorTests
             Interval = "1d"
         };
 
-        _mockStrategyRepository.Setup(x => x.FindActiveStrategyByType(
-            It.IsAny<StrategyType>(),
-            It.IsAny<CancellationToken>()
-        )).ReturnsAsync([strategy]);
+        _mockStrategyStateManager
+            .Setup(x => x.GetState(It.IsAny<StrategyType>()))
+            .Returns(new Dictionary<string, Strategy>
+            {
+                { strategy.Id, strategy }
+            });
 
         _mockAccountProcessorFactory.Setup(x => x.GetAccountProcessor(It.IsAny<AccountType>()))
             .Returns(_mockAccountProcessor.Object);
@@ -101,7 +106,6 @@ public class CloseBuyExecutorTests
         SetupSuccessfulSymbolFilterResponse();
 
         // Act
-        await _executor.LoadActiveStratey(StrategyType.CloseBuy, CancellationToken.None);
         await _executor.Handle(notification, _ct);
 
         // Assert

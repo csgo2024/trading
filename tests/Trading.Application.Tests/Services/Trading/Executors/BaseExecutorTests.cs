@@ -18,15 +18,13 @@ public class TestExecutor : BaseExecutor
 {
     public TestExecutor(ILogger logger,
                         IStrategyRepository strategyRepository,
-                        JavaScriptEvaluator javaScriptEvaluator)
-        : base(logger, strategyRepository, javaScriptEvaluator)
+                        JavaScriptEvaluator javaScriptEvaluator,
+                        IStrategyStateManager strategyStateManager)
+        : base(logger, strategyRepository, javaScriptEvaluator, strategyStateManager)
     {
     }
 
-    public override async Task ExecuteAsync(IAccountProcessor accountProcessor, Strategy strategy, CancellationToken ct)
-    {
-        await base.ExecuteAsync(accountProcessor, strategy, ct);
-    }
+    public override StrategyType StrategyType => StrategyType.CloseSell;
 
     public override Task Handle(KlineClosedEvent notification, CancellationToken cancellationToken)
     {
@@ -40,6 +38,7 @@ public class BaseExecutorTests
     private readonly Mock<IAccountProcessor> _mockAccountProcessor;
     private readonly Mock<IStrategyRepository> _mockStrategyRepository;
     private readonly Mock<JavaScriptEvaluator> _mockJavaScriptEvaluator;
+    private readonly Mock<IStrategyStateManager> _mockStrategyStateManager;
     private readonly TestExecutor _executor;
     private readonly CancellationToken _ct;
 
@@ -48,8 +47,12 @@ public class BaseExecutorTests
         _mockLogger = new Mock<ILogger<TestExecutor>>();
         _mockAccountProcessor = new Mock<IAccountProcessor>();
         _mockStrategyRepository = new Mock<IStrategyRepository>();
+        _mockStrategyStateManager = new Mock<IStrategyStateManager>();
         _mockJavaScriptEvaluator = new Mock<JavaScriptEvaluator>(Mock.Of<ILogger<JavaScriptEvaluator>>());
-        _executor = new TestExecutor(_mockLogger.Object, _mockStrategyRepository.Object, _mockJavaScriptEvaluator.Object);
+        _executor = new TestExecutor(_mockLogger.Object,
+                                     _mockStrategyRepository.Object,
+                                     _mockJavaScriptEvaluator.Object,
+                                     _mockStrategyStateManager.Object);
         _ct = CancellationToken.None;
     }
     [Fact]

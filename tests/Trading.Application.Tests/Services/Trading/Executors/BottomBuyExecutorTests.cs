@@ -51,6 +51,7 @@ public class BottomBuyExecutorTests
     private readonly Mock<IStrategyRepository> _mockStrategyRepository;
     private readonly Mock<IAccountProcessor> _mockAccountProcessor;
     private readonly Mock<JavaScriptEvaluator> _mockJavaScriptEvaluator;
+    private readonly Mock<IStrategyStateManager> _mockStrategyStateManager;
     private readonly BottomBuyExecutor _executor;
 
     public BottomBuyExecutorTests()
@@ -59,7 +60,11 @@ public class BottomBuyExecutorTests
         _mockStrategyRepository = new Mock<IStrategyRepository>();
         _mockAccountProcessor = new Mock<IAccountProcessor>();
         _mockJavaScriptEvaluator = new Mock<JavaScriptEvaluator>(Mock.Of<ILogger<JavaScriptEvaluator>>());
-        _executor = new BottomBuyExecutor(_mockLogger.Object, _mockStrategyRepository.Object, _mockJavaScriptEvaluator.Object);
+        _mockStrategyStateManager = new Mock<IStrategyStateManager>();
+        _executor = new BottomBuyExecutor(_mockLogger.Object,
+                                          _mockStrategyRepository.Object,
+                                          _mockJavaScriptEvaluator.Object,
+                                          _mockStrategyStateManager.Object);
     }
 
     [Fact]

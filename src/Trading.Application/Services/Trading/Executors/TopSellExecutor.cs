@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Trading.Application.JavaScript;
 using Trading.Application.Services.Alerts;
 using Trading.Application.Services.Trading.Account;
+using Trading.Common.Enums;
 using Trading.Common.Helpers;
 using Trading.Domain.Entities;
 using Trading.Domain.IRepositories;
@@ -14,10 +15,13 @@ public class TopSellExecutor : BaseExecutor
 {
     public TopSellExecutor(ILogger<TopSellExecutor> logger,
                            IStrategyRepository strategyRepository,
-                           JavaScriptEvaluator javaScriptEvaluator)
-        : base(logger, strategyRepository, javaScriptEvaluator)
+                           JavaScriptEvaluator javaScriptEvaluator,
+                           IStrategyStateManager strategyStateManager)
+        : base(logger, strategyRepository, javaScriptEvaluator, strategyStateManager)
     {
     }
+
+    public override StrategyType StrategyType => StrategyType.TopSell;
 
     public override bool ShouldStopLoss(IAccountProcessor accountProcessor, Strategy strategy, KlineClosedEvent @event)
     {

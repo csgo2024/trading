@@ -23,6 +23,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IBackgroundTaskManager, BackgroundTaskManager>();
         services.AddSingleton<IExecutorFactory, ExecutorFactory>();
         services.AddSingleton<IKlineStreamManager, KlineStreamManager>();
+        services.AddSingleton<IStrategyStateManager, StrategyStateManager>();
         services.AddSingleton<JavaScriptEvaluator>();
         services.AddSingleton<SpotProcessor>();
         services.AddSingleton<StrategyDispatchService>();
