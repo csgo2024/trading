@@ -15,6 +15,9 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<AlertNotificationService>();
         services.AddSingleton<BottomBuyExecutor>();
         services.AddSingleton<DCABuyExecutor>();
+        services.AddSingleton<CloseSellExecutor>();
+        services.AddSingleton<CloseBuyExecutor>();
+        services.AddSingleton<TopSellExecutor>();
         services.AddSingleton<FutureProcessor>();
         services.AddSingleton<IAccountProcessorFactory, AccountProcessorFactory>();
         services.AddSingleton<IBackgroundTaskManager, BackgroundTaskManager>();
@@ -23,7 +26,6 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<JavaScriptEvaluator>();
         services.AddSingleton<SpotProcessor>();
         services.AddSingleton<StrategyExecutionService>();
-        services.AddSingleton<TopSellExecutor>();
         return services;
     }
 

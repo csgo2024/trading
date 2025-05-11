@@ -157,4 +157,17 @@ public class SpotProcessor : IAccountProcessor
     {
         throw new NotImplementedException("Spot account don't support short order.");
     }
+
+    public Task<WebCallResult<BinanceOrderBase>> StopLongOrderAsync(string symbol,
+                                                                     decimal quantity,
+                                                                     decimal price,
+                                                                     CancellationToken ct)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<WebCallResult<BinanceOrderBase>> StopShortOrderAsync(string symbol, decimal quantity, decimal price, CancellationToken ct)
+    {
+        throw new NotImplementedException();
+    }
 }

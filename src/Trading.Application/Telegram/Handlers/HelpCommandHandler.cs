@@ -41,10 +41,10 @@ public class HelpCommandHandler : ICommandHandler
 `/strategy create {""Symbol"":""BTCUSDT"",""Amount"":1000,""Volatility"":0.2,""Interval"":""1d"",""Leverage"":5,""AccountType"":""Future"",""StrategyType"":""TopSell""}`
 
 3\. WebSocket合约做空策略 \(CloseSell\)
-`/strategy create {""Symbol"":""BTCUSDT"",""Amount"":1000,""Volatility"":0.002,""Interval"":""4h"",""AccountType"":""Future"",""StrategyType"":""CloseSell""}`
+`/strategy create {""Symbol"":""BTCUSDT"",""Amount"":1000,""Volatility"":0.002,""Interval"":""4h"",""AccountType"":""Future"",""StrategyType"":""CloseSell"",""StopLossExpression"":""close >= 100000""}`
 
 4\. WebSocket合约做多策略 \(CloseBuy\)
-`/strategy create {""Symbol"":""BTCUSDT"",""Amount"":1000,""Volatility"":0.002,""Interval"":""4h"",""AccountType"":""Future"",""StrategyType"":""CloseBuy""}`
+`/strategy create {""Symbol"":""BTCUSDT"",""Amount"":1000,""Volatility"":0.002,""Interval"":""4h"",""AccountType"":""Future"",""StrategyType"":""CloseBuy"",""StopLossExpression"":""close <= 60000""}`
 
 删除策略:
 `/strategy delete <Id>`

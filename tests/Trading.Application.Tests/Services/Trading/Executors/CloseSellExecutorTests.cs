@@ -3,6 +3,7 @@ using Binance.Net.Interfaces;
 using Binance.Net.Objects.Models.Spot;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Trading.Application.JavaScript;
 using Trading.Application.Services.Alerts;
 using Trading.Application.Services.Trading.Account;
 using Trading.Application.Services.Trading.Executors;
@@ -19,6 +20,7 @@ public class CloseSellExecutorTests
     private readonly Mock<IStrategyRepository> _mockStrategyRepository;
     private readonly Mock<IAccountProcessorFactory> _mockAccountProcessorFactory;
     private readonly Mock<IAccountProcessor> _mockAccountProcessor;
+    private readonly Mock<JavaScriptEvaluator> _mockJavaScriptEvaluator;
     private readonly CloseSellExecutor _executor;
     private readonly CancellationToken _ct;
 
@@ -28,10 +30,12 @@ public class CloseSellExecutorTests
         _mockStrategyRepository = new Mock<IStrategyRepository>();
         _mockAccountProcessorFactory = new Mock<IAccountProcessorFactory>();
         _mockAccountProcessor = new Mock<IAccountProcessor>();
+        _mockJavaScriptEvaluator = new Mock<JavaScriptEvaluator>(Mock.Of<ILogger<JavaScriptEvaluator>>());
         _executor = new CloseSellExecutor(
             _mockLogger.Object,
             _mockAccountProcessorFactory.Object,
-            _mockStrategyRepository.Object
+            _mockStrategyRepository.Object,
+            _mockJavaScriptEvaluator.Object
         );
         _ct = CancellationToken.None;
     }
@@ -49,9 +53,7 @@ public class CloseSellExecutorTests
             k.LowPrice == 39000m);
         var notification = new KlineClosedEvent(symbol, interval, kline);
 
-        _mockStrategyRepository.Setup(x => x.Find(
-            It.IsAny<string>(),
-            It.IsAny<string>(),
+        _mockStrategyRepository.Setup(x => x.FindActiveStrategyByType(
             It.IsAny<StrategyType>(),
             It.IsAny<CancellationToken>()
         )).ReturnsAsync(new List<Strategy>());
@@ -83,12 +85,11 @@ public class CloseSellExecutorTests
 
         var strategy = new Strategy
         {
-            AccountType = AccountType.Spot
+            AccountType = AccountType.Spot,
+            StrategyType = StrategyType.CloseSell,
         };
 
-        _mockStrategyRepository.Setup(x => x.Find(
-            It.IsAny<string>(),
-            It.IsAny<string>(),
+        _mockStrategyRepository.Setup(x => x.FindActiveStrategyByType(
             It.IsAny<StrategyType>(),
             It.IsAny<CancellationToken>()
         )).ReturnsAsync(new List<Strategy> { strategy });
@@ -125,12 +126,12 @@ public class CloseSellExecutorTests
             Volatility = 0.01m,
             Amount = 1000,
             HasOpenOrder = false,
-            AccountType = AccountType.Future
+            AccountType = AccountType.Future,
+            StrategyType = StrategyType.CloseSell,
+            Interval = "1d"
         };
 
-        _mockStrategyRepository.Setup(x => x.Find(
-            It.IsAny<string>(),
-            It.IsAny<string>(),
+        _mockStrategyRepository.Setup(x => x.FindActiveStrategyByType(
             It.IsAny<StrategyType>(),
             It.IsAny<CancellationToken>()
         )).ReturnsAsync(new List<Strategy> { strategy });
@@ -141,6 +142,7 @@ public class CloseSellExecutorTests
         SetupSuccessfulSymbolFilterResponse();
 
         // Act
+        await _executor.LoadActiveStratey(StrategyType.CloseSell, CancellationToken.None);
         await _executor.Handle(notification, _ct);
 
         // Assert
@@ -170,12 +172,11 @@ public class CloseSellExecutorTests
         var strategy = new Strategy
         {
             Id = "test-id",
-            AccountType = AccountType.Future
+            AccountType = AccountType.Future,
+            StrategyType = StrategyType.CloseSell,
         };
 
-        _mockStrategyRepository.Setup(x => x.Find(
-            It.IsAny<string>(),
-            It.IsAny<string>(),
+        _mockStrategyRepository.Setup(x => x.FindActiveStrategyByType(
             It.IsAny<StrategyType>(),
             It.IsAny<CancellationToken>()
         )).ReturnsAsync(new List<Strategy> { strategy });
@@ -215,12 +216,11 @@ public class CloseSellExecutorTests
         {
             Id = "test-id",
             HasOpenOrder = true,
-            AccountType = AccountType.Future
+            AccountType = AccountType.Future,
+            StrategyType = StrategyType.CloseSell,
         };
 
-        _mockStrategyRepository.Setup(x => x.Find(
-            It.IsAny<string>(),
-            It.IsAny<string>(),
+        _mockStrategyRepository.Setup(x => x.FindActiveStrategyByType(
             It.IsAny<StrategyType>(),
             It.IsAny<CancellationToken>()
         )).ReturnsAsync([strategy]);

@@ -147,7 +147,7 @@ public class StrategyCommandHandler : ICommandHandler
         strategy.Status = Status.Paused;
         strategy.UpdatedAt = DateTime.UtcNow;
         await _strategyRepository.UpdateAsync(id, strategy);
-        await _mediator.Publish(new StrategyPausedEvent(id));
+        await _mediator.Publish(new StrategyPausedEvent(strategy));
         _logger.LogInformation("Strategy {id} paused successfully.", id);
     }
 

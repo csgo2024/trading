@@ -20,5 +20,5 @@ public class Strategy : BaseEntity
 
     public Status Status { get; set; }
     public string? Interval { get; set; }
-
+    public string? StopLossExpression { get; set; }
 }

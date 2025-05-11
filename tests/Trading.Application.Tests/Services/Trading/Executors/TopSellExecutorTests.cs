@@ -5,6 +5,7 @@ using Binance.Net.Objects.Models.Spot;
 using CryptoExchange.Net.Objects;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Trading.Application.JavaScript;
 using Trading.Application.Services.Trading.Account;
 using Trading.Application.Services.Trading.Executors;
 using Trading.Domain.Entities;
@@ -19,6 +20,7 @@ public class TopSellExecutorTests
     private readonly Mock<ILogger<TopSellExecutor>> _mockLogger;
     private readonly Mock<IStrategyRepository> _mockStrategyRepository;
     private readonly Mock<IAccountProcessor> _mockAccountProcessor;
+    private readonly Mock<JavaScriptEvaluator> _mockJavaScriptEvaluator;
     private readonly TopSellExecutor _executor;
 
     public TopSellExecutorTests()
@@ -26,7 +28,8 @@ public class TopSellExecutorTests
         _mockLogger = new Mock<ILogger<TopSellExecutor>>();
         _mockStrategyRepository = new Mock<IStrategyRepository>();
         _mockAccountProcessor = new Mock<IAccountProcessor>();
-        _executor = new TopSellExecutor(_mockLogger.Object, _mockStrategyRepository.Object);
+        _mockJavaScriptEvaluator = new Mock<JavaScriptEvaluator>(Mock.Of<ILogger<JavaScriptEvaluator>>());
+        _executor = new TopSellExecutor(_mockLogger.Object, _mockStrategyRepository.Object, _mockJavaScriptEvaluator.Object);
     }
 
     [Fact]
@@ -42,7 +45,7 @@ public class TopSellExecutorTests
             .ReturnsAsync(true);
 
         // Act
-        await _executor.Execute(_mockAccountProcessor.Object, strategy, CancellationToken.None);
+        await _executor.ExecuteAsync(_mockAccountProcessor.Object, strategy, CancellationToken.None);
 
         // Assert
         Assert.Equal(DateTime.UtcNow.Date, strategy.OrderPlacedTime?.Date);
@@ -60,7 +63,7 @@ public class TopSellExecutorTests
             .ReturnsAsync(true);
 
         // Act
-        await _executor.Execute(_mockAccountProcessor.Object, strategy, CancellationToken.None);
+        await _executor.ExecuteAsync(_mockAccountProcessor.Object, strategy, CancellationToken.None);
 
         // Assert
         _mockLogger.Verify(
@@ -86,7 +89,7 @@ public class TopSellExecutorTests
             .ReturnsAsync(true);
 
         // Act
-        await _executor.Execute(_mockAccountProcessor.Object, strategy, CancellationToken.None);
+        await _executor.ExecuteAsync(_mockAccountProcessor.Object, strategy, CancellationToken.None);
 
         // Assert
         Assert.Equal(DateTime.UtcNow.Date, strategy.OrderPlacedTime?.Date);
@@ -105,7 +108,7 @@ public class TopSellExecutorTests
             .ReturnsAsync(true);
 
         // Act
-        await _executor.Execute(_mockAccountProcessor.Object, strategy, CancellationToken.None);
+        await _executor.ExecuteAsync(_mockAccountProcessor.Object, strategy, CancellationToken.None);
 
         // Assert
         Assert.False(strategy.HasOpenOrder);
@@ -126,7 +129,7 @@ public class TopSellExecutorTests
             .ReturnsAsync(true);
 
         // Act
-        await _executor.Execute(_mockAccountProcessor.Object, strategy, CancellationToken.None);
+        await _executor.ExecuteAsync(_mockAccountProcessor.Object, strategy, CancellationToken.None);
 
         // Assert
         Assert.False(strategy.HasOpenOrder);
@@ -156,7 +159,7 @@ public class TopSellExecutorTests
             .ReturnsAsync(true);
 
         // Act
-        await _executor.Execute(_mockAccountProcessor.Object, strategy, CancellationToken.None);
+        await _executor.ExecuteAsync(_mockAccountProcessor.Object, strategy, CancellationToken.None);
 
         // Assert
         Assert.True(strategy.HasOpenOrder);
@@ -190,7 +193,7 @@ public class TopSellExecutorTests
             .ReturnsAsync(true);
 
         // Act
-        await _executor.Execute(_mockAccountProcessor.Object, strategy, CancellationToken.None);
+        await _executor.ExecuteAsync(_mockAccountProcessor.Object, strategy, CancellationToken.None);
 
         // Assert
         // Verify order cancellation
@@ -223,7 +226,7 @@ public class TopSellExecutorTests
             .ReturnsAsync(true);
 
         // Act
-        await _executor.Execute(_mockAccountProcessor.Object, strategy, CancellationToken.None);
+        await _executor.ExecuteAsync(_mockAccountProcessor.Object, strategy, CancellationToken.None);
 
         // Assert
         // Verify order wasn't cancelled

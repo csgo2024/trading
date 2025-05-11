@@ -4,7 +4,6 @@ using Trading.Application.Services.Common;
 using Trading.Application.Services.Trading.Account;
 using Trading.Application.Services.Trading.Executors;
 using Trading.Common.Enums;
-using Trading.Domain.Entities;
 using Trading.Domain.Events;
 using Trading.Domain.IRepositories;
 
@@ -18,8 +17,6 @@ public class StrategyExecutionService :
 {
     private readonly IAccountProcessorFactory _accountProcessorFactory;
     private readonly IExecutorFactory _executorFactory;
-    private readonly ILogger<StrategyExecutionService> _logger;
-    private readonly IStrategyRepository _strategyRepository;
     private readonly IBackgroundTaskManager _backgroundTaskManager;
 
     public StrategyExecutionService(ILogger<StrategyExecutionService> logger,
@@ -28,96 +25,58 @@ public class StrategyExecutionService :
                                     IBackgroundTaskManager backgroundTaskManager,
                                     IStrategyRepository strategyRepository)
     {
-        _logger = logger;
         _accountProcessorFactory = accountProcessorFactory;
         _executorFactory = executorFactory;
         _backgroundTaskManager = backgroundTaskManager;
-        _strategyRepository = strategyRepository;
     }
 
     public async Task Handle(StrategyCreatedEvent notification, CancellationToken cancellationToken)
     {
-        var strategy = notification.Strategy;
-        await ExecuteAsync(strategy, cancellationToken);
+        await DispatchAsync(cancellationToken);
     }
 
     public async Task Handle(StrategyDeletedEvent notification, CancellationToken cancellationToken)
     {
         var strategy = notification.Strategy;
+        var executor = _executorFactory.GetExecutor(strategy.StrategyType);
         if (strategy.OrderId.HasValue)
         {
             var accountProcessor = _accountProcessorFactory.GetAccountProcessor(strategy.AccountType);
-            var executor = _executorFactory.GetExecutor(strategy.StrategyType);
             await executor!.CancelExistingOrder(accountProcessor!, strategy, cancellationToken);
         }
+        executor!.RemoveFromMonitoringStrategy(strategy);
         await _backgroundTaskManager.StopAsync(TaskCategory.Strategy, strategy.Id);
     }
 
     public async Task Handle(StrategyPausedEvent notification, CancellationToken cancellationToken)
     {
-        await _backgroundTaskManager.StopAsync(TaskCategory.Strategy, notification.Id);
+        var strategy = notification.Strategy;
+        var executor = _executorFactory.GetExecutor(strategy.StrategyType);
+        executor!.RemoveFromMonitoringStrategy(strategy);
+        await _backgroundTaskManager.StopAsync(TaskCategory.Strategy, strategy.Id);
     }
 
     public async Task Handle(StrategyResumedEvent notification, CancellationToken cancellationToken)
     {
-        await ExecuteAsync(notification.Strategy, cancellationToken);
+        await DispatchAsync(cancellationToken);
     }
 
-    public virtual async Task ExecuteAsync(CancellationToken cancellationToken)
+    public virtual async Task DispatchAsync(CancellationToken cancellationToken)
     {
-        try
+        var strategyTypes = Enum.GetValues(typeof(StrategyType)).Cast<StrategyType>();
+        var tasks = strategyTypes.Select(async strategyType =>
         {
-            var strategies = await _strategyRepository.InitializeActiveStrategies();
-            foreach (var strategy in strategies.Values)
+            var executor = _executorFactory.GetExecutor(strategyType);
+            await executor!.LoadActiveStratey(strategyType, cancellationToken);
+            foreach (var strategy in executor!.GetMonitoringStrategy(strategyType))
             {
-                await ExecuteAsync(strategy, cancellationToken);
+                var accountProcessor = _accountProcessorFactory.GetAccountProcessor(strategy.AccountType)!;
+                await _backgroundTaskManager.StartAsync(TaskCategory.Strategy,
+                                                        strategy.Id,
+                                                        async (ct) => await executor.ExecuteLoopAsync(accountProcessor, strategy, ct),
+                                                        cancellationToken);
             }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to initialize strategies");
-        }
-    }
-
-    private async Task ExecuteAsync(Strategy strategy, CancellationToken cancellationToken)
-    {
-        var accountProcessor = _accountProcessorFactory.GetAccountProcessor(strategy.AccountType);
-        var executor = _executorFactory.GetExecutor(strategy.StrategyType);
-
-        if (executor == null || accountProcessor == null)
-        {
-            // _logger.LogError("Failed to get executor or account processor for strategy {StrategyId}", strategy.Id);
-            return;
-        }
-
-        await _backgroundTaskManager.StartAsync(
-            TaskCategory.Strategy,
-            strategy.Id,
-            async (ct) => await ExecuteAsync(executor, accountProcessor, strategy, ct),
-            cancellationToken);
-    }
-
-    private async Task ExecuteAsync(BaseExecutor executor,
-                                    IAccountProcessor accountProcessor,
-                                    Strategy strategy,
-                                    CancellationToken cancellationToken)
-    {
-        while (!cancellationToken.IsCancellationRequested)
-        {
-            try
-            {
-                await executor.Execute(accountProcessor, strategy, cancellationToken);
-                await Task.Delay(TimeSpan.FromMinutes(2), cancellationToken);
-            }
-            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-            {
-                break;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error executing strategy {StrategyId}", strategy.Id);
-                await Task.Delay(TimeSpan.FromSeconds(30), cancellationToken);
-            }
-        }
+        });
+        await Task.WhenAll(tasks);
     }
 }

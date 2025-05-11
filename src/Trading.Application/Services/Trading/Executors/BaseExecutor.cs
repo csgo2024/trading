@@ -1,7 +1,11 @@
+using System.Collections.Concurrent;
 using Binance.Net.Enums;
 using Binance.Net.Objects.Models;
 using CryptoExchange.Net.Objects;
+using MediatR;
 using Microsoft.Extensions.Logging;
+using Trading.Application.JavaScript;
+using Trading.Application.Services.Alerts;
 using Trading.Application.Services.Trading.Account;
 using Trading.Common.Enums;
 using Trading.Common.Helpers;
@@ -10,22 +14,23 @@ using Trading.Domain.IRepositories;
 
 namespace Trading.Application.Services.Trading.Executors;
 
-public abstract class BaseExecutor
+public abstract class BaseExecutor :
+    INotificationHandler<KlineClosedEvent>
 {
     protected readonly ILogger _logger;
     protected readonly IStrategyRepository _strategyRepository;
-    public BaseExecutor(ILogger logger, IStrategyRepository strategyRepository)
+    protected readonly JavaScriptEvaluator _javaScriptEvaluator;
+    private static readonly ConcurrentDictionary<StrategyType, List<Strategy>> _monitoringStrategyDict = [];
+
+    public BaseExecutor(ILogger logger,
+                        IStrategyRepository strategyRepository,
+                        JavaScriptEvaluator javaScriptEvaluator)
     {
         _strategyRepository = strategyRepository;
+        _javaScriptEvaluator = javaScriptEvaluator;
         _logger = logger;
     }
 
-    public virtual async Task Execute(IAccountProcessor accountProcessor, Strategy strategy, CancellationToken ct)
-    {
-        await CheckOrderStatus(accountProcessor, strategy, ct);
-        strategy.UpdatedAt = DateTime.Now;
-        await _strategyRepository.UpdateAsync(strategy.Id, strategy, ct);
-    }
     private static Task<WebCallResult<BinanceOrderBase>> PlaceOrderAsync(IAccountProcessor accountProcessor,
                                                                          Strategy strategy,
                                                                          CancellationToken ct)
@@ -39,8 +44,7 @@ public abstract class BaseExecutor
                                                          TimeInForce.GoodTillCanceled,
                                                          ct);
         }
-        else if (strategy.StrategyType == StrategyType.BottomBuy ||
-                 strategy.StrategyType == StrategyType.CloseBuy)
+        else
         {
             return accountProcessor.PlaceLongOrderAsync(strategy.Symbol,
                                                         strategy.Quantity,
@@ -48,9 +52,97 @@ public abstract class BaseExecutor
                                                         TimeInForce.GoodTillCanceled,
                                                         ct);
         }
+    }
+    private static Task<WebCallResult<BinanceOrderBase>> StopOrderAsync(IAccountProcessor accountProcessor,
+                                                                        Strategy strategy,
+                                                                        decimal price,
+                                                                        CancellationToken ct)
+    {
+        if (strategy.StrategyType == StrategyType.TopSell ||
+            strategy.StrategyType == StrategyType.CloseSell)
+        {
+            return accountProcessor.StopShortOrderAsync(strategy.Symbol,
+                                                        strategy.Quantity,
+                                                        price,
+                                                        ct);
+        }
         else
         {
-            throw new NotSupportedException($"Strategy type {strategy.StrategyType} is not supported.");
+            return accountProcessor.StopLongOrderAsync(strategy.Symbol,
+                                                       strategy.Quantity,
+                                                       price,
+                                                       ct);
+        }
+    }
+    public List<Strategy> GetMonitoringStrategy(StrategyType type)
+    {
+        var result = _monitoringStrategyDict.TryGetValue(type, out var value) ? value : [];
+        return result ?? [];
+    }
+    public void RemoveFromMonitoringStrategy(Strategy strategy)
+    {
+        if (_monitoringStrategyDict.TryGetValue(strategy.StrategyType, out var strategies) && strategies?.Count > 0)
+        {
+            strategies.RemoveAll(x => x.Id == strategy.Id);
+            _logger.LogInformation("[{AccountType}-{Symbol}-{StrategyType}] Removed strategy from monitoring list.",
+                                   strategy.AccountType,
+                                   strategy.Symbol,
+                                   strategy.StrategyType);
+            if (strategies.Count == 0)
+            {
+                _monitoringStrategyDict.TryRemove(strategy.StrategyType, out _);
+            }
+        }
+    }
+
+    public async Task LoadActiveStratey(StrategyType strategyType, CancellationToken cancellationToken)
+    {
+        var strategies = await _strategyRepository.FindActiveStrategyByType(strategyType, cancellationToken);
+        _monitoringStrategyDict.TryRemove(strategyType, out _);
+        _monitoringStrategyDict.TryAdd(strategyType, strategies);
+    }
+
+    public virtual bool ShouldStopLoss(IAccountProcessor accountProcessor,
+                                       Strategy strategy,
+                                       KlineClosedEvent @event)
+    {
+        if (string.IsNullOrEmpty(strategy.StopLossExpression))
+        {
+            return false;
+        }
+        return _javaScriptEvaluator.EvaluateExpression(strategy.StopLossExpression,
+                                                       @event.Kline.OpenPrice,
+                                                       @event.Kline.ClosePrice,
+                                                       @event.Kline.HighPrice,
+                                                       @event.Kline.LowPrice);
+    }
+    public virtual async Task ExecuteAsync(IAccountProcessor accountProcessor, Strategy strategy, CancellationToken ct)
+    {
+        await CheckOrderStatus(accountProcessor, strategy, ct);
+        strategy.UpdatedAt = DateTime.Now;
+        await _strategyRepository.UpdateAsync(strategy.Id, strategy, ct);
+    }
+
+    public virtual async Task ExecuteLoopAsync(IAccountProcessor accountProcessor,
+                                              Strategy strategy,
+                                              CancellationToken cancellationToken)
+    {
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            try
+            {
+                await ExecuteAsync(accountProcessor, strategy, cancellationToken);
+                await Task.Delay(TimeSpan.FromMinutes(2), cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                break;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error executing strategy {StrategyId}", strategy.Id);
+                await Task.Delay(TimeSpan.FromSeconds(30), cancellationToken);
+            }
         }
     }
 
@@ -79,6 +171,82 @@ public abstract class BaseExecutor
                              strategy.Symbol,
                              cancelResult.Error?.Message);
         }
+    }
+    public async Task TryStopOrderAsync(IAccountProcessor accountProcessor,
+                                        Strategy strategy,
+                                        decimal stopPrice,
+                                        CancellationToken ct)
+    {
+        if (strategy.OrderId is not null)
+        {
+            return;
+        }
+        var maxRetries = 3;
+        var currentRetry = 0;
+        var errorMessage = string.Empty;
+
+        while (currentRetry < maxRetries)
+        {
+            try
+            {
+                var orderResult = await StopOrderAsync(accountProcessor, strategy, stopPrice, ct);
+
+                if (orderResult.Success)
+                {
+                    _logger.LogInformationWithAlert("[{AccountType}-{Symbol}-{StrateType}] Triggering stop loss at price {Price}",
+                                                    strategy.AccountType,
+                                                    strategy.Symbol,
+                                                    strategy.StrategyType,
+                                                    stopPrice);
+                    strategy.Status = Status.Paused;
+                    strategy.OrderId = null;
+                    strategy.OrderPlacedTime = null;
+                    strategy.HasOpenOrder = false;
+                    return;
+                }
+                errorMessage = orderResult.Error?.Message ?? "Unknown error";
+
+                currentRetry++;
+                if (currentRetry < maxRetries)
+                {
+                    var delay = TimeSpan.FromSeconds(Math.Pow(2, currentRetry));
+                    _logger.LogWarning("[{StrategyType}-{AccountType}-{Symbol}] Attempt {RetryCount} of {MaxRetries} failed. Retrying in {Delay} seconds. Error: {Error}",
+                                       strategy.StrategyType,
+                                       strategy.AccountType,
+                                       strategy.Symbol,
+                                       currentRetry,
+                                       maxRetries,
+                                       delay.TotalSeconds,
+                                       orderResult.Error?.Message);
+                    await Task.Delay(delay, ct);
+                }
+            }
+            catch (Exception ex)
+            {
+                currentRetry++;
+                if (currentRetry < maxRetries)
+                {
+                    var delay = TimeSpan.FromSeconds(Math.Pow(2, currentRetry));
+                    _logger.LogWarning("[{StrategyType}-{AccountType}-{Symbol}] Attempt {RetryCount} of {MaxRetries} failed with exception. Retrying in {Delay} seconds. Error: {Error}",
+                                       strategy.StrategyType,
+                                       strategy.AccountType,
+                                       strategy.Symbol,
+                                       currentRetry,
+                                       maxRetries,
+                                       delay.TotalSeconds,
+                                       ex.Message);
+                    await Task.Delay(delay, ct);
+                }
+            }
+        }
+
+        _logger.LogErrorWithAlert("""
+        [{StrategyType}-{AccountType}-{Symbol}] Failed to stop order after {MaxRetries} attempts.
+        StrategyId: {StrategyId}
+        Error: {ErrorMessage}
+        TargetPrice:{Price}, Quantity: {Quantity}.
+        """, strategy.StrategyType, strategy.AccountType, strategy.Symbol, maxRetries, strategy.Id,
+            errorMessage, stopPrice, strategy.Quantity);
     }
 
     public virtual async Task CheckOrderStatus(IAccountProcessor accountProcessor, Strategy strategy, CancellationToken ct)
@@ -160,6 +328,7 @@ public abstract class BaseExecutor
                     strategy.OrderId = orderResult.Data.Id;
                     strategy.HasOpenOrder = true;
                     strategy.OrderPlacedTime = DateTime.UtcNow;
+                    strategy.UpdatedAt = DateTime.UtcNow;
                     return;
                 }
                 errorMessage = orderResult.Error?.Message ?? "Unknown error";
@@ -207,4 +376,5 @@ public abstract class BaseExecutor
             errorMessage, price, quantity);
     }
 
+    public abstract Task Handle(KlineClosedEvent notification, CancellationToken cancellationToken);
 }

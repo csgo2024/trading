@@ -4,6 +4,8 @@ using Binance.Net.Objects.Models.Spot;
 using CryptoExchange.Net.Objects;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Trading.Application.JavaScript;
+using Trading.Application.Services.Alerts;
 using Trading.Application.Services.Trading.Account;
 using Trading.Application.Services.Trading.Executors;
 using Trading.Domain.Entities;
@@ -14,13 +16,21 @@ namespace Trading.Application.Tests.Services.Trading.Executors;
 
 public class TestExecutor : BaseExecutor
 {
-    public TestExecutor(ILogger logger, IStrategyRepository strategyRepository) : base(logger, strategyRepository)
+    public TestExecutor(ILogger logger,
+                        IStrategyRepository strategyRepository,
+                        JavaScriptEvaluator javaScriptEvaluator)
+        : base(logger, strategyRepository, javaScriptEvaluator)
     {
     }
 
-    public override async Task Execute(IAccountProcessor accountProcessor, Strategy strategy, CancellationToken ct)
+    public override async Task ExecuteAsync(IAccountProcessor accountProcessor, Strategy strategy, CancellationToken ct)
     {
-        await base.Execute(accountProcessor, strategy, ct);
+        await base.ExecuteAsync(accountProcessor, strategy, ct);
+    }
+
+    public override Task Handle(KlineClosedEvent notification, CancellationToken cancellationToken)
+    {
+        throw new NotImplementedException();
     }
 }
 
@@ -29,6 +39,7 @@ public class BaseExecutorTests
     private readonly Mock<ILogger<TestExecutor>> _mockLogger;
     private readonly Mock<IAccountProcessor> _mockAccountProcessor;
     private readonly Mock<IStrategyRepository> _mockStrategyRepository;
+    private readonly Mock<JavaScriptEvaluator> _mockJavaScriptEvaluator;
     private readonly TestExecutor _executor;
     private readonly CancellationToken _ct;
 
@@ -37,7 +48,8 @@ public class BaseExecutorTests
         _mockLogger = new Mock<ILogger<TestExecutor>>();
         _mockAccountProcessor = new Mock<IAccountProcessor>();
         _mockStrategyRepository = new Mock<IStrategyRepository>();
-        _executor = new TestExecutor(_mockLogger.Object, _mockStrategyRepository.Object);
+        _mockJavaScriptEvaluator = new Mock<JavaScriptEvaluator>(Mock.Of<ILogger<JavaScriptEvaluator>>());
+        _executor = new TestExecutor(_mockLogger.Object, _mockStrategyRepository.Object, _mockJavaScriptEvaluator.Object);
         _ct = CancellationToken.None;
     }
     [Fact]
@@ -56,7 +68,7 @@ public class BaseExecutorTests
             .ReturnsAsync(true);
 
         // Act
-        await _executor.Execute(_mockAccountProcessor.Object, strategy, CancellationToken.None);
+        await _executor.ExecuteAsync(_mockAccountProcessor.Object, strategy, CancellationToken.None);
 
         // Assert
         Assert.True(strategy.HasOpenOrder); // True since order status is new.
