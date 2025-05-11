@@ -9,7 +9,7 @@ using Trading.Domain.IRepositories;
 
 namespace Trading.Application.Services.Trading;
 
-public class StrategyExecutionService :
+public class StrategyDispatchService :
     INotificationHandler<StrategyCreatedEvent>,
     INotificationHandler<StrategyDeletedEvent>,
     INotificationHandler<StrategyPausedEvent>,
@@ -19,7 +19,7 @@ public class StrategyExecutionService :
     private readonly IExecutorFactory _executorFactory;
     private readonly IBackgroundTaskManager _backgroundTaskManager;
 
-    public StrategyExecutionService(ILogger<StrategyExecutionService> logger,
+    public StrategyDispatchService(ILogger<StrategyDispatchService> logger,
                                     IAccountProcessorFactory accountProcessorFactory,
                                     IExecutorFactory executorFactory,
                                     IBackgroundTaskManager backgroundTaskManager,

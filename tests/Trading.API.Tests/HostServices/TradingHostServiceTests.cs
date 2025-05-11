@@ -12,15 +12,15 @@ namespace Trading.API.Tests.HostServices;
 public class TradingHostServiceTests : IDisposable
 {
     private readonly Mock<ILogger<TradingHostService>> _loggerMock;
-    private readonly Mock<StrategyExecutionService> _strategyExecutionServiceMock;
+    private readonly Mock<StrategyDispatchService> _strategyDispatchServiceMock;
     private readonly CancellationTokenSource _cts;
     private readonly TestTradingHostService _service;
 
     public TradingHostServiceTests()
     {
         _loggerMock = new Mock<ILogger<TradingHostService>>();
-        _strategyExecutionServiceMock = new Mock<StrategyExecutionService>(
-            Mock.Of<ILogger<StrategyExecutionService>>(),
+        _strategyDispatchServiceMock = new Mock<StrategyDispatchService>(
+            Mock.Of<ILogger<StrategyDispatchService>>(),
             Mock.Of<IAccountProcessorFactory>(),
             Mock.Of<IExecutorFactory>(),
             Mock.Of<IBackgroundTaskManager>(),
@@ -29,7 +29,7 @@ public class TradingHostServiceTests : IDisposable
 
         _service = new TestTradingHostService(
             _loggerMock.Object,
-            _strategyExecutionServiceMock.Object);
+            _strategyDispatchServiceMock.Object);
     }
 
     private sealed class TestTradingHostService : TradingHostService
@@ -38,8 +38,8 @@ public class TradingHostServiceTests : IDisposable
 
         public TestTradingHostService(
             ILogger<TradingHostService> logger,
-            StrategyExecutionService strategyExecutionService)
-            : base(logger, strategyExecutionService)
+            StrategyDispatchService strategyDispatchService)
+            : base(logger, strategyDispatchService)
         {
         }
 
@@ -59,7 +59,7 @@ public class TradingHostServiceTests : IDisposable
     public async Task ExecuteAsync_ShouldExecuteStrategyService()
     {
         // Arrange
-        _strategyExecutionServiceMock
+        _strategyDispatchServiceMock
             .Setup(x => x.DispatchAsync(It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
@@ -74,7 +74,7 @@ public class TradingHostServiceTests : IDisposable
         }
 
         // Assert
-        _strategyExecutionServiceMock.Verify(
+        _strategyDispatchServiceMock.Verify(
             x => x.DispatchAsync(It.IsAny<CancellationToken>()),
             Times.AtLeast(1));
     }
@@ -84,7 +84,7 @@ public class TradingHostServiceTests : IDisposable
     {
         // Arrange
         var expectedException = new InvalidOperationException("Test exception");
-        _strategyExecutionServiceMock
+        _strategyDispatchServiceMock
             .Setup(x => x.DispatchAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(expectedException);
 
@@ -107,7 +107,7 @@ public class TradingHostServiceTests : IDisposable
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Exactly(2));
 
-        _strategyExecutionServiceMock.Verify(
+        _strategyDispatchServiceMock.Verify(
             x => x.DispatchAsync(It.IsAny<CancellationToken>()),
             Times.Exactly(2));
     }
@@ -129,7 +129,7 @@ public class TradingHostServiceTests : IDisposable
         }
 
         // Assert
-        _strategyExecutionServiceMock.Verify(
+        _strategyDispatchServiceMock.Verify(
             x => x.DispatchAsync(It.IsAny<CancellationToken>()),
             Times.AtMost(2));
     }

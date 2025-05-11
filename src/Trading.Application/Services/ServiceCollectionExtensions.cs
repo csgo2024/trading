@@ -25,7 +25,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IKlineStreamManager, KlineStreamManager>();
         services.AddSingleton<JavaScriptEvaluator>();
         services.AddSingleton<SpotProcessor>();
-        services.AddSingleton<StrategyExecutionService>();
+        services.AddSingleton<StrategyDispatchService>();
         return services;
     }
 

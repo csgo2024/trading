@@ -5,13 +5,13 @@ namespace Trading.API.HostServices;
 public class TradingHostService : BackgroundService
 {
     private readonly ILogger<TradingHostService> _logger;
-    private readonly StrategyExecutionService _strategyExecutionService;
+    private readonly StrategyDispatchService _strategyDispatchService;
 
     public TradingHostService(ILogger<TradingHostService> logger,
-                              StrategyExecutionService strategyExecutionService)
+                              StrategyDispatchService strategyDispatchService)
     {
         _logger = logger;
-        _strategyExecutionService = strategyExecutionService;
+        _strategyDispatchService = strategyDispatchService;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -20,7 +20,7 @@ public class TradingHostService : BackgroundService
         {
             try
             {
-                await _strategyExecutionService.DispatchAsync(stoppingToken);
+                await _strategyDispatchService.DispatchAsync(stoppingToken);
             }
             catch (Exception ex)
             {

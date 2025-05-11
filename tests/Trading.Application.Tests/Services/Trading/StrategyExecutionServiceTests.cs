@@ -17,9 +17,9 @@ using StrategyType = Trading.Common.Enums.StrategyType;
 
 namespace Trading.Application.Tests.Services.Trading;
 
-public class StrategyExecutionServiceTests
+public class StrategyDispatchServiceTests
 {
-    private readonly Mock<ILogger<StrategyExecutionService>> _loggerMock;
+    private readonly Mock<ILogger<StrategyDispatchService>> _loggerMock;
     private readonly Mock<IAccountProcessorFactory> _accountProcessorFactoryMock;
     private readonly Mock<IExecutorFactory> _executorFactoryMock;
     private readonly Mock<IBackgroundTaskManager> _backgroundTaskManagerMock;
@@ -27,12 +27,12 @@ public class StrategyExecutionServiceTests
     private readonly Mock<IAccountProcessor> _accountProcessorMock;
     private readonly Mock<BaseExecutor> _executorMock;
     private readonly Mock<JavaScriptEvaluator> _mockJavaScriptEvaluator;
-    private readonly StrategyExecutionService _service;
+    private readonly StrategyDispatchService _service;
     private readonly CancellationTokenSource _cts;
 
-    public StrategyExecutionServiceTests()
+    public StrategyDispatchServiceTests()
     {
-        _loggerMock = new Mock<ILogger<StrategyExecutionService>>();
+        _loggerMock = new Mock<ILogger<StrategyDispatchService>>();
         _accountProcessorFactoryMock = new Mock<IAccountProcessorFactory>();
         _executorFactoryMock = new Mock<IExecutorFactory>();
         _backgroundTaskManagerMock = new Mock<IBackgroundTaskManager>();
@@ -42,7 +42,7 @@ public class StrategyExecutionServiceTests
         _executorMock = new Mock<BaseExecutor>(_loggerMock.Object, _strategyRepositoryMock.Object, _mockJavaScriptEvaluator.Object);
         _cts = new CancellationTokenSource();
 
-        _service = new StrategyExecutionService(
+        _service = new StrategyDispatchService(
             _loggerMock.Object,
             _accountProcessorFactoryMock.Object,
             _executorFactoryMock.Object,
