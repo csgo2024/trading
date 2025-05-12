@@ -16,76 +16,85 @@ public interface IBackgroundTaskManager : IAsyncDisposable
 public class BackgroundTaskManager : IBackgroundTaskManager
 {
     private readonly ILogger<BackgroundTaskManager> _logger;
-    private readonly ConcurrentDictionary<(TaskCategory category, string taskId), (CancellationTokenSource cts, Task task)> _monitoringTasks = new();
+    private readonly SemaphoreSlim _taskLock = new(1, 1);
+    private static readonly ConcurrentDictionary<(TaskCategory category, string taskId), (CancellationTokenSource cts, Task task)> _monitoringTasks = new();
 
     public BackgroundTaskManager(ILogger<BackgroundTaskManager> logger)
     {
         _logger = logger;
-        _logger.LogInformation("[BackgroundTaskManager]HashCode: {HashCode}", GetHashCode());
     }
 
-    public Task StartAsync(TaskCategory category, string taskId, Func<CancellationToken, Task> executionFunc, CancellationToken cancellationToken)
+    public async Task StartAsync(TaskCategory category, string taskId, Func<CancellationToken, Task> executionFunc, CancellationToken cancellationToken)
     {
         var key = (category, taskId);
-        _monitoringTasks.GetOrAdd(key, key =>
+        await _taskLock.WaitAsync(cancellationToken);
+        try
         {
+            if (_monitoringTasks.ContainsKey(key))
+            {
+                return;
+            }
+
             var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             var task = Task.Run(() => executionFunc(cts.Token), cts.Token);
+            _monitoringTasks.TryAdd(key, (cts, task));
             _logger.LogInformation("Task started: Category={Category}, TaskId={TaskId}", category, taskId);
-            return (cts, task);
-        });
-        return Task.CompletedTask;
-    }
-
-    public virtual async Task StopAsync(TaskCategory category, string taskId)
-    {
-        var key = (category, taskId);
-        if (_monitoringTasks.TryRemove(key, out var taskInfo))
+        }
+        catch (Exception ex)
         {
-            try
-            {
-                await taskInfo.cts.CancelAsync();
-                await taskInfo.task;
-                _logger.LogInformation("Task stopped: Category={Category}, TaskId={TaskId}", category, taskId);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error stopping task: Category={Category}, TaskId={TaskId}", category, taskId);
-            }
-            finally
-            {
-                taskInfo.cts.Dispose();
-            }
-
+            _logger.LogError(ex, "Error starting stopping task: Category={Category}, TaskId={TaskId}", category, taskId);
+        }
+        finally
+        {
+            _taskLock.Release();
         }
     }
 
-    public virtual async Task StopAsync(TaskCategory category)
+    public async Task StopAsync(TaskCategory category, string taskId)
     {
-        var tasksToRemove = _monitoringTasks.Where(kvp => kvp.Key.category == category).ToList();
-        var tasks = tasksToRemove.Select(async task =>
+        await _taskLock.WaitAsync();
+        try
         {
-            if (_monitoringTasks.TryRemove(task.Key, out var taskInfo))
+            var key = (category, taskId);
+            if (_monitoringTasks.TryRemove(key, out var taskInfo))
             {
-                try
+                await taskInfo.cts.CancelAsync();
+                await taskInfo.task;
+                taskInfo.cts.Dispose();
+                _logger.LogInformation("Task stopped: Category={Category}, TaskId={TaskId}", category, taskId);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error stopping task: Category={Category}, TaskId={TaskId}", category, taskId);
+        }
+        finally
+        {
+            _taskLock.Release();
+        }
+    }
+
+    public async Task StopAsync(TaskCategory category)
+    {
+        await _taskLock.WaitAsync();
+        try
+        {
+            var tasksToRemove = _monitoringTasks.Where(kvp => kvp.Key.category == category).ToList();
+            foreach (var task in tasksToRemove)
+            {
+                if (_monitoringTasks.TryRemove(task.Key, out var taskInfo))
                 {
                     await taskInfo.cts.CancelAsync();
                     await taskInfo.task;
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error stopping task: Category={Category}, TaskId={TaskId}", task.Key.category, task.Key.taskId);
-                }
-                finally
-                {
                     taskInfo.cts.Dispose();
                 }
             }
-        });
-
-        await Task.WhenAll(tasks);
-
-        _logger.LogInformation("All tasks stopped for category: {Category}", category);
+            _logger.LogInformation("All tasks stopped for category: {Category}", category);
+        }
+        finally
+        {
+            _taskLock.Release();
+        }
     }
 
     public string[] GetActiveTaskIds(TaskCategory category) =>
@@ -94,34 +103,30 @@ public class BackgroundTaskManager : IBackgroundTaskManager
             .Select(k => k.taskId)
             .ToArray();
 
-    public virtual async Task StopAsync()
+    public async Task StopAsync()
     {
-        var tasks = _monitoringTasks.Select(async kvp =>
+        await _taskLock.WaitAsync();
+        try
         {
-            var (_, taskInfo) = kvp;
-            try
+            foreach (var (_, taskInfo) in _monitoringTasks)
             {
                 await taskInfo.cts.CancelAsync();
                 await taskInfo.task;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error stopping task");
-            }
-            finally
-            {
                 taskInfo.cts.Dispose();
             }
-        });
-
-        await Task.WhenAll(tasks);
-        _monitoringTasks.Clear();
-
-        _logger.LogInformation("All tasks stopped across all categories");
+            _monitoringTasks.Clear();
+            _logger.LogInformation("All tasks stopped across all categories");
+        }
+        finally
+        {
+            _taskLock.Release();
+        }
     }
 
     public async ValueTask DisposeAsync()
     {
         await StopAsync();
+        _taskLock.Dispose();
     }
 }
+
