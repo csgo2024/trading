@@ -56,11 +56,11 @@ public class AlertNotificationService :
         var key = $"{notification.Symbol}-{notification.Interval}";
         _lastkLines.AddOrUpdate(key, kline, (_, _) => kline);
         _logger.LogDebug("LastkLines: {@LastKlines} after klineUpdate.", _lastkLines);
-        // reset paused alerts to running if the kline is closed
 
+        // reset paused alerts to running if the kline is closed
         var idsToUpdate = await _alertRepository.ResumeAlertAsync(notification.Symbol,
-                                                BinanceHelper.ConvertToIntervalString(notification.Interval),
-                                                cancellationToken);
+                                                                  BinanceHelper.ConvertToIntervalString(notification.Interval),
+                                                                  cancellationToken);
         if (idsToUpdate.Count > 0)
         {
             var alerts = await _alertRepository.GetActiveAlertsAsync(cancellationToken);
@@ -117,11 +117,14 @@ public class AlertNotificationService :
         {
             foreach (var alert in alerts)
             {
-                _activeAlerts.AddOrUpdate(alert.Id, alert, (_, _) => alert);
-                await _backgroundTaskManager.StartAsync(TaskCategory.Alert,
-                                                        alert.Id,
-                                                        ct => ProcessAlert(alert, ct),
-                                                        cancellationToken);
+                if (!_activeAlerts.ContainsKey(alert.Id))
+                {
+                    _activeAlerts.AddOrUpdate(alert.Id, alert, (_, _) => alert);
+                    await _backgroundTaskManager.StartAsync(TaskCategory.Alert,
+                                                            alert.Id,
+                                                            ct => ProcessAlert(alert, ct),
+                                                            cancellationToken);
+                }
             }
         }
         catch (Exception ex)
@@ -163,7 +166,7 @@ public class AlertNotificationService :
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
-                break;
+                return;
             }
             catch (Exception ex)
             {
@@ -204,7 +207,6 @@ public class AlertNotificationService :
             _logger.LogDebug(text);
             alert.LastNotification = DateTime.UtcNow;
             alert.UpdatedAt = DateTime.UtcNow;
-            await _alertRepository.UpdateAsync(alert.Id, alert);
         }
         catch (Exception ex)
         {

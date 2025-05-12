@@ -21,8 +21,7 @@ public class StrategyStateManager : IStrategyStateManager
     public StrategyStateManager(ILogger<StrategyStateManager> logger)
     {
         _logger = logger;
-        _logger.LogInformation("HashCode: {HashCode}", GetHashCode());
-        _logger.LogInformation("ThreadName: {ThreadName}", Thread.CurrentThread.Name);
+        _logger.LogInformation("[StrategyStateManager]HashCode: {HashCode}", GetHashCode());
     }
     public void SetState(StrategyType strategyType, Dictionary<string, Strategy> state)
     {
