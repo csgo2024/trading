@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using Trading.Common.Helpers;
-using Trading.Common.Models;
 using Trading.Domain.IRepositories;
 using Trading.Exchange.Abstraction;
 using Trading.Exchange.Abstraction.Contracts;
@@ -25,9 +24,9 @@ public class ApiCredentialProvider : IApiCredentialProvider
         _configuration = configuration;
     }
 
-    public BinanceSettings GetBinanceSettingsV1()
+    public CredentialSettingV1 GetCredentialSettingsV1()
     {
-        var result = new BinanceSettings();
+        var result = new CredentialSettingV1();
         var privateKey = _configuration.GetSection("PrivateKey")?.Value ?? string.Empty;
         var settings = _credentialSettingRepository.GetEncryptedRawSetting();
         if (settings == null)
@@ -43,12 +42,12 @@ public class ApiCredentialProvider : IApiCredentialProvider
         result.ApiSecret = apiSecret;
         return result;
     }
-    public BinanceSettings GetBinanceSettingsV2()
+    public CredentialSettingV1 GetCredentialSettingsV2()
     {
         var (apiKey, apiSecret) = RsaEncryptionHelper.DecryptApiCredentialFromBase64(_credentialSetting.Value.ApiKey,
                                                                                      _credentialSetting.Value.ApiSecret,
                                                                                      _credentialSetting.Value.PrivateKey);
-        return new BinanceSettings
+        return new CredentialSettingV1
         {
             ApiKey = apiKey,
             ApiSecret = apiSecret

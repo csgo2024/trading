@@ -2,7 +2,6 @@ using Binance.Net.Clients;
 using CryptoExchange.Net.Authentication;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Trading.Common.Models;
 using Trading.Exchange.Abstraction;
 using Trading.Exchange.Abstraction.Contracts;
 using Trading.Exchange.Binance.Wrappers.Clients;
@@ -16,12 +15,12 @@ public static class ServiceCollectionExtensions
         services.AddSingleton(provider =>
         {
             var credentialProvider = provider.GetRequiredService<IApiCredentialProvider>();
-            var settings = credentialProvider.GetBinanceSettingsV1();
+            var settings = credentialProvider.GetCredentialSettingsV1();
             return settings;
         });
         services.AddSingleton(provider =>
         {
-            var settings = provider.GetRequiredService<BinanceSettings>();
+            var settings = provider.GetRequiredService<CredentialSettingV1>();
             var restClient = new BinanceRestClient(options =>
             {
                 options.ApiCredentials = new ApiCredentials(settings.ApiKey, settings.ApiSecret);
@@ -31,7 +30,7 @@ public static class ServiceCollectionExtensions
 
         services.AddSingleton(provider =>
         {
-            var settings = provider.GetRequiredService<BinanceSettings>();
+            var settings = provider.GetRequiredService<CredentialSettingV1>();
             var restClient = new BinanceSocketClient(options =>
             {
                 options.ApiCredentials = new ApiCredentials(settings.ApiKey, settings.ApiSecret);

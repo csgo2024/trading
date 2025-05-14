@@ -53,7 +53,7 @@ public class ApiCredentialProviderTests
         _repositoryMock.Setup(x => x.GetEncryptedRawSetting()).Returns(settings);
 
         // Act
-        var result = _provider.GetBinanceSettingsV1();
+        var result = _provider.GetCredentialSettingsV1();
 
         // Assert
         Assert.Equal(TestApiKey, result.ApiKey);
@@ -68,7 +68,7 @@ public class ApiCredentialProviderTests
         _repositoryMock.Setup(x => x.GetEncryptedRawSetting()).Returns(null as CredentialSetting);
 
         // Act
-        var result = _provider.GetBinanceSettingsV1();
+        var result = _provider.GetCredentialSettingsV1();
 
         // Assert
         Assert.NotNull(result);
@@ -90,7 +90,7 @@ public class ApiCredentialProviderTests
         });
 
         // Act
-        var result = _provider.GetBinanceSettingsV2();
+        var result = _provider.GetCredentialSettingsV2();
 
         // Assert
         Assert.Equal(TestApiKey, result.ApiKey);
