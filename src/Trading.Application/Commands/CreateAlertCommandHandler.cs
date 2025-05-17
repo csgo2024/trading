@@ -2,15 +2,17 @@ using System.ComponentModel.DataAnnotations;
 using System.Text.RegularExpressions;
 using MediatR;
 using Trading.Application.JavaScript;
-using Trading.Common.Enums;
 using Trading.Domain.Entities;
 using Trading.Domain.IRepositories;
 using Trading.Exchange.Binance.Helpers;
 
 namespace Trading.Application.Commands;
 
-public class CreateAlertCommandHandler : IRequestHandler<CreateAlertCommand, Alert>
+public partial class CreateAlertCommandHandler : IRequestHandler<CreateAlertCommand, Alert>
 {
+    [GeneratedRegex(@"\s+", RegexOptions.Compiled)]
+    private static partial Regex WhitespaceRegex();
+
     private readonly IAlertRepository _alertRepository;
     private readonly JavaScriptEvaluator _javaScriptEvaluator;
 
@@ -39,15 +41,11 @@ public class CreateAlertCommandHandler : IRequestHandler<CreateAlertCommand, Ale
         {
             throw new ValidationException($"Invalid expression: {message}");
         }
-        var alert = new Alert
-        {
-            Symbol = request.Symbol.ToUpper(),
-            Interval = request.Interval,
-            Expression = Regex.Replace(request.Expression, @"\s+", ""),
-            Status = Status.Running,
-            LastNotification = DateTime.UtcNow,
-        };
-        alert.Add();
+        var alert = new Alert(
+            request.Symbol.ToUpper(),
+            request.Interval,
+            WhitespaceRegex().Replace(request.Expression, "")
+        );
         await _alertRepository.AddAsync(alert, cancellationToken);
         return alert;
     }

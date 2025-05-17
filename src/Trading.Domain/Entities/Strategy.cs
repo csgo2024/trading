@@ -22,9 +22,30 @@ public class Strategy : BaseEntity
     public Status Status { get; set; }
     public string? Interval { get; set; }
     public string? StopLossExpression { get; set; }
-
-    public void Add()
+    public Strategy()
     {
+    }
+
+    public Strategy(
+        string symbol,
+        int amount,
+        decimal volatility,
+        int? leverage,
+        AccountType accountType,
+        string? interval,
+        StrategyType strategyType
+    )
+    {
+        Interval = interval;
+        Symbol = symbol;
+        Amount = amount;
+        Volatility = volatility;
+        Leverage = leverage;
+        AccountType = accountType;
+        StrategyType = strategyType;
+        Volatility = volatility;
+        CreatedAt = DateTime.Now;
+        Status = Status.Running;
         AddDomainEvent(new StrategyCreatedEvent(this));
     }
     public void Pause()

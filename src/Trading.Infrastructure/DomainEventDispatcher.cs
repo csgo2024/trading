@@ -19,7 +19,7 @@ public class DomainEventDispatcher : IDomainEventDispatcher
 
     public async Task DispatchAsync(BaseEntity aggregateRoot)
     {
-        var events = aggregateRoot.DomainEvents.ToList(); // 防止迭代时修改
+        var events = aggregateRoot.DomainEvents.ToList();
         foreach (var domainEvent in events)
         {
             await _mediator.Publish(domainEvent);

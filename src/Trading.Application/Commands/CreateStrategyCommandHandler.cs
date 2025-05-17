@@ -38,19 +38,15 @@ public class CreateStrategyCommandHandler : IRequestHandler<CreateStrategyComman
                 throw new ValidationException("Spot account type is not supported for TopSell or CloseSell strategies.");
             }
         }
-        var entity = new Strategy
-        {
-            CreatedAt = DateTime.Now,
-            Volatility = request.Volatility,
-            AccountType = request.AccountType,
-            Symbol = request.Symbol.ToUpper(),
-            Amount = request.Amount,
-            Leverage = request.Leverage,
-            Status = Status.Running,
-            StrategyType = request.StrategyType,
-            Interval = request.Interval,
-        };
-        entity.Add();
+        var entity = new Strategy(
+            request.Symbol.ToUpper(),
+            request.Amount,
+            request.Volatility,
+            request.Leverage,
+            request.AccountType,
+            request.Interval,
+            request.StrategyType
+        );
         await _strategyRepository.Add(entity, cancellationToken);
         _logger.LogInformation("[{Interval}-{StrategyType}] Strategy created: {StrategyId}",
                                entity.Interval,

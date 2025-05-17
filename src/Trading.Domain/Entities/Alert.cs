@@ -7,12 +7,20 @@ public class Alert : BaseEntity
 {
     public string Symbol { get; set; } = null!;
     public string Interval { set; get; } = "4h";
-    public string Expression { get; set; } = null!; // JavaScript条件代码
+    public string Expression { get; set; } = null!;
     public Status Status { get; set; } = Status.Running;
     public DateTime LastNotification { get; set; } = DateTime.UtcNow;
-
-    public void Add()
+    public Alert()
     {
+
+    }
+    public Alert(string symbol, string interval, string expression)
+    {
+        Symbol = symbol;
+        Interval = interval;
+        Expression = expression;
+        Status = Status.Running;
+        LastNotification = DateTime.UtcNow;
         AddDomainEvent(new AlertCreatedEvent(this));
     }
     public void Pause()
