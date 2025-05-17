@@ -1,7 +1,7 @@
 using Jint;
 using Microsoft.Extensions.Logging;
 
-namespace Trading.Application.JavaScript;
+namespace Trading.Common.JavaScript;
 
 public class JavaScriptEvaluator : IDisposable
 {

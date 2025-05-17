@@ -34,7 +34,7 @@ public class Strategy : BaseEntity
         AccountType accountType,
         string? interval,
         StrategyType strategyType,
-        string stopLossExpression
+        string? stopLossExpression
     )
     {
         Interval = interval;

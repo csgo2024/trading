@@ -1,8 +1,8 @@
 using Microsoft.Extensions.Logging;
-using Trading.Application.JavaScript;
 using Trading.Application.Services.Alerts;
 using Trading.Application.Services.Trading.Account;
 using Trading.Common.Enums;
+using Trading.Common.JavaScript;
 using Trading.Domain.Entities;
 using Trading.Domain.IRepositories;
 

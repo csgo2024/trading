@@ -5,5 +5,9 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
     </PropertyGroup>
+    <ItemGroup>
+      <PackageReference Include="Jint" Version="4.2.2" />
+      <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.5" />
+    </ItemGroup>
 
 </Project>

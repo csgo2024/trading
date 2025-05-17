@@ -1,8 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using Trading.Application.JavaScript;
-using Trading.Common.Enums;
 using Trading.Domain.Entities;
 using Trading.Domain.IRepositories;
 
@@ -12,13 +10,10 @@ public class CreateStrategyCommandHandler : IRequestHandler<CreateStrategyComman
 {
     private readonly IStrategyRepository _strategyRepository;
     private readonly ILogger<CreateStrategyCommandHandler> _logger;
-    private readonly JavaScriptEvaluator _javaScriptEvaluator;
     public CreateStrategyCommandHandler(IStrategyRepository strategyRepository,
-            JavaScriptEvaluator javaScriptEvaluator,
                                         ILogger<CreateStrategyCommandHandler> logger)
     {
         _logger = logger;
-        _javaScriptEvaluator = javaScriptEvaluator;
         _strategyRepository = strategyRepository;
     }
 
@@ -32,19 +27,6 @@ public class CreateStrategyCommandHandler : IRequestHandler<CreateStrategyComman
         {
             var errorMessage = string.Join("; ", validationResults.Select(r => r.ErrorMessage));
             throw new ValidationException(errorMessage);
-        }
-        // Validate stoploss expression
-        if (!string.IsNullOrEmpty(request.StopLossExpression)
-            && !_javaScriptEvaluator.ValidateExpression(request.StopLossExpression, out var message))
-        {
-            throw new ValidationException($"Invalid stoploss expression: {message}");
-        }
-        if (request.AccountType == AccountType.Spot)
-        {
-            if (request.StrategyType == StrategyType.TopSell || request.StrategyType == StrategyType.CloseSell)
-            {
-                throw new ValidationException("Spot account type is not supported for TopSell or CloseSell strategies.");
-            }
         }
         var entity = new Strategy(
             request.Symbol.ToUpper(),

@@ -1,10 +1,10 @@
 using Microsoft.Extensions.DependencyInjection;
-using Trading.Application.JavaScript;
 using Trading.Application.Services.Alerts;
 using Trading.Application.Services.Common;
 using Trading.Application.Services.Trading;
 using Trading.Application.Services.Trading.Account;
 using Trading.Application.Services.Trading.Executors;
+using Trading.Common.JavaScript;
 
 namespace Trading.Application.Services;
 

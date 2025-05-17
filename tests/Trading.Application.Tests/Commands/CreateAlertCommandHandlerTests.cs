@@ -1,8 +1,6 @@
 using System.ComponentModel.DataAnnotations;
-using Microsoft.Extensions.Logging;
 using Moq;
 using Trading.Application.Commands;
-using Trading.Application.JavaScript;
 using Trading.Common.Enums;
 using Trading.Domain.Entities;
 using Trading.Domain.IRepositories;
@@ -12,16 +10,12 @@ namespace Trading.Application.Tests.Commands;
 public class CreateAlertCommandHandlerTests
 {
     private readonly Mock<IAlertRepository> _alertRepositoryMock;
-    private readonly Mock<JavaScriptEvaluator> _jsEvaluatorMock;
     private readonly CreateAlertCommandHandler _handler;
 
     public CreateAlertCommandHandlerTests()
     {
         _alertRepositoryMock = new Mock<IAlertRepository>();
-        _jsEvaluatorMock = new Mock<JavaScriptEvaluator>(Mock.Of<ILogger<JavaScriptEvaluator>>());
-        _handler = new CreateAlertCommandHandler(
-            _alertRepositoryMock.Object,
-            _jsEvaluatorMock.Object);
+        _handler = new CreateAlertCommandHandler(_alertRepositoryMock.Object);
     }
 
     [Fact]
@@ -34,10 +28,6 @@ public class CreateAlertCommandHandlerTests
             Interval = "4h",
             Expression = "close > open"
         };
-
-        _jsEvaluatorMock
-            .Setup(x => x.ValidateExpression(command.Expression, out It.Ref<string>.IsAny))
-            .Returns(true);
 
         Alert? capturedAlert = null;
         _alertRepositoryMock
@@ -69,7 +59,7 @@ public class CreateAlertCommandHandlerTests
     [Theory]
     [InlineData("", "4h", "close > open", "Symbol cannot be empty")]
     [InlineData("BTCUSDT", "", "close > open", "Interval is required.")]
-    [InlineData("BTCUSDT", "4h", "", "Expression cannot be empty")]
+    [InlineData("BTCUSDT", "4h", "", "JavaScript expression cannot be empty.")]
     [InlineData("BTCUSDT", "invalid", "close > open", "Invalid interval")]
     public async Task Handle_WithInvalidCommand_ShouldThrowValidationException(
         string symbol, string interval, string expression, string expectedError)
@@ -105,13 +95,7 @@ public class CreateAlertCommandHandlerTests
             Expression = "invalid expression"
         };
 
-        var errorMessage = "Invalid syntax";
-        _jsEvaluatorMock
-            .Setup(x => x.ValidateExpression(command.Expression, out It.Ref<string>.IsAny))
-            .Returns(false)
-            .Callback(new ValidateExpressionCallback((string _, out string message) =>
-                message = errorMessage));
-
+        var errorMessage = "Invalid JavaScript expression";
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ValidationException>(
             () => _handler.Handle(command, CancellationToken.None));
@@ -135,10 +119,6 @@ public class CreateAlertCommandHandlerTests
             Expression = "close > open"
         };
 
-        _jsEvaluatorMock
-            .Setup(x => x.ValidateExpression(command.Expression, out It.Ref<string>.IsAny))
-            .Returns(true);
-
         _alertRepositoryMock
             .Setup(x => x.AddAsync(It.IsAny<Alert>(), It.IsAny<CancellationToken>()))
             .Throws<InvalidOperationException>();
@@ -149,6 +129,3 @@ public class CreateAlertCommandHandlerTests
 
     }
 }
-
-// Helper delegate for mocking out parameters
-public delegate void ValidateExpressionCallback(string expression, out string message);

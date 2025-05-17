@@ -4,11 +4,11 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using Telegram.Bot;
-using Trading.Application.JavaScript;
 using Trading.Application.Services.Alerts;
 using Trading.Application.Services.Common;
 using Trading.Application.Telegram;
 using Trading.Application.Telegram.Handlers;
+using Trading.Common.JavaScript;
 using Trading.Common.Models;
 using Trading.Domain.IRepositories;
 

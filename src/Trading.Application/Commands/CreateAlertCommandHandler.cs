@@ -1,10 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.RegularExpressions;
 using MediatR;
-using Trading.Application.JavaScript;
 using Trading.Domain.Entities;
 using Trading.Domain.IRepositories;
-using Trading.Exchange.Binance.Helpers;
 
 namespace Trading.Application.Commands;
 
@@ -14,13 +12,9 @@ public partial class CreateAlertCommandHandler : IRequestHandler<CreateAlertComm
     private static partial Regex WhitespaceRegex();
 
     private readonly IAlertRepository _alertRepository;
-    private readonly JavaScriptEvaluator _javaScriptEvaluator;
 
-    public CreateAlertCommandHandler(
-        IAlertRepository alertRepository,
-        JavaScriptEvaluator javaScriptEvaluator)
+    public CreateAlertCommandHandler(IAlertRepository alertRepository)
     {
-        _javaScriptEvaluator = javaScriptEvaluator;
         _alertRepository = alertRepository;
     }
 
@@ -34,12 +28,6 @@ public partial class CreateAlertCommandHandler : IRequestHandler<CreateAlertComm
         {
             var errorMessage = string.Join("; ", validationResults.Select(r => r.ErrorMessage));
             throw new ValidationException(errorMessage);
-        }
-        BinanceHelper.ConvertToKlineInterval(request.Interval);
-        // Validate JavaScript expression
-        if (!_javaScriptEvaluator.ValidateExpression(request.Expression, out var message))
-        {
-            throw new ValidationException($"Invalid expression: {message}");
         }
         var alert = new Alert(
             request.Symbol.ToUpper(),

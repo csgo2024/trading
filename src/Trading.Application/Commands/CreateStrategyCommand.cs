@@ -1,12 +1,13 @@
 using System.ComponentModel.DataAnnotations;
 using MediatR;
+using Trading.Common.Attributes;
 using Trading.Common.Enums;
 using Trading.Domain.Entities;
 using Trading.Exchange.Binance.Attributes;
 
 namespace Trading.Application.Commands;
 
-public class CreateStrategyCommand : IRequest<Strategy>
+public class CreateStrategyCommand : IRequest<Strategy>, IValidatableObject
 {
     [Required(ErrorMessage = "Symbol cannot be empty")]
     public string Symbol { get; set; } = string.Empty;
@@ -26,5 +27,18 @@ public class CreateStrategyCommand : IRequest<Strategy>
 
     [Interval]
     public string? Interval { get; set; }
-    public string StopLossExpression { get; set; } = string.Empty;
+
+    [JavaScript(Required = false)]
+    public string? StopLossExpression { get; set; }
+
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        if (AccountType == AccountType.Spot)
+        {
+            if (StrategyType == StrategyType.TopSell || StrategyType == StrategyType.CloseSell)
+            {
+                yield return new ValidationResult("Spot account type is not supported for TopSell or CloseSell strategy.", [nameof(AccountType)]);
+            }
+        }
+    }
 }

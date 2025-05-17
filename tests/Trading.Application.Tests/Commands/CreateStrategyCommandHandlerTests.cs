@@ -3,7 +3,6 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Trading.Application.Commands;
-using Trading.Application.JavaScript;
 using Trading.Domain.Entities;
 using Trading.Domain.Events;
 using Trading.Domain.IRepositories;
@@ -18,7 +17,6 @@ public class CreateStrategyCommandHandlerTests
     private readonly Mock<IStrategyRepository> _strategyRepositoryMock;
     private readonly Mock<IMediator> _mediatorMock;
     private readonly Mock<ILogger<CreateStrategyCommandHandler>> _loggerMock;
-    private readonly Mock<JavaScriptEvaluator> _jsEvaluatorMock;
     private readonly CreateStrategyCommandHandler _handler;
 
     public CreateStrategyCommandHandlerTests()
@@ -26,8 +24,7 @@ public class CreateStrategyCommandHandlerTests
         _strategyRepositoryMock = new Mock<IStrategyRepository>();
         _mediatorMock = new Mock<IMediator>();
         _loggerMock = new Mock<ILogger<CreateStrategyCommandHandler>>();
-        _jsEvaluatorMock = new Mock<JavaScriptEvaluator>(Mock.Of<ILogger<JavaScriptEvaluator>>());
-        _handler = new CreateStrategyCommandHandler(_strategyRepositoryMock.Object, _jsEvaluatorMock.Object, _loggerMock.Object);
+        _handler = new CreateStrategyCommandHandler(_strategyRepositoryMock.Object, _loggerMock.Object);
     }
 
     [Fact]
@@ -126,6 +123,28 @@ public class CreateStrategyCommandHandlerTests
             () => _handler.Handle(command, CancellationToken.None));
 
         Assert.Contains("Leverage must be between 1 and 20", exception.Message);
+    }
+    [Theory]
+    [InlineData(StrategyType.TopSell)]
+    [InlineData(StrategyType.CloseSell)]
+    public async Task Handle_WhenAccountTypeIsSpot_StrategyIsSell_ShouldThrowValidationException(StrategyType strategyType)
+    {
+        // Arrange
+        var command = new CreateStrategyCommand
+        {
+            Symbol = "BTCUSDT",
+            Amount = 100,
+            Volatility = 0.1m,
+            Leverage = 5,
+            AccountType = AccountType.Spot,
+            StrategyType = strategyType
+        };
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<ValidationException>(
+            () => _handler.Handle(command, CancellationToken.None));
+
+        Assert.Contains("Spot account type is not supported for TopSell or CloseSell strategy.", exception.Message);
     }
 
     [Fact]

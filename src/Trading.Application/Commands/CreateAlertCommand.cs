@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using MediatR;
+using Trading.Common.Attributes;
 using Trading.Domain.Entities;
 using Trading.Exchange.Binance.Attributes;
 
@@ -13,6 +14,6 @@ public class CreateAlertCommand : IRequest<Alert>
     [Interval(Required = true)]
     public string Interval { get; set; } = "4h";
 
-    [Required(ErrorMessage = "Expression cannot be empty")]
+    [JavaScript(Required = true)]
     public string Expression { get; set; } = "";
 }

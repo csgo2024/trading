@@ -1,8 +1,8 @@
 using Microsoft.Extensions.Logging;
 using Moq;
-using Trading.Application.JavaScript;
+using Trading.Common.JavaScript;
 
-namespace Trading.Application.Tests.JavaScript;
+namespace Trading.Application.Tests.Telegram.JavaScript;
 
 public class JavaScriptEvaluatorTests
 {
