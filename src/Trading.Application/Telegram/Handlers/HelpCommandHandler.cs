@@ -50,7 +50,7 @@ public class HelpCommandHandler : ICommandHandler
 `/strategy delete <Id>`
 
 *警报管理*
-创建警报\(支持间隔: 5m,15m,1h,4h,1d\):
+创建警报\(支持间隔: 5m,15m,1h,4h,1d,3d,1w\):
 
 1\. 价格波动警报
 `/alert create {""Symbol"":""BTCUSDT"",""Interval"":""4h"",""Expression"":""Math\.abs\(\(close \- open\) / open\) \>\= 0\.02""}`

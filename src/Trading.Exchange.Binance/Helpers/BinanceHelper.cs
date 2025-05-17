@@ -14,6 +14,8 @@ public static class BinanceHelper
         { "1h", KlineInterval.OneHour },
         { "4h", KlineInterval.FourHour },
         { "1d", KlineInterval.OneDay },
+        { "3d", KlineInterval.ThreeDay },
+        { "1w", KlineInterval.OneWeek },
     };
 
     public static IReadOnlyDictionary<string, KlineInterval> KlineIntervalDict => _stringToInterval;
