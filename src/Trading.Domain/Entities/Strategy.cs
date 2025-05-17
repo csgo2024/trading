@@ -33,7 +33,8 @@ public class Strategy : BaseEntity
         int? leverage,
         AccountType accountType,
         string? interval,
-        StrategyType strategyType
+        StrategyType strategyType,
+        string stopLossExpression
     )
     {
         Interval = interval;
@@ -46,6 +47,7 @@ public class Strategy : BaseEntity
         Volatility = volatility;
         CreatedAt = DateTime.Now;
         Status = Status.Running;
+        StopLossExpression = stopLossExpression;
         AddDomainEvent(new StrategyCreatedEvent(this));
     }
     public void Pause()

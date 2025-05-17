@@ -3,6 +3,7 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Trading.Application.Commands;
+using Trading.Application.JavaScript;
 using Trading.Domain.Entities;
 using Trading.Domain.Events;
 using Trading.Domain.IRepositories;
@@ -17,6 +18,7 @@ public class CreateStrategyCommandHandlerTests
     private readonly Mock<IStrategyRepository> _strategyRepositoryMock;
     private readonly Mock<IMediator> _mediatorMock;
     private readonly Mock<ILogger<CreateStrategyCommandHandler>> _loggerMock;
+    private readonly Mock<JavaScriptEvaluator> _jsEvaluatorMock;
     private readonly CreateStrategyCommandHandler _handler;
 
     public CreateStrategyCommandHandlerTests()
@@ -24,7 +26,8 @@ public class CreateStrategyCommandHandlerTests
         _strategyRepositoryMock = new Mock<IStrategyRepository>();
         _mediatorMock = new Mock<IMediator>();
         _loggerMock = new Mock<ILogger<CreateStrategyCommandHandler>>();
-        _handler = new CreateStrategyCommandHandler(_strategyRepositoryMock.Object, _loggerMock.Object);
+        _jsEvaluatorMock = new Mock<JavaScriptEvaluator>(Mock.Of<ILogger<JavaScriptEvaluator>>());
+        _handler = new CreateStrategyCommandHandler(_strategyRepositoryMock.Object, _jsEvaluatorMock.Object, _loggerMock.Object);
     }
 
     [Fact]
