@@ -21,6 +21,7 @@ public class TopSellExecutorTests
     private readonly Mock<IStrategyRepository> _mockStrategyRepository;
     private readonly Mock<IAccountProcessor> _mockAccountProcessor;
     private readonly Mock<JavaScriptEvaluator> _mockJavaScriptEvaluator;
+    private readonly Mock<IAccountProcessorFactory> _mockAccountProcessorFactory;
     private readonly Mock<IStrategyStateManager> _mockStrategyStateManager;
     private readonly TopSellExecutor _executor;
 
@@ -30,10 +31,12 @@ public class TopSellExecutorTests
         _mockStrategyRepository = new Mock<IStrategyRepository>();
         _mockAccountProcessor = new Mock<IAccountProcessor>();
         _mockJavaScriptEvaluator = new Mock<JavaScriptEvaluator>(Mock.Of<ILogger<JavaScriptEvaluator>>());
+        _mockAccountProcessorFactory = new Mock<IAccountProcessorFactory>();
         _mockStrategyStateManager = new Mock<IStrategyStateManager>();
         _executor = new TopSellExecutor(_mockLogger.Object,
                                         _mockStrategyRepository.Object,
                                         _mockJavaScriptEvaluator.Object,
+                                        _mockAccountProcessorFactory.Object,
                                         _mockStrategyStateManager.Object);
     }
 

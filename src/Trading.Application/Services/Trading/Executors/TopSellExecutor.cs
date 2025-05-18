@@ -1,6 +1,5 @@
 using Binance.Net.Enums;
 using Microsoft.Extensions.Logging;
-using Trading.Application.Services.Alerts;
 using Trading.Application.Services.Trading.Account;
 using Trading.Common.Enums;
 using Trading.Common.Helpers;
@@ -16,17 +15,14 @@ public class TopSellExecutor : BaseExecutor
     public TopSellExecutor(ILogger<TopSellExecutor> logger,
                            IStrategyRepository strategyRepository,
                            JavaScriptEvaluator javaScriptEvaluator,
+                           IAccountProcessorFactory accountProcessorFactory,
                            IStrategyStateManager strategyStateManager)
-        : base(logger, strategyRepository, javaScriptEvaluator, strategyStateManager)
+        : base(logger, strategyRepository, javaScriptEvaluator, accountProcessorFactory, strategyStateManager)
     {
     }
 
     public override StrategyType StrategyType => StrategyType.TopSell;
 
-    public override bool ShouldStopLoss(IAccountProcessor accountProcessor, Strategy strategy, KlineClosedEvent @event)
-    {
-        return false;
-    }
     public override async Task ExecuteAsync(IAccountProcessor accountProcessor, Strategy strategy, CancellationToken ct)
     {
         var currentDate = DateTime.UtcNow.Date;
@@ -65,10 +61,5 @@ public class TopSellExecutor : BaseExecutor
                                       strategy.Symbol,
                                       kLines.Error?.Message);
         }
-    }
-
-    public override Task Handle(KlineClosedEvent notification, CancellationToken cancellationToken)
-    {
-        return Task.CompletedTask;
     }
 }

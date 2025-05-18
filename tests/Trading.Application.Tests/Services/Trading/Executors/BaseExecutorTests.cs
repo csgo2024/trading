@@ -1,4 +1,5 @@
 using Binance.Net.Enums;
+using Binance.Net.Interfaces;
 using Binance.Net.Objects.Models;
 using Binance.Net.Objects.Models.Spot;
 using CryptoExchange.Net.Objects;
@@ -7,9 +8,11 @@ using Moq;
 using Trading.Application.Services.Alerts;
 using Trading.Application.Services.Trading.Account;
 using Trading.Application.Services.Trading.Executors;
+using Trading.Common.Enums;
 using Trading.Common.JavaScript;
 using Trading.Domain.Entities;
 using Trading.Domain.IRepositories;
+using AccountType = Trading.Common.Enums.AccountType;
 using StrategyType = Trading.Common.Enums.StrategyType;
 
 namespace Trading.Application.Tests.Services.Trading.Executors;
@@ -19,17 +22,13 @@ public class TestExecutor : BaseExecutor
     public TestExecutor(ILogger logger,
                         IStrategyRepository strategyRepository,
                         JavaScriptEvaluator javaScriptEvaluator,
+                        IAccountProcessorFactory accountProcessorFactory,
                         IStrategyStateManager strategyStateManager)
-        : base(logger, strategyRepository, javaScriptEvaluator, strategyStateManager)
+        : base(logger, strategyRepository, javaScriptEvaluator, accountProcessorFactory, strategyStateManager)
     {
     }
 
     public override StrategyType StrategyType => StrategyType.CloseSell;
-
-    public override Task Handle(KlineClosedEvent notification, CancellationToken cancellationToken)
-    {
-        throw new NotImplementedException();
-    }
 }
 
 public class BaseExecutorTests
@@ -37,6 +36,7 @@ public class BaseExecutorTests
     private readonly Mock<ILogger<TestExecutor>> _mockLogger;
     private readonly Mock<IAccountProcessor> _mockAccountProcessor;
     private readonly Mock<IStrategyRepository> _mockStrategyRepository;
+    private readonly Mock<IAccountProcessorFactory> _mockAccountProcessorFactory;
     private readonly Mock<JavaScriptEvaluator> _mockJavaScriptEvaluator;
     private readonly Mock<IStrategyStateManager> _mockStrategyStateManager;
     private readonly TestExecutor _executor;
@@ -47,11 +47,13 @@ public class BaseExecutorTests
         _mockLogger = new Mock<ILogger<TestExecutor>>();
         _mockAccountProcessor = new Mock<IAccountProcessor>();
         _mockStrategyRepository = new Mock<IStrategyRepository>();
+        _mockAccountProcessorFactory = new Mock<IAccountProcessorFactory>();
         _mockStrategyStateManager = new Mock<IStrategyStateManager>();
         _mockJavaScriptEvaluator = new Mock<JavaScriptEvaluator>(Mock.Of<ILogger<JavaScriptEvaluator>>());
         _executor = new TestExecutor(_mockLogger.Object,
                                      _mockStrategyRepository.Object,
                                      _mockJavaScriptEvaluator.Object,
+                                     _mockAccountProcessorFactory.Object,
                                      _mockStrategyStateManager.Object);
         _ct = CancellationToken.None;
     }
@@ -322,6 +324,179 @@ public class BaseExecutorTests
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Exactly(2));
+    }
+
+    [Fact]
+    public async Task Handle_WithNoMatchingStrategies_ShouldNotProcessAnyStrategy()
+    {
+        // Arrange
+        var symbol = "ETHUSDT";
+        var interval = KlineInterval.FiveMinutes;
+        var kline = Mock.Of<IBinanceKline>(k =>
+            k.OpenPrice == 40000m &&
+            k.ClosePrice == 41000m &&
+            k.HighPrice == 42000m &&
+            k.LowPrice == 39000m);
+        var notification = new KlineClosedEvent(symbol, interval, kline);
+
+        _mockStrategyStateManager.Setup(x => x.GetState(It.IsAny<StrategyType>()))
+            .Returns(new Dictionary<string, Strategy>
+            {
+                ["1"] = new Strategy { Symbol = "BTCUSDT", Interval = "5m" }
+            });
+
+        // Act
+        await _executor.Handle(notification, CancellationToken.None);
+
+        // Assert
+        _mockStrategyRepository.Verify(
+            x => x.UpdateAsync(It.IsAny<string>(), It.IsAny<Strategy>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_WithMatchingStrategies_ShouldProcessAllMatchingStrategies()
+    {
+        // Arrange
+        var symbol = "BTCUSDT";
+        var interval = KlineInterval.FiveMinutes;
+        var kline = Mock.Of<IBinanceKline>(k =>
+            k.OpenPrice == 40000m &&
+            k.ClosePrice == 41000m &&
+            k.HighPrice == 42000m &&
+            k.LowPrice == 39000m);
+        var notification = new KlineClosedEvent(symbol, interval, kline);
+
+        var strategies = new Dictionary<string, Strategy>
+        {
+            ["1"] = new Strategy { Id = "1", Symbol = "BTCUSDT", Interval = "5m" },
+            ["2"] = new Strategy { Id = "2", Symbol = "BTCUSDT", Interval = "5m" }
+        };
+
+        _mockStrategyStateManager.Setup(x => x.GetState(It.IsAny<StrategyType>()))
+            .Returns(strategies);
+
+        _mockAccountProcessorFactory.Setup(x => x.GetAccountProcessor(It.IsAny<AccountType>()))
+            .Returns(_mockAccountProcessor.Object);
+
+        // Act
+        await _executor.Handle(notification, CancellationToken.None);
+
+        // Assert
+        _mockStrategyRepository.Verify(
+            x => x.UpdateAsync(It.IsAny<string>(), It.IsAny<Strategy>(), It.IsAny<CancellationToken>()),
+            Times.Exactly(2));
+    }
+
+    [Fact]
+    public async Task Handle_WhenStopLossTriggered_ShouldExecuteStopLossAndPauseStrategy()
+    {
+        // Arrange
+        var strategy = new Strategy
+        {
+            Id = "1",
+            Symbol = "BTCUSDT",
+            Interval = "5m",
+            OrderId = 12345,
+            StopLossExpression = "close < 45000"
+        };
+
+        var symbol = "BTCUSDT";
+        var interval = KlineInterval.FiveMinutes;
+        var kline = Mock.Of<IBinanceKline>(k =>
+            k.OpenPrice == 40000m &&
+            k.ClosePrice == 41000m &&
+            k.HighPrice == 42000m &&
+            k.LowPrice == 39000m);
+        var notification = new KlineClosedEvent(symbol, interval, kline);
+
+        _mockStrategyStateManager.Setup(x => x.GetState(It.IsAny<StrategyType>()))
+            .Returns(new Dictionary<string, Strategy> { ["1"] = strategy });
+
+        _mockAccountProcessorFactory.Setup(x => x.GetAccountProcessor(It.IsAny<AccountType>()))
+            .Returns(_mockAccountProcessor.Object);
+
+        _mockJavaScriptEvaluator.Setup(x => x.EvaluateExpression(
+            It.IsAny<string>(),
+            It.IsAny<decimal>(),
+            It.IsAny<decimal>(),
+            It.IsAny<decimal>(),
+            It.IsAny<decimal>()))
+            .Returns(true);
+
+        SetupSuccessfulStopOrderResponse();
+
+        // Act
+        await _executor.Handle(notification, CancellationToken.None);
+
+        // Assert
+        Assert.Equal(Status.Paused, strategy.Status);
+        _mockAccountProcessor.Verify(
+            x => x.StopLongOrderAsync(
+                It.IsAny<string>(),
+                It.IsAny<decimal>(),
+                It.IsAny<decimal>(),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task TryStopOrderAsync_WithRetrySuccess_ShouldStopOrderEventually()
+    {
+        // Arrange
+        var strategy = new Strategy
+        {
+            Symbol = "BTCUSDT",
+            StrategyType = StrategyType.BottomBuy,
+            Quantity = 1.0m,
+            TargetPrice = 50000m,
+            OrderId = 12345L,
+        };
+
+        var failCount = 0;
+        _mockAccountProcessor
+            .Setup(x => x.StopLongOrderAsync(
+                It.IsAny<string>(),
+                It.IsAny<decimal>(),
+                It.IsAny<decimal>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(() =>
+            {
+                if (failCount++ < 2)
+                {
+                    return new WebCallResult<BinanceOrderBase>(null, null, null, 0, null, 0, null, null, null, null,
+                        ResultDataSource.Server, null, new ServerError(0, "Temporary error"));
+                }
+                return new WebCallResult<BinanceOrderBase>(null, null, null, 0, null, 0, null, null, null, null,
+                    ResultDataSource.Server, new BinanceOrder { Id = 12345 }, null);
+            });
+
+        // Act
+        await _executor.TryStopOrderAsync(_mockAccountProcessor.Object, strategy, 1000m, _ct);
+
+        // Assert
+        Assert.False(strategy.HasOpenOrder);
+        Assert.Null(strategy.OrderId);
+        _mockAccountProcessor.Verify(
+            x => x.StopLongOrderAsync(
+                It.IsAny<string>(),
+                It.IsAny<decimal>(),
+                It.IsAny<decimal>(),
+                It.IsAny<CancellationToken>()),
+            Times.Exactly(3));
+    }
+
+    private void SetupSuccessfulStopOrderResponse()
+    {
+        _mockAccountProcessor
+            .Setup(x => x.StopLongOrderAsync(
+                It.IsAny<string>(),
+                It.IsAny<decimal>(),
+                It.IsAny<decimal>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new WebCallResult<BinanceOrderBase>(
+                null, null, null, 0, null, 0, null, null, null, null,
+                ResultDataSource.Server, new BinanceOrder(), null));
     }
 
     private void SetupSuccessfulCancelOrderResponse()

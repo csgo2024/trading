@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Trading.Application.Services.Trading.Account;
 using Trading.Application.Services.Trading.Executors;
 using Trading.Common.Enums;
 using Trading.Common.JavaScript;
@@ -28,6 +29,8 @@ public class ExecutorFactoryTests
         var strategyRepositoryMock = new Mock<IStrategyRepository>();
         services.AddSingleton(strategyRepositoryMock.Object);
 
+        var accountProcessorFactory = new Mock<IAccountProcessorFactory>();
+        services.AddSingleton(accountProcessorFactory.Object);
         // Register executors
         services.AddScoped<BottomBuyExecutor>();
         services.AddScoped<DCABuyExecutor>();

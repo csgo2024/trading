@@ -1,6 +1,5 @@
 using Binance.Net.Enums;
 using Microsoft.Extensions.Logging;
-using Trading.Application.Services.Alerts;
 using Trading.Application.Services.Trading.Account;
 using Trading.Common.Enums;
 using Trading.Common.Helpers;
@@ -18,18 +17,10 @@ public class BottomBuyExecutor : BaseExecutor
     public BottomBuyExecutor(ILogger<BottomBuyExecutor> logger,
                              IStrategyRepository strategyRepository,
                              JavaScriptEvaluator javaScriptEvaluator,
+                             IAccountProcessorFactory accountProcessorFactory,
                              IStrategyStateManager strategyStateManager)
-        : base(logger, strategyRepository, javaScriptEvaluator, strategyStateManager)
+        : base(logger, strategyRepository, javaScriptEvaluator, accountProcessorFactory, strategyStateManager)
     {
-    }
-
-    public override bool ShouldStopLoss(IAccountProcessor accountProcessor, Strategy strategy, KlineClosedEvent @event)
-    {
-        return false;
-    }
-    public override Task Handle(KlineClosedEvent notification, CancellationToken cancellationToken)
-    {
-        return Task.CompletedTask;
     }
     public override async Task ExecuteAsync(IAccountProcessor accountProcessor, Strategy strategy, CancellationToken ct)
     {

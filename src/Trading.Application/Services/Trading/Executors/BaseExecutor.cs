@@ -10,6 +10,7 @@ using Trading.Common.Helpers;
 using Trading.Common.JavaScript;
 using Trading.Domain.Entities;
 using Trading.Domain.IRepositories;
+using Trading.Exchange.Binance.Helpers;
 
 namespace Trading.Application.Services.Trading.Executors;
 
@@ -20,15 +21,17 @@ public abstract class BaseExecutor :
     protected readonly IStrategyRepository _strategyRepository;
     protected readonly JavaScriptEvaluator _javaScriptEvaluator;
     protected readonly IStrategyStateManager _stateManager;
-
+    protected readonly IAccountProcessorFactory _accountProcessorFactory;
     public BaseExecutor(ILogger logger,
                         IStrategyRepository strategyRepository,
                         JavaScriptEvaluator javaScriptEvaluator,
+                        IAccountProcessorFactory accountProcessorFactory,
                         IStrategyStateManager strategyStateManager)
     {
         _strategyRepository = strategyRepository;
         _javaScriptEvaluator = javaScriptEvaluator;
         _logger = logger;
+        _accountProcessorFactory = accountProcessorFactory;
         _stateManager = strategyStateManager;
     }
 
@@ -37,22 +40,13 @@ public abstract class BaseExecutor :
                                                                          Strategy strategy,
                                                                          CancellationToken ct)
     {
-        if (strategy.StrategyType == StrategyType.TopSell ||
-            strategy.StrategyType == StrategyType.CloseSell)
+        if (strategy.StrategyType == StrategyType.TopSell || strategy.StrategyType == StrategyType.CloseSell)
         {
-            return accountProcessor.PlaceShortOrderAsync(strategy.Symbol,
-                                                         strategy.Quantity,
-                                                         strategy.TargetPrice,
-                                                         TimeInForce.GoodTillCanceled,
-                                                         ct);
+            return accountProcessor.PlaceShortOrderAsync(strategy.Symbol, strategy.Quantity, strategy.TargetPrice, TimeInForce.GoodTillCanceled, ct);
         }
         else
         {
-            return accountProcessor.PlaceLongOrderAsync(strategy.Symbol,
-                                                        strategy.Quantity,
-                                                        strategy.TargetPrice,
-                                                        TimeInForce.GoodTillCanceled,
-                                                        ct);
+            return accountProcessor.PlaceLongOrderAsync(strategy.Symbol, strategy.Quantity, strategy.TargetPrice, TimeInForce.GoodTillCanceled, ct);
         }
     }
     private static Task<WebCallResult<BinanceOrderBase>> StopOrderAsync(IAccountProcessor accountProcessor,
@@ -60,20 +54,13 @@ public abstract class BaseExecutor :
                                                                         decimal price,
                                                                         CancellationToken ct)
     {
-        if (strategy.StrategyType == StrategyType.TopSell ||
-            strategy.StrategyType == StrategyType.CloseSell)
+        if (strategy.StrategyType == StrategyType.TopSell || strategy.StrategyType == StrategyType.CloseSell)
         {
-            return accountProcessor.StopShortOrderAsync(strategy.Symbol,
-                                                        strategy.Quantity,
-                                                        price,
-                                                        ct);
+            return accountProcessor.StopShortOrderAsync(strategy.Symbol, strategy.Quantity, price, ct);
         }
         else
         {
-            return accountProcessor.StopLongOrderAsync(strategy.Symbol,
-                                                       strategy.Quantity,
-                                                       price,
-                                                       ct);
+            return accountProcessor.StopLongOrderAsync(strategy.Symbol, strategy.Quantity, price, ct);
         }
     }
     public virtual Dictionary<string, Strategy> GetMonitoringStrategy()
@@ -92,20 +79,6 @@ public abstract class BaseExecutor :
         _stateManager.SetState(StrategyType, strategies.ToDictionary(x => x.Id));
     }
 
-    public virtual bool ShouldStopLoss(IAccountProcessor accountProcessor,
-                                       Strategy strategy,
-                                       KlineClosedEvent @event)
-    {
-        if (string.IsNullOrEmpty(strategy.StopLossExpression))
-        {
-            return false;
-        }
-        return _javaScriptEvaluator.EvaluateExpression(strategy.StopLossExpression,
-                                                       @event.Kline.OpenPrice,
-                                                       @event.Kline.ClosePrice,
-                                                       @event.Kline.HighPrice,
-                                                       @event.Kline.LowPrice);
-    }
     public virtual async Task ExecuteAsync(IAccountProcessor accountProcessor, Strategy strategy, CancellationToken ct)
     {
         await CheckOrderStatus(accountProcessor, strategy, ct);
@@ -113,9 +86,7 @@ public abstract class BaseExecutor :
         await _strategyRepository.UpdateAsync(strategy.Id, strategy, ct);
     }
 
-    public virtual async Task ExecuteLoopAsync(IAccountProcessor accountProcessor,
-                                              Strategy strategy,
-                                              CancellationToken cancellationToken)
+    public virtual async Task ExecuteLoopAsync(IAccountProcessor accountProcessor, Strategy strategy, CancellationToken cancellationToken)
     {
         while (!cancellationToken.IsCancellationRequested)
         {
@@ -162,12 +133,21 @@ public abstract class BaseExecutor :
                              cancelResult.Error?.Message);
         }
     }
-    public async Task TryStopOrderAsync(IAccountProcessor accountProcessor,
-                                        Strategy strategy,
-                                        decimal stopPrice,
-                                        CancellationToken ct)
+    protected bool ShouldStopLoss(IAccountProcessor accountProcessor, Strategy strategy, KlineClosedEvent @event)
     {
-        if (strategy.OrderId is not null)
+        if (string.IsNullOrEmpty(strategy.StopLossExpression))
+        {
+            return false;
+        }
+        return _javaScriptEvaluator.EvaluateExpression(strategy.StopLossExpression,
+                                                       @event.Kline.OpenPrice,
+                                                       @event.Kline.ClosePrice,
+                                                       @event.Kline.HighPrice,
+                                                       @event.Kline.LowPrice);
+    }
+    public async Task TryStopOrderAsync(IAccountProcessor accountProcessor, Strategy strategy, decimal stopPrice, CancellationToken ct)
+    {
+        if (strategy.OrderId is null)
         {
             return;
         }
@@ -237,7 +217,6 @@ public abstract class BaseExecutor :
         """, strategy.StrategyType, strategy.AccountType, strategy.Symbol, maxRetries, strategy.Id,
             errorMessage, stopPrice, strategy.Quantity);
     }
-
     public virtual async Task CheckOrderStatus(IAccountProcessor accountProcessor, Strategy strategy, CancellationToken ct)
     {
         // NO open order skip check.
@@ -365,5 +344,28 @@ public abstract class BaseExecutor :
             errorMessage, price, quantity);
     }
 
-    public abstract Task Handle(KlineClosedEvent notification, CancellationToken cancellationToken);
+    public virtual async Task Handle(KlineClosedEvent notification, CancellationToken cancellationToken)
+    {
+        var strategies = GetMonitoringStrategy().Values.Where(x => x.Symbol == notification.Symbol
+                        && x.Interval == BinanceHelper.ConvertToIntervalString(notification.Interval));
+        var tasks = strategies.Select(async strategy =>
+        {
+            var accountProcessor = _accountProcessorFactory.GetAccountProcessor(strategy.AccountType);
+            if (accountProcessor != null)
+            {
+                await HandleKlineClosedEvent(accountProcessor, strategy, notification, cancellationToken);
+                if (ShouldStopLoss(accountProcessor, strategy, notification))
+                {
+                    await TryStopOrderAsync(accountProcessor, strategy, notification.Kline.ClosePrice, cancellationToken);
+                    strategy.Pause();
+                }
+                await _strategyRepository.UpdateAsync(strategy.Id, strategy, cancellationToken);
+            }
+        });
+        await Task.WhenAll(tasks);
+    }
+    public virtual Task HandleKlineClosedEvent(IAccountProcessor accountProcessor, Strategy strategy, KlineClosedEvent notification, CancellationToken cancellationToken)
+    {
+        return Task.CompletedTask;
+    }
 }

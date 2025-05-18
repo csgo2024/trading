@@ -37,6 +37,7 @@ public class CreateStrategyCommandHandlerTests
             Amount = 100,
             Volatility = 0.1m,
             AccountType = AccountType.Spot,
+            StopLossExpression = "close > open",
             StrategyType = StrategyType.BottomBuy
         };
 
@@ -137,6 +138,7 @@ public class CreateStrategyCommandHandlerTests
             Volatility = 0.1m,
             Leverage = 5,
             AccountType = AccountType.Spot,
+            StopLossExpression = "close > open",
             StrategyType = strategyType
         };
 
@@ -155,7 +157,8 @@ public class CreateStrategyCommandHandlerTests
         {
             Symbol = "BTCUSDT",
             Amount = 100,
-            Volatility = 0.1m
+            Volatility = 0.1m,
+            StopLossExpression = "close > open"
         };
 
         var expectedException = new InvalidOperationException("Test exception");

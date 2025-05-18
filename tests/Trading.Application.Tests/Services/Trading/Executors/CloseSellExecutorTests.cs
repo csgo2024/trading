@@ -1,6 +1,8 @@
 using Binance.Net.Enums;
 using Binance.Net.Interfaces;
+using Binance.Net.Objects.Models;
 using Binance.Net.Objects.Models.Spot;
+using CryptoExchange.Net.Objects;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Trading.Application.Services.Alerts;
@@ -145,6 +147,7 @@ public class CloseSellExecutorTests
             .Returns(_mockAccountProcessor.Object);
 
         SetupSuccessfulSymbolFilterResponse();
+        SetupSuccessfulPlaceOrderResponse(12345L);
 
         // Act
         await _executor.Handle(notification, _ct);
@@ -265,4 +268,18 @@ public class CloseSellExecutorTests
                 MaxQuantity = decimal.MaxValue,
             }));
     }
+    private void SetupSuccessfulPlaceOrderResponse(long orderId)
+    {
+        _mockAccountProcessor
+            .Setup(x => x.PlaceShortOrderAsync(
+                It.IsAny<string>(),
+                It.IsAny<decimal>(),
+                It.IsAny<decimal>(),
+                It.IsAny<TimeInForce>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new WebCallResult<BinanceOrderBase>(
+                null, null, null, 0, null, 0, null, null, null, null,
+                ResultDataSource.Server, new BinanceOrder { Id = orderId }, null));
+    }
+
 }

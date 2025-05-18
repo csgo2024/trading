@@ -45,6 +45,7 @@ public class StrategyDispatchServiceTests
         _executorMock = new Mock<BaseExecutor>(_loggerMock.Object,
                                                _strategyRepositoryMock.Object,
                                                _mockJavaScriptEvaluator.Object,
+                                               _accountProcessorFactoryMock.Object,
                                                _mockStrategyStateManager.Object);
         _cts = new CancellationTokenSource();
 
