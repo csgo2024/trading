@@ -21,7 +21,7 @@ public class Strategy : BaseEntity
 
     public Status Status { get; set; }
     public string? Interval { get; set; }
-    public string? StopLossExpression { get; set; }
+    public string StopLossExpression { get; set; } = string.Empty;
     public Strategy()
     {
     }
@@ -34,7 +34,7 @@ public class Strategy : BaseEntity
         AccountType accountType,
         string? interval,
         StrategyType strategyType,
-        string? stopLossExpression
+        string stopLossExpression
     )
     {
         Interval = interval;

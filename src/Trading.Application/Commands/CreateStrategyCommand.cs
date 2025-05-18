@@ -28,8 +28,8 @@ public class CreateStrategyCommand : IRequest<Strategy>, IValidatableObject
     [Interval]
     public string? Interval { get; set; }
 
-    [JavaScript(Required = false)]
-    public string? StopLossExpression { get; set; }
+    [JavaScript(Required = true)]
+    public string StopLossExpression { get; set; } = string.Empty;
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {

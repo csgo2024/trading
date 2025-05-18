@@ -14,7 +14,7 @@ public class HelpCommandHandler : ICommandHandler
     private readonly string _chatId;
     public static string Command => "/help";
 
-    private readonly string _helpText = @"
+    private readonly string _helpText = """
 *基础命令:*
 /help \- 显示此帮助信息
 /strategy \- [create\|delete\|pause\|resume] 策略管理
@@ -35,16 +35,51 @@ public class HelpCommandHandler : ICommandHandler
 *策略示例*
 
 1\. 现货做多策略 \(BottomBuy\)
-`/strategy create {""Symbol"":""BTCUSDT"",""Amount"":1000,""Volatility"":0.2,""Interval"":""1d"",""Leverage"":5,""AccountType"":""Spot"",""StrategyType"":""BottomBuy""}`
+`/strategy create 
+{
+  "Symbol": "BTCUSDT",
+  "Amount": 1000,
+  "Volatility": 0.2,
+  "Interval": "1d",
+  "AccountType": "Spot",
+  "StopLossExpression": "low<=100000"
+}`
 
 2\. 合约做空策略 \(TopSell\)
-`/strategy create {""Symbol"":""BTCUSDT"",""Amount"":1000,""Volatility"":0.2,""Interval"":""1d"",""Leverage"":5,""AccountType"":""Future"",""StrategyType"":""TopSell""}`
+`/strategy create 
+{
+  "Symbol": "BTCUSDT",
+  "Amount": 1000,
+  "Volatility": 0.2,
+  "Interval": "1d",
+  "AccountType": "Future",
+  "StrategyType": "TopSell",
+  "StopLossExpression": "high>=100000"
+}`
 
 3\. WebSocket合约做空策略 \(CloseSell\)
-`/strategy create {""Symbol"":""BTCUSDT"",""Amount"":1000,""Volatility"":0.002,""Interval"":""4h"",""AccountType"":""Future"",""StrategyType"":""CloseSell"",""StopLossExpression"":""close >= 100000""}`
+`/strategy create 
+{
+  "Symbol": "BTCUSDT",
+  "Amount": 1000,
+  "Volatility": 0.002,
+  "Interval": "4h",
+  "AccountType": "Future",
+  "StrategyType": "CloseSell",
+  "StopLossExpression": "close >= 100000"
+}`
 
 4\. WebSocket合约做多策略 \(CloseBuy\)
-`/strategy create {""Symbol"":""BTCUSDT"",""Amount"":1000,""Volatility"":0.002,""Interval"":""4h"",""AccountType"":""Future"",""StrategyType"":""CloseBuy"",""StopLossExpression"":""close <= 60000""}`
+`/strategy create 
+{
+  "Symbol": "BTCUSDT",
+  "Amount": 1000,
+  "Volatility": 0.002,
+  "Interval": "4h",
+  "AccountType": "Future",
+  "StrategyType": "CloseBuy",
+  "StopLossExpression": "close <= 60000"
+}`
 
 删除策略:
 `/strategy delete <Id>`
@@ -53,16 +88,27 @@ public class HelpCommandHandler : ICommandHandler
 创建警报\(支持间隔: 5m,15m,1h,4h,1d,3d,1w\):
 
 1\. 价格波动警报
-`/alert create {""Symbol"":""BTCUSDT"",""Interval"":""4h"",""Expression"":""Math\.abs\(\(close \- open\) / open\) \>\= 0\.02""}`
+`/alert create 
+{
+  "Symbol":"BTCUSDT",
+  "Interval":"4h",
+  "Expression":"Math.abs((close-open)/open)>=0.02"
+}`
 
 2\. 价格阈值警报
-`/alert create {""Symbol"":""BTCUSDT"",""Interval"":""4h"",""Expression"":""close \> 20000""}`
+`/alert create 
+{
+  "Symbol":"BTCUSDT",
+  "Interval":"4h",
+  "Expression":"close>=20000"
+}`
 
 删除警报:
 `/alert delete <Id>`
 
 清空警报:
-`/alert empty`";
+`/alert empty`
+""";
 
     public HelpCommandHandler(ILogger<HelpCommandHandler> logger,
                               ITelegramBotClient botClient,
