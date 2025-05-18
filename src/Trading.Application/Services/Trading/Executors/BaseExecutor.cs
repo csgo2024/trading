@@ -44,10 +44,7 @@ public abstract class BaseExecutor :
         {
             return accountProcessor.PlaceShortOrderAsync(strategy.Symbol, strategy.Quantity, strategy.TargetPrice, TimeInForce.GoodTillCanceled, ct);
         }
-        else
-        {
-            return accountProcessor.PlaceLongOrderAsync(strategy.Symbol, strategy.Quantity, strategy.TargetPrice, TimeInForce.GoodTillCanceled, ct);
-        }
+        return accountProcessor.PlaceLongOrderAsync(strategy.Symbol, strategy.Quantity, strategy.TargetPrice, TimeInForce.GoodTillCanceled, ct);
     }
     private static Task<WebCallResult<BinanceOrderBase>> StopOrderAsync(IAccountProcessor accountProcessor,
                                                                         Strategy strategy,
@@ -58,10 +55,36 @@ public abstract class BaseExecutor :
         {
             return accountProcessor.StopShortOrderAsync(strategy.Symbol, strategy.Quantity, price, ct);
         }
-        else
+        return accountProcessor.StopLongOrderAsync(strategy.Symbol, strategy.Quantity, price, ct);
+    }
+    private async Task<(bool, WebCallResult<T>?)> ExecuteWithRetry<T>(Func<Task<WebCallResult<T>>> operation, Strategy strategy, CancellationToken ct)
+    {
+        var MAX_RETRIES = 3;
+        WebCallResult<T>? result = null;
+        for (var attempt = 0; attempt < MAX_RETRIES; attempt++)
         {
-            return accountProcessor.StopLongOrderAsync(strategy.Symbol, strategy.Quantity, price, ct);
+            result = await operation();
+            if (result.Success)
+            {
+                return (true, result);
+            }
+            if (attempt < MAX_RETRIES - 1)
+            {
+                var delay = TimeSpan.FromSeconds(Math.Pow(2, attempt + 1));
+                _logger.LogWarning(
+                    "[{StrategyType}-{AccountType}-{Symbol}] Attempt {RetryCount} of {MaxRetries} failed. Retrying in {Delay} seconds. Error: {Error}",
+                    strategy.StrategyType,
+                    strategy.AccountType,
+                    strategy.Symbol,
+                    attempt + 1,
+                    MAX_RETRIES,
+                    delay.TotalSeconds,
+                    result.Error?.Message);
+                await Task.Delay(delay, ct);
+            }
         }
+
+        return (false, result);
     }
     public virtual Dictionary<string, Strategy> GetMonitoringStrategy()
     {
@@ -124,26 +147,12 @@ public abstract class BaseExecutor :
             strategy.HasOpenOrder = false;
             strategy.OrderId = null;
             strategy.OrderPlacedTime = null;
+            return;
         }
-        else
-        {
-            _logger.LogError("[{AccountType}-{Symbol}] Failed to cancel order. Error: {ErrorMessage}",
-                             strategy.AccountType,
-                             strategy.Symbol,
-                             cancelResult.Error?.Message);
-        }
-    }
-    protected bool ShouldStopLoss(IAccountProcessor accountProcessor, Strategy strategy, KlineClosedEvent @event)
-    {
-        if (string.IsNullOrEmpty(strategy.StopLossExpression))
-        {
-            return false;
-        }
-        return _javaScriptEvaluator.EvaluateExpression(strategy.StopLossExpression,
-                                                       @event.Kline.OpenPrice,
-                                                       @event.Kline.ClosePrice,
-                                                       @event.Kline.HighPrice,
-                                                       @event.Kline.LowPrice);
+        _logger.LogError("[{AccountType}-{Symbol}] Failed to cancel order. Error: {ErrorMessage}",
+                         strategy.AccountType,
+                         strategy.Symbol,
+                         cancelResult.Error?.Message);
     }
     public async Task TryStopOrderAsync(IAccountProcessor accountProcessor, Strategy strategy, decimal stopPrice, CancellationToken ct)
     {
@@ -151,52 +160,27 @@ public abstract class BaseExecutor :
         {
             return;
         }
-        var maxRetries = 3;
-        var currentRetry = 0;
-        var errorMessage = string.Empty;
-
-        while (currentRetry < maxRetries)
+        var (success, result) = await ExecuteWithRetry(() => StopOrderAsync(accountProcessor, strategy, stopPrice, ct), strategy, ct);
+        if (success)
         {
-            var orderResult = await StopOrderAsync(accountProcessor, strategy, stopPrice, ct);
-
-            if (orderResult.Success)
-            {
-                _logger.LogInformationWithAlert("[{AccountType}-{Symbol}-{StrateType}] Triggering stop loss at price {Price}",
-                                                strategy.AccountType,
-                                                strategy.Symbol,
-                                                strategy.StrategyType,
-                                                stopPrice);
-                strategy.OrderId = null;
-                strategy.OrderPlacedTime = null;
-                strategy.HasOpenOrder = false;
-                return;
-            }
-            errorMessage = orderResult.Error?.Message ?? "Unknown error";
-
-            currentRetry++;
-            if (currentRetry < maxRetries)
-            {
-                var delay = TimeSpan.FromSeconds(Math.Pow(2, currentRetry));
-                _logger.LogWarning("[{StrategyType}-{AccountType}-{Symbol}] Attempt {RetryCount} of {MaxRetries} failed. Retrying in {Delay} seconds. Error: {Error}",
-                                   strategy.StrategyType,
-                                   strategy.AccountType,
-                                   strategy.Symbol,
-                                   currentRetry,
-                                   maxRetries,
-                                   delay.TotalSeconds,
-                                   orderResult.Error?.Message);
-                await Task.Delay(delay, ct);
-            }
-
+            _logger.LogInformationWithAlert(
+                "[{AccountType}-{Symbol}-{StrateType}] Triggering stop loss at price {Price}",
+                strategy.AccountType,
+                strategy.Symbol,
+                strategy.StrategyType,
+                stopPrice);
+            strategy.OrderId = null;
+            strategy.OrderPlacedTime = null;
+            strategy.HasOpenOrder = false;
+            return;
         }
-
         _logger.LogErrorWithAlert("""
-        [{StrategyType}-{AccountType}-{Symbol}] Failed to stop order after {MaxRetries} attempts.
+        [{StrategyType}-{AccountType}-{Symbol}] Failed to stop order.
         StrategyId: {StrategyId}
         Error: {ErrorMessage}
         TargetPrice:{Price}, Quantity: {Quantity}.
-        """, strategy.StrategyType, strategy.AccountType, strategy.Symbol, maxRetries, strategy.Id,
-            errorMessage, stopPrice, strategy.Quantity);
+        """, strategy.StrategyType, strategy.AccountType, strategy.Symbol, strategy.Id,
+            result?.Error?.Message, stopPrice, strategy.Quantity);
     }
     public virtual async Task CheckOrderStatus(IAccountProcessor accountProcessor, Strategy strategy, CancellationToken ct)
     {
@@ -236,14 +220,12 @@ public abstract class BaseExecutor :
                 default:
                     break;
             }
+            return;
         }
-        else
-        {
-            _logger.LogError("[{AccountType}-{Symbol}] Failed to check order status, Error: {ErrorMessage}.",
-                             strategy.AccountType,
-                             strategy.Symbol,
-                             orderResult.Error?.Message);
-        }
+        _logger.LogError("[{AccountType}-{Symbol}] Failed to check order status, Error: {ErrorMessage}.",
+                         strategy.AccountType,
+                         strategy.Symbol,
+                         orderResult.Error?.Message);
     }
     public virtual async Task TryPlaceOrder(IAccountProcessor accountProcessor, Strategy strategy, CancellationToken ct)
     {
@@ -256,53 +238,31 @@ public abstract class BaseExecutor :
         var price = CommonHelper.TrimEndZero(strategy.TargetPrice);
         strategy.TargetPrice = price;
         strategy.Quantity = quantity;
-        var maxRetries = 3;
-        var currentRetry = 0;
-        var errorMessage = string.Empty;
 
-        while (currentRetry < maxRetries)
+        var (success, result) = await ExecuteWithRetry(() => PlaceOrderAsync(accountProcessor, strategy, ct), strategy, ct);
+
+        if (success)
         {
-            var orderResult = await PlaceOrderAsync(accountProcessor, strategy, ct);
-
-            if (orderResult.Success)
-            {
-                _logger.LogInformation("[{StrategyType}-{AccountType}-{Symbol}] Order placed successfully. Quantity: {Quantity}, Price: {Price}.",
-                                       strategy.StrategyType,
-                                       strategy.AccountType,
-                                       strategy.Symbol,
-                                       quantity,
-                                       price);
-                strategy.OrderId = orderResult.Data.Id;
-                strategy.HasOpenOrder = true;
-                strategy.OrderPlacedTime = DateTime.UtcNow;
-                strategy.UpdatedAt = DateTime.UtcNow;
-                return;
-            }
-            errorMessage = orderResult.Error?.Message ?? "Unknown error";
-
-            currentRetry++;
-            if (currentRetry < maxRetries)
-            {
-                var delay = TimeSpan.FromSeconds(Math.Pow(2, currentRetry));
-                _logger.LogWarning("[{StrategyType}-{AccountType}-{Symbol}] Attempt {RetryCount} of {MaxRetries} failed. Retrying in {Delay} seconds. Error: {Error}",
+            _logger.LogInformation("[{StrategyType}-{AccountType}-{Symbol}] Order placed successfully. Quantity: {Quantity}, Price: {Price}.",
                                    strategy.StrategyType,
                                    strategy.AccountType,
                                    strategy.Symbol,
-                                   currentRetry,
-                                   maxRetries,
-                                   delay.TotalSeconds,
-                                   orderResult.Error?.Message);
-                await Task.Delay(delay, ct);
-            }
+                                   strategy.Quantity,
+                                   strategy.TargetPrice);
+            strategy.OrderId = result!.Data.Id;
+            strategy.HasOpenOrder = true;
+            strategy.OrderPlacedTime = DateTime.UtcNow;
+            strategy.UpdatedAt = DateTime.UtcNow;
+            return;
         }
 
         _logger.LogErrorWithAlert("""
-        [{StrategyType}-{AccountType}-{Symbol}] Failed to place order after {MaxRetries} attempts.
+        [{StrategyType}-{AccountType}-{Symbol}] Failed to place order.
         StrategyId: {StrategyId}
         Error: {ErrorMessage}
         TargetPrice:{Price}, Quantity: {Quantity}.
-        """, strategy.StrategyType, strategy.AccountType, strategy.Symbol, maxRetries, strategy.Id,
-            errorMessage, price, quantity);
+        """, strategy.StrategyType, strategy.AccountType, strategy.Symbol, strategy.Id,
+            result?.Error?.Message, price, quantity);
     }
 
     public virtual async Task Handle(KlineClosedEvent notification, CancellationToken cancellationToken)
@@ -328,5 +288,17 @@ public abstract class BaseExecutor :
     public virtual Task HandleKlineClosedEvent(IAccountProcessor accountProcessor, Strategy strategy, KlineClosedEvent notification, CancellationToken cancellationToken)
     {
         return Task.CompletedTask;
+    }
+    protected bool ShouldStopLoss(IAccountProcessor accountProcessor, Strategy strategy, KlineClosedEvent @event)
+    {
+        if (string.IsNullOrEmpty(strategy.StopLossExpression))
+        {
+            return false;
+        }
+        return _javaScriptEvaluator.EvaluateExpression(strategy.StopLossExpression,
+                                                       @event.Kline.OpenPrice,
+                                                       @event.Kline.ClosePrice,
+                                                       @event.Kline.HighPrice,
+                                                       @event.Kline.LowPrice);
     }
 }
