@@ -157,56 +157,37 @@ public abstract class BaseExecutor :
 
         while (currentRetry < maxRetries)
         {
-            try
-            {
-                var orderResult = await StopOrderAsync(accountProcessor, strategy, stopPrice, ct);
+            var orderResult = await StopOrderAsync(accountProcessor, strategy, stopPrice, ct);
 
-                if (orderResult.Success)
-                {
-                    _logger.LogInformationWithAlert("[{AccountType}-{Symbol}-{StrateType}] Triggering stop loss at price {Price}",
-                                                    strategy.AccountType,
-                                                    strategy.Symbol,
-                                                    strategy.StrategyType,
-                                                    stopPrice);
-                    strategy.OrderId = null;
-                    strategy.OrderPlacedTime = null;
-                    strategy.HasOpenOrder = false;
-                    return;
-                }
-                errorMessage = orderResult.Error?.Message ?? "Unknown error";
-
-                currentRetry++;
-                if (currentRetry < maxRetries)
-                {
-                    var delay = TimeSpan.FromSeconds(Math.Pow(2, currentRetry));
-                    _logger.LogWarning("[{StrategyType}-{AccountType}-{Symbol}] Attempt {RetryCount} of {MaxRetries} failed. Retrying in {Delay} seconds. Error: {Error}",
-                                       strategy.StrategyType,
-                                       strategy.AccountType,
-                                       strategy.Symbol,
-                                       currentRetry,
-                                       maxRetries,
-                                       delay.TotalSeconds,
-                                       orderResult.Error?.Message);
-                    await Task.Delay(delay, ct);
-                }
-            }
-            catch (Exception ex)
+            if (orderResult.Success)
             {
-                currentRetry++;
-                if (currentRetry < maxRetries)
-                {
-                    var delay = TimeSpan.FromSeconds(Math.Pow(2, currentRetry));
-                    _logger.LogWarning("[{StrategyType}-{AccountType}-{Symbol}] Attempt {RetryCount} of {MaxRetries} failed with exception. Retrying in {Delay} seconds. Error: {Error}",
-                                       strategy.StrategyType,
-                                       strategy.AccountType,
-                                       strategy.Symbol,
-                                       currentRetry,
-                                       maxRetries,
-                                       delay.TotalSeconds,
-                                       ex.Message);
-                    await Task.Delay(delay, ct);
-                }
+                _logger.LogInformationWithAlert("[{AccountType}-{Symbol}-{StrateType}] Triggering stop loss at price {Price}",
+                                                strategy.AccountType,
+                                                strategy.Symbol,
+                                                strategy.StrategyType,
+                                                stopPrice);
+                strategy.OrderId = null;
+                strategy.OrderPlacedTime = null;
+                strategy.HasOpenOrder = false;
+                return;
             }
+            errorMessage = orderResult.Error?.Message ?? "Unknown error";
+
+            currentRetry++;
+            if (currentRetry < maxRetries)
+            {
+                var delay = TimeSpan.FromSeconds(Math.Pow(2, currentRetry));
+                _logger.LogWarning("[{StrategyType}-{AccountType}-{Symbol}] Attempt {RetryCount} of {MaxRetries} failed. Retrying in {Delay} seconds. Error: {Error}",
+                                   strategy.StrategyType,
+                                   strategy.AccountType,
+                                   strategy.Symbol,
+                                   currentRetry,
+                                   maxRetries,
+                                   delay.TotalSeconds,
+                                   orderResult.Error?.Message);
+                await Task.Delay(delay, ct);
+            }
+
         }
 
         _logger.LogErrorWithAlert("""
@@ -281,57 +262,37 @@ public abstract class BaseExecutor :
 
         while (currentRetry < maxRetries)
         {
-            try
+            var orderResult = await PlaceOrderAsync(accountProcessor, strategy, ct);
+
+            if (orderResult.Success)
             {
-                var orderResult = await PlaceOrderAsync(accountProcessor, strategy, ct);
-
-                if (orderResult.Success)
-                {
-                    _logger.LogInformation("[{StrategyType}-{AccountType}-{Symbol}] Order placed successfully. Quantity: {Quantity}, Price: {Price}.",
-                                           strategy.StrategyType,
-                                           strategy.AccountType,
-                                           strategy.Symbol,
-                                           quantity,
-                                           price);
-                    strategy.OrderId = orderResult.Data.Id;
-                    strategy.HasOpenOrder = true;
-                    strategy.OrderPlacedTime = DateTime.UtcNow;
-                    strategy.UpdatedAt = DateTime.UtcNow;
-                    return;
-                }
-                errorMessage = orderResult.Error?.Message ?? "Unknown error";
-
-                currentRetry++;
-                if (currentRetry < maxRetries)
-                {
-                    var delay = TimeSpan.FromSeconds(Math.Pow(2, currentRetry));
-                    _logger.LogWarning("[{StrategyType}-{AccountType}-{Symbol}] Attempt {RetryCount} of {MaxRetries} failed. Retrying in {Delay} seconds. Error: {Error}",
+                _logger.LogInformation("[{StrategyType}-{AccountType}-{Symbol}] Order placed successfully. Quantity: {Quantity}, Price: {Price}.",
                                        strategy.StrategyType,
                                        strategy.AccountType,
                                        strategy.Symbol,
-                                       currentRetry,
-                                       maxRetries,
-                                       delay.TotalSeconds,
-                                       orderResult.Error?.Message);
-                    await Task.Delay(delay, ct);
-                }
+                                       quantity,
+                                       price);
+                strategy.OrderId = orderResult.Data.Id;
+                strategy.HasOpenOrder = true;
+                strategy.OrderPlacedTime = DateTime.UtcNow;
+                strategy.UpdatedAt = DateTime.UtcNow;
+                return;
             }
-            catch (Exception ex)
+            errorMessage = orderResult.Error?.Message ?? "Unknown error";
+
+            currentRetry++;
+            if (currentRetry < maxRetries)
             {
-                currentRetry++;
-                if (currentRetry < maxRetries)
-                {
-                    var delay = TimeSpan.FromSeconds(Math.Pow(2, currentRetry));
-                    _logger.LogWarning("[{StrategyType}-{AccountType}-{Symbol}] Attempt {RetryCount} of {MaxRetries} failed with exception. Retrying in {Delay} seconds. Error: {Error}",
-                                       strategy.StrategyType,
-                                       strategy.AccountType,
-                                       strategy.Symbol,
-                                       currentRetry,
-                                       maxRetries,
-                                       delay.TotalSeconds,
-                                       ex.Message);
-                    await Task.Delay(delay, ct);
-                }
+                var delay = TimeSpan.FromSeconds(Math.Pow(2, currentRetry));
+                _logger.LogWarning("[{StrategyType}-{AccountType}-{Symbol}] Attempt {RetryCount} of {MaxRetries} failed. Retrying in {Delay} seconds. Error: {Error}",
+                                   strategy.StrategyType,
+                                   strategy.AccountType,
+                                   strategy.Symbol,
+                                   currentRetry,
+                                   maxRetries,
+                                   delay.TotalSeconds,
+                                   orderResult.Error?.Message);
+                await Task.Delay(delay, ct);
             }
         }
 
