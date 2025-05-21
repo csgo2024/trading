@@ -52,13 +52,13 @@ public class BottomBuyExecutor : BaseExecutor
             strategy.HasOpenOrder = false;
             strategy.OrderId = null;
             strategy.OrderPlacedTime = null;
+            _logger.LogInformation("[{AccountType}-{Symbol}] New day started, Open price: {OpenPrice}, Target price: {TargetPrice}.",
+                strategy.AccountType, strategy.Symbol, openPrice, strategy.TargetPrice);
+            return;
         }
-        else
-        {
-            _logger.LogErrorWithAlert("[{AccountType}-{Symbol}] Failed to get daily open price. Error: {ErrorMessage}.",
-                                      strategy.AccountType,
-                                      strategy.Symbol,
-                                      kLines.Error?.Message);
-        }
+        _logger.LogErrorWithAlert("[{AccountType}-{Symbol}] Failed to get daily open price. Error: {ErrorMessage}.",
+                                  strategy.AccountType,
+                                  strategy.Symbol,
+                                  kLines.Error?.Message);
     }
 }

@@ -92,14 +92,7 @@ public class TelegramCommandHandlerTests
         await _handler.HandleCommand(message);
 
         // Assert
-        _mockLogger.Verify(
-            x => x.Log(
-                LogLevel.Error,
-                It.IsAny<EventId>(),
-                It.IsAny<It.IsAnyType>(),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Never);
+        _mockLogger.VerifyLoggingNever(LogLevel.Error, "");
     }
 
     [Fact]
@@ -121,14 +114,7 @@ public class TelegramCommandHandlerTests
         await _handler.HandleCommand(message);
 
         // Assert
-        _mockLogger.Verify(
-            x => x.Log(
-                LogLevel.Error,
-                It.IsAny<EventId>(),
-                It.IsAny<It.IsAnyType>(),
-                expectedException,
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
+        _mockLogger.VerifyLoggingOnce(LogLevel.Error, "Command execution failed");
     }
 
     // HandleCallbackQuery 测试
@@ -219,13 +205,6 @@ public class TelegramCommandHandlerTests
         await _handler.HandleCallbackQuery(query);
 
         // Assert
-        _mockLogger.Verify(
-            x => x.Log(
-                LogLevel.Error,
-                It.IsAny<EventId>(),
-                It.IsAny<It.IsAnyType>(),
-                expectedException,
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
+        _mockLogger.VerifyLoggingOnce(LogLevel.Error, "");
     }
 }

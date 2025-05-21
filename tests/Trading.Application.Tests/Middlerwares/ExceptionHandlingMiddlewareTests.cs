@@ -69,16 +69,8 @@ public class ExceptionHandlingMiddlewareTests
         await middleware.InvokeAsync(context);
 
         // Assert
-        _mockLogger.Verify(
-            x => x.Log(
-                LogLevel.Error,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) =>
-                    v.ToString()!.Contains("Inner exception") &&
-                    v.ToString()!.Contains("Outer exception")),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
+        _mockLogger.VerifyLoggingOnce(LogLevel.Error, "Inner exception");
+        _mockLogger.VerifyLoggingOnce(LogLevel.Error, "Outer exception");
     }
 
     [Fact]
@@ -101,14 +93,7 @@ public class ExceptionHandlingMiddlewareTests
         await middleware.InvokeAsync(context);
 
         // Assert
-        _mockLogger.Verify(
-            x => x.Log(
-                LogLevel.Error,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(bodyContent)),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
+        _mockLogger.VerifyLoggingOnce(LogLevel.Error, bodyContent);
     }
 
     [Fact]
@@ -128,14 +113,7 @@ public class ExceptionHandlingMiddlewareTests
         await middleware.InvokeAsync(context);
 
         // Assert
-        _mockLogger.Verify(
-            x => x.Log(
-                LogLevel.Error,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("?param=value")),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
+        _mockLogger.VerifyLoggingOnce(LogLevel.Error, "?param=value");
     }
 }
 

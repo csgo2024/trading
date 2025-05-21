@@ -19,7 +19,7 @@ namespace Trading.Application.Tests.Services.Alerts;
 
 public class AlertNotificationServiceTests
 {
-    private readonly Mock<ILogger<AlertNotificationService>> _loggerMock;
+    private readonly Mock<ILogger<AlertNotificationService>> _mockLogger;
     private readonly Mock<ILogger<JavaScriptEvaluator>> _jsLoggerMock;
     private readonly Mock<IAlertRepository> _alertRepositoryMock;
     private readonly Mock<ITelegramBotClient> _botClientMock;
@@ -30,7 +30,7 @@ public class AlertNotificationServiceTests
 
     public AlertNotificationServiceTests()
     {
-        _loggerMock = new Mock<ILogger<AlertNotificationService>>();
+        _mockLogger = new Mock<ILogger<AlertNotificationService>>();
         _jsLoggerMock = new Mock<ILogger<JavaScriptEvaluator>>();
 
         _alertRepositoryMock = new Mock<IAlertRepository>();
@@ -45,7 +45,7 @@ public class AlertNotificationServiceTests
         optionsMock.Setup(x => x.Value).Returns(settings);
 
         _service = new AlertNotificationService(
-            _loggerMock.Object,
+            _mockLogger.Object,
             _alertRepositoryMock.Object,
             _botClientMock.Object,
             _jsEvaluatorMock.Object,
@@ -303,13 +303,6 @@ public class AlertNotificationServiceTests
         await task;
 
         // Assert
-        _loggerMock.Verify(
-            x => x.Log(
-                LogLevel.Debug,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => true),
-                It.IsAny<Exception>(),
-                It.Is<Func<It.IsAnyType, Exception?, string>>((v, t) => true)),
-            Times.AtLeastOnce);
+        _mockLogger.VerifyLoggingTimes(LogLevel.Debug, "", Times.AtLeastOnce);
     }
 }

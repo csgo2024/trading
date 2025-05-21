@@ -1,8 +1,4 @@
 using Binance.Net.Enums;
-using Binance.Net.Interfaces;
-using Binance.Net.Objects.Models;
-using Binance.Net.Objects.Models.Spot;
-using CryptoExchange.Net.Objects;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Trading.Application.Services.Trading.Account;
@@ -41,14 +37,23 @@ public class TopSellExecutorTests
     }
 
     [Fact]
+    public void StrategyType_ShouldEqualTo_TopSell()
+    {
+        var result = _executor.StrategyType;
+
+        // Assert
+        Assert.Equal(StrategyType.TopSell, result);
+    }
+
+    [Fact]
     public async Task Execute_WhenOrderIdNotExist_ShouldResetStrategy()
     {
         // Arrange
         var strategy = CreateTestStrategy();
-        SetupSuccessfulKlineResponse();
-        SetupSuccessfulSymbolFilterResponse();
-        SetupSuccessfulPlaceOrderResponse(12345L);
-        SetupSuccessfulOrderStatusResponse(OrderStatus.New);
+        _mockAccountProcessor.SetupSuccessfulGetKlines();
+        _mockAccountProcessor.SetupSuccessfulSymbolFilter();
+        _mockAccountProcessor.SetupSuccessfulPlaceShortOrderAsync(12345L);
+        _mockAccountProcessor.SetupSuccessfulGetOrder(OrderStatus.New);
         _mockStrategyRepository.Setup(x => x.UpdateAsync(It.IsAny<string>(), It.IsAny<Strategy>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
@@ -66,7 +71,7 @@ public class TopSellExecutorTests
     {
         // Arrange
         var strategy = CreateTestStrategy(true, 12345, DateTime.UtcNow);
-        SetupSuccessfulOrderStatusResponse(OrderStatus.New);
+        _mockAccountProcessor.SetupSuccessfulGetOrder(OrderStatus.New);
         _mockStrategyRepository.Setup(x => x.UpdateAsync(It.IsAny<string>(), It.IsAny<Strategy>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
@@ -74,14 +79,7 @@ public class TopSellExecutorTests
         await _executor.ExecuteAsync(_mockAccountProcessor.Object, strategy, CancellationToken.None);
 
         // Assert
-        _mockLogger.Verify(
-            x => x.Log(
-                It.IsAny<LogLevel>(),
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Previous day's order not filled")),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Never);
+        _mockLogger.VerifyLoggingNever(LogLevel.Information, "Previous day's order not filled");
     }
 
     [Fact]
@@ -89,10 +87,10 @@ public class TopSellExecutorTests
     {
         // Arrange
         var strategy = CreateTestStrategy(orderPlacedTime: DateTime.UtcNow.AddDays(-1));
-        SetupSuccessfulKlineResponse();
-        SetupSuccessfulSymbolFilterResponse();
-        SetupSuccessfulPlaceOrderResponse(12345L);
-        SetupSuccessfulOrderStatusResponse(OrderStatus.New);
+        _mockAccountProcessor.SetupSuccessfulGetKlines();
+        _mockAccountProcessor.SetupSuccessfulSymbolFilter();
+        _mockAccountProcessor.SetupSuccessfulPlaceShortOrderAsync(12345L);
+        _mockAccountProcessor.SetupSuccessfulGetOrder(OrderStatus.New);
         _mockStrategyRepository.Setup(x => x.UpdateAsync(It.IsAny<string>(), It.IsAny<Strategy>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
@@ -111,7 +109,7 @@ public class TopSellExecutorTests
     {
         // Arrange
         var strategy = CreateTestStrategy(hasOpenOrder: true, orderId: 12345);
-        SetupSuccessfulOrderStatusResponse(OrderStatus.Filled);
+        _mockAccountProcessor.SetupSuccessfulGetOrder(OrderStatus.Filled);
         _mockStrategyRepository.Setup(x => x.UpdateAsync(It.IsAny<string>(), It.IsAny<Strategy>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
@@ -131,7 +129,7 @@ public class TopSellExecutorTests
     {
         // Arrange
         var strategy = CreateTestStrategy(hasOpenOrder: true, orderId: 12345);
-        SetupSuccessfulOrderStatusResponse(status);
+        _mockAccountProcessor.SetupSuccessfulGetOrder(status);
         _mockStrategyRepository
             .Setup(x => x.UpdateAsync(It.IsAny<string>(), It.IsAny<Strategy>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
@@ -143,7 +141,7 @@ public class TopSellExecutorTests
         Assert.False(strategy.HasOpenOrder);
         Assert.Null(strategy.OrderId);
         Assert.Null(strategy.OrderPlacedTime);
-        VerifyLogging(_mockLogger, $"[{strategy.AccountType}-{strategy.Symbol}] Order {status}. Will try to place new order.");
+        _mockLogger.VerifyLoggingOnce(LogLevel.Information, $"[{strategy.AccountType}-{strategy.Symbol}] Order {status}. Will try to place new order.");
     }
 
     [Fact]
@@ -156,11 +154,11 @@ public class TopSellExecutorTests
             orderPlacedTime: DateTime.UtcNow.AddDays(-1));
         strategy.OrderPlacedTime = DateTime.UtcNow.AddDays(-1);
 
-        SetupSuccessfulKlineResponse(100m);
-        SetupSuccessfulSymbolFilterResponse();
-        SetupSuccessfulOrderStatusResponse(OrderStatus.New);
-        SetupSuccessfulCancelOrderResponse();
-        SetupSuccessfulPlaceOrderResponse(54321L); // Add this line - new order ID different from canceled one
+        _mockAccountProcessor.SetupSuccessfulGetKlines(100m);
+        _mockAccountProcessor.SetupSuccessfulSymbolFilter();
+        _mockAccountProcessor.SetupSuccessfulGetOrder(OrderStatus.New);
+        _mockAccountProcessor.SetupSuccessfulCancelOrder();
+        _mockAccountProcessor.SetupSuccessfulPlaceShortOrderAsync(54321L); // Add this line - new order ID different from canceled one
 
         _mockStrategyRepository
             .Setup(x => x.UpdateAsync(It.IsAny<string>(), It.IsAny<Strategy>(), It.IsAny<CancellationToken>()))
@@ -175,8 +173,8 @@ public class TopSellExecutorTests
         Assert.NotNull(strategy.OrderPlacedTime);
         Assert.NotEqual(0, strategy.TargetPrice);
         Assert.NotEqual(0, strategy.Quantity);
-        VerifyLogging(_mockLogger, $"[{strategy.AccountType}-{strategy.Symbol}] Previous day's order not filled, cancelling order before reset.");
-        VerifyLogging(_mockLogger, $"[{strategy.AccountType}-{strategy.Symbol}] Successfully cancelled order");
+        _mockLogger.VerifyLoggingOnce(LogLevel.Information, $"[{strategy.AccountType}-{strategy.Symbol}] Previous day's order not filled, cancelling order before reset.");
+        _mockLogger.VerifyLoggingOnce(LogLevel.Information, $"[{strategy.AccountType}-{strategy.Symbol}] Successfully cancelled order");
     }
 
     [Theory]
@@ -190,11 +188,11 @@ public class TopSellExecutorTests
             orderId: 12345);
         strategy.OrderPlacedTime = DateTime.UtcNow.AddDays(-1); // Set order placed time to previous day
 
-        SetupSuccessfulKlineResponse(100m);
-        SetupSuccessfulSymbolFilterResponse();
-        SetupSuccessfulOrderStatusResponse(status);
-        SetupSuccessfulCancelOrderResponse();
-        SetupSuccessfulPlaceOrderResponse(54321L);
+        _mockAccountProcessor.SetupSuccessfulGetKlines(100m);
+        _mockAccountProcessor.SetupSuccessfulSymbolFilter();
+        _mockAccountProcessor.SetupSuccessfulGetOrder(status);
+        _mockAccountProcessor.SetupSuccessfulCancelOrder();
+        _mockAccountProcessor.SetupSuccessfulPlaceShortOrderAsync(54321L);
 
         _mockStrategyRepository
             .Setup(x => x.UpdateAsync(It.IsAny<string>(), It.IsAny<Strategy>(), It.IsAny<CancellationToken>()))
@@ -205,10 +203,8 @@ public class TopSellExecutorTests
 
         // Assert
         // Verify order cancellation
-        VerifyLoggingSequence(_mockLogger, [
-            $"[{strategy.AccountType}-{strategy.Symbol}] Previous day's order not filled, cancelling order before reset",
-            $"[{strategy.AccountType}-{strategy.Symbol}] Successfully cancelled order"
-        ]);
+        _mockLogger.VerifyLoggingOnce(LogLevel.Information, $"[{strategy.AccountType}-{strategy.Symbol}] Previous day's order not filled, cancelling order before reset");
+        _mockLogger.VerifyLoggingOnce(LogLevel.Information, $"[{strategy.AccountType}-{strategy.Symbol}] Successfully cancelled order");
 
         // Verify strategy state after executed, should place new order.
         Assert.True(strategy.HasOpenOrder);
@@ -227,7 +223,7 @@ public class TopSellExecutorTests
             orderId: 12345);
         strategy.OrderPlacedTime = DateTime.UtcNow; // Set order placed time to current day
 
-        SetupSuccessfulOrderStatusResponse(status);
+        _mockAccountProcessor.SetupSuccessfulGetOrder(status);
 
         _mockStrategyRepository
             .Setup(x => x.UpdateAsync(It.IsAny<string>(), It.IsAny<Strategy>(), It.IsAny<CancellationToken>()))
@@ -241,16 +237,6 @@ public class TopSellExecutorTests
         Assert.True(strategy.HasOpenOrder);
         Assert.Equal(12345L, strategy.OrderId); // Same order ID
         Assert.NotNull(strategy.OrderPlacedTime);
-
-        // Verify no cancellation logs
-        _mockLogger.Verify(
-            x => x.Log(
-                It.IsAny<LogLevel>(),
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("initiating cancellation")),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Never);
     }
 
     [Fact]
@@ -259,7 +245,7 @@ public class TopSellExecutorTests
         // Arrange
         var strategy = CreateTestStrategy();
         var orderId = 12345L;
-        SetupSuccessfulPlaceOrderResponse(orderId);
+        _mockAccountProcessor.SetupSuccessfulPlaceShortOrderAsync(orderId);
 
         // Act
         await _executor.TryPlaceOrder(_mockAccountProcessor.Object, strategy, CancellationToken.None);
@@ -275,7 +261,7 @@ public class TopSellExecutorTests
     {
         // Arrange
         var strategy = CreateTestStrategy(hasOpenOrder: true, orderId: 12345);
-        SetupSuccessfulCancelOrderResponse();
+        _mockAccountProcessor.SetupSuccessfulCancelOrder();
 
         // Act
         await _executor.CancelExistingOrder(_mockAccountProcessor.Object, strategy, CancellationToken.None);
@@ -292,8 +278,8 @@ public class TopSellExecutorTests
         // Arrange
         var strategy = CreateTestStrategy();
         var openPrice = 100m;
-        SetupSuccessfulKlineResponse(openPrice);
-        SetupSuccessfulSymbolFilterResponse();
+        _mockAccountProcessor.SetupSuccessfulGetKlines(openPrice);
+        _mockAccountProcessor.SetupSuccessfulSymbolFilter();
 
         // Act
         await _executor.ResetDailyStrategy(_mockAccountProcessor.Object, strategy, DateTime.UtcNow, CancellationToken.None);
@@ -309,27 +295,16 @@ public class TopSellExecutorTests
     {
         // Arrange
         var strategy = CreateTestStrategy();
-        var openPrice = 100m;
-        SetupFailedKlineResponse(openPrice);
+        _mockAccountProcessor.SetupFailedGetKlines();
 
         // Act
         await _executor.ResetDailyStrategy(_mockAccountProcessor.Object, strategy, DateTime.UtcNow, CancellationToken.None);
 
         // Assert
-        _mockLogger.Verify(
-            x => x.Log(
-                It.IsAny<LogLevel>(),
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Failed to get daily open price")),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
+        _mockLogger.VerifyLoggingOnce(LogLevel.Error, $"Failed to get daily open price");
     }
 
-    private static Strategy CreateTestStrategy(
-        bool hasOpenOrder = false,
-        long? orderId = null,
-        DateTime? orderPlacedTime = null)
+    private static Strategy CreateTestStrategy(bool hasOpenOrder = false, long? orderId = null, DateTime? orderPlacedTime = null)
     {
         return new Strategy
         {
@@ -344,183 +319,4 @@ public class TopSellExecutorTests
             OrderPlacedTime = orderPlacedTime
         };
     }
-
-    private void SetupSuccessfulKlineResponse(decimal openPrice = 100m)
-    {
-        var kline = new Mock<IBinanceKline>();
-        kline.Setup(x => x.OpenPrice).Returns(openPrice);
-
-        _mockAccountProcessor
-            .Setup(x => x.GetKlines(
-                It.IsAny<string>(),
-                It.IsAny<KlineInterval>(),
-                It.IsAny<DateTime?>(),
-                It.IsAny<DateTime?>(),
-                It.IsAny<int?>(),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new WebCallResult<IEnumerable<IBinanceKline>>(
-                null,
-                null,
-                null,
-                0,
-                null,
-                0,
-                null,
-                null,
-                null,
-                null,
-                ResultDataSource.Server,
-                [kline.Object],
-                null)
-            );
-    }
-    private void SetupFailedKlineResponse(decimal openPrice = 100m)
-    {
-        var kline = new Mock<IBinanceKline>();
-        kline.Setup(x => x.OpenPrice).Returns(openPrice);
-
-        _mockAccountProcessor
-            .Setup(x => x.GetKlines(
-                It.IsAny<string>(),
-                It.IsAny<KlineInterval>(),
-                It.IsAny<DateTime?>(),
-                It.IsAny<DateTime?>(),
-                It.IsAny<int?>(),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new WebCallResult<IEnumerable<IBinanceKline>>(
-                null,
-                null,
-                null,
-                0,
-                null,
-                0,
-                null,
-                null,
-                null,
-                null,
-                ResultDataSource.Server,
-                [kline.Object],
-                new ServerError("Error"))
-            );
-    }
-
-    private void SetupSuccessfulOrderStatusResponse(OrderStatus status)
-    {
-        _mockAccountProcessor
-            .Setup(x => x.GetOrder(
-                It.IsAny<string>(),
-                It.IsAny<long>(),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new WebCallResult<BinanceOrderBase>(
-                null,
-                null,
-                null,
-                0,
-                null,
-                0,
-                null,
-                null,
-                null,
-                null,
-                ResultDataSource.Server,
-                new BinanceOrder { Status = status },
-                null));
-    }
-
-    private void SetupSuccessfulPlaceOrderResponse(long orderId)
-    {
-        _mockAccountProcessor
-            .Setup(x => x.PlaceShortOrderAsync(
-                It.IsAny<string>(),
-                It.IsAny<decimal>(),
-                It.IsAny<decimal>(),
-                It.IsAny<TimeInForce>(),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new WebCallResult<BinanceOrderBase>(
-                null,
-                null,
-                null,
-                0,
-                null,
-                0,
-                null,
-                null,
-                null,
-                null,
-                ResultDataSource.Server,
-                new BinanceOrder { Id = orderId },
-                null)
-            );
-    }
-
-    private void SetupSuccessfulCancelOrderResponse()
-    {
-        _mockAccountProcessor
-            .Setup(x => x.CancelOrder(
-                It.IsAny<string>(),
-                It.IsAny<long>(),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new WebCallResult<BinanceOrderBase>(
-                null,
-                null,
-                null,
-                0,
-                null,
-                0,
-                null,
-                null,
-                null,
-                null,
-                ResultDataSource.Server,
-                new BinanceOrder(),
-                null
-                ));
-    }
-
-    private void SetupSuccessfulSymbolFilterResponse()
-    {
-        _mockAccountProcessor
-            .Setup(x => x.GetSymbolFilterData(
-                It.IsAny<Strategy>(),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync((new BinanceSymbolPriceFilter()
-            {
-                TickSize = 0.001m,
-                MaxPrice = decimal.MaxValue,
-                MinPrice = decimal.MinValue,
-            }, new BinanceSymbolLotSizeFilter()
-            {
-                StepSize = 0.01m,
-                MinQuantity = decimal.MinValue,
-                MaxQuantity = decimal.MaxValue,
-            }));
-    }
-
-    private static void VerifyLogging(Mock<ILogger<TopSellExecutor>> logger, string expectedMessage)
-    {
-        logger.Verify(
-            x => x.Log(
-                It.IsAny<LogLevel>(),
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(expectedMessage)),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
-    }
-
-    private static void VerifyLoggingSequence(Mock<ILogger<TopSellExecutor>> logger, string[] expectedMessages)
-    {
-        foreach (var expectedMessage in expectedMessages)
-        {
-            logger.Verify(
-                x => x.Log(
-                    It.IsAny<LogLevel>(),
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(expectedMessage)),
-                    It.IsAny<Exception>(),
-                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-                Times.Once);
-        }
-    }
-
 }

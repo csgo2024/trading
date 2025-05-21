@@ -1,6 +1,3 @@
-using Binance.Net.Objects.Models;
-using Binance.Net.Objects.Models.Spot;
-using CryptoExchange.Net.Objects;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Trading.Application.Services.Common;
@@ -65,26 +62,7 @@ public class StrategyDispatchServiceTests
             .Setup(x => x.GetAccountProcessor(It.IsAny<AccountType>()))
             .Returns(_accountProcessorMock.Object);
 
-        _accountProcessorMock
-            .Setup(x => x.CancelOrder(
-                It.IsAny<string>(),
-                It.IsAny<long>(),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new WebCallResult<BinanceOrderBase>(
-                null,
-                null,
-                null,
-                0,
-                null,
-                0,
-                null,
-                null,
-                null,
-                null,
-                ResultDataSource.Server,
-                new BinanceOrder(),
-                null
-                ));
+        _accountProcessorMock.SetupSuccessfulCancelOrder();
 
         _executorFactoryMock
             .Setup(x => x.GetExecutor(It.IsAny<StrategyType>()))

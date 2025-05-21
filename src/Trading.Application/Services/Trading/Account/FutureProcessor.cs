@@ -100,7 +100,7 @@ public class FutureProcessor : IAccountProcessor
 
     }
 
-    public async Task<WebCallResult<BinanceOrderBase>> CancelOrder(string symbol, long orderId, CancellationToken ct)
+    public async Task<WebCallResult<BinanceOrderBase>> CancelOrderAsync(string symbol, long orderId, CancellationToken ct)
     {
         var webCallResult = await _usdFutureRestClient.Trading.CancelOrderAsync(
             symbol: symbol,

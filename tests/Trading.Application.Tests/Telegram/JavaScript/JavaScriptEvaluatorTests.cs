@@ -46,14 +46,7 @@ public class JavaScriptEvaluatorTests
 
         // Assert
         Assert.False(result);
-        _loggerMock.Verify(
-            x => x.Log(
-                LogLevel.Error,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => true),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
+        _loggerMock.VerifyLoggingOnce(LogLevel.Error, "invalid * syntax >");
     }
 
     [Theory]

@@ -28,7 +28,7 @@ public interface IAccountProcessor
                                                                decimal price,
                                                                TimeInForce timeInForce,
                                                                CancellationToken ct);
-    Task<WebCallResult<BinanceOrderBase>> CancelOrder(string symbol,
+    Task<WebCallResult<BinanceOrderBase>> CancelOrderAsync(string symbol,
                                                       long orderId,
                                                       CancellationToken ct);
     Task<(BinanceSymbolPriceFilter?, BinanceSymbolLotSizeFilter?)> GetSymbolFilterData(Strategy strategy,

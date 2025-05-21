@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Logging;
-using Trading.Application.Services.Alerts;
 using Trading.Application.Services.Trading.Account;
 using Trading.Common.Enums;
 using Trading.Common.JavaScript;
@@ -23,10 +22,5 @@ public class DCABuyExecutor : BaseExecutor
     public override Task ExecuteAsync(IAccountProcessor accountProcessor, Strategy strategy, CancellationToken ct)
     {
         throw new NotImplementedException();
-    }
-
-    public override Task Handle(KlineClosedEvent notification, CancellationToken cancellationToken)
-    {
-        return Task.CompletedTask;
     }
 }

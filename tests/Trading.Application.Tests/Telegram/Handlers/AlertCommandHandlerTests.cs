@@ -78,14 +78,7 @@ public class AlertCommandHandlerTests
         await _handler.HandleAsync("");
 
         // Assert
-        _loggerMock.Verify(
-            x => x.Log(
-                LogLevel.Information,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((o, t) => o.ToString()!.Contains("Alert is empty, please create and call later.")),
-                null,
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
+        _loggerMock.VerifyLoggingOnce(LogLevel.Information, "Alert is empty, please create and call later.");
     }
     [Fact]
     public async Task HandleAsync_WithEmptyCommand_ClearsAllAlerts()
@@ -101,7 +94,7 @@ public class AlertCommandHandlerTests
         // Assert
         _alertRepositoryMock.Verify(x => x.ClearAllAlertsAsync(It.IsAny<CancellationToken>()), Times.Once);
         _mediatorMock.Verify(x => x.Publish(It.IsAny<AlertEmptyedEvent>(), It.IsAny<CancellationToken>()), Times.Once);
-        VerifyLogInfo("已清空所有价格警报");
+        _loggerMock.VerifyLoggingOnce(LogLevel.Information, "已清空所有价格警报");
     }
 
     [Fact]
@@ -227,7 +220,7 @@ public class AlertCommandHandlerTests
         await _handler.HandleAsync($"{command} {alertId}");
 
         // Assert
-        VerifyLogError($"未找到报警 ID: {alertId}");
+        _loggerMock.VerifyLoggingOnce(LogLevel.Error, $"未找到报警 ID: {alertId}");
     }
 
     [Theory]
@@ -251,29 +244,5 @@ public class AlertCommandHandlerTests
             alertId,
             It.Is<Alert>(a => a.Status != status),
             It.IsAny<CancellationToken>()), Times.Once);
-    }
-
-    private void VerifyLogError(string expectedMessage)
-    {
-        _loggerMock.Verify(
-            x => x.Log(
-                LogLevel.Error,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(expectedMessage)),
-                It.IsAny<Exception>(),
-                It.Is<Func<It.IsAnyType, Exception?, string>>((v, t) => true)),
-            Times.Once);
-    }
-
-    private void VerifyLogInfo(string expectedMessage)
-    {
-        _loggerMock.Verify(
-            x => x.Log(
-                LogLevel.Information,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(expectedMessage)),
-                It.IsAny<Exception>(),
-                It.Is<Func<It.IsAnyType, Exception?, string>>((v, t) => true)),
-            Times.Once);
     }
 }

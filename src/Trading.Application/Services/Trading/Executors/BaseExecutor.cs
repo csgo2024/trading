@@ -137,7 +137,7 @@ public abstract class BaseExecutor :
             return;
         }
 
-        var cancelResult = await accountProcessor.CancelOrder(strategy.Symbol, strategy.OrderId.Value, ct);
+        var cancelResult = await accountProcessor.CancelOrderAsync(strategy.Symbol, strategy.OrderId.Value, ct);
         if (cancelResult.Success)
         {
             _logger.LogInformation("[{AccountType}-{Symbol}] Successfully cancelled order, OrderId: {OrderId}",

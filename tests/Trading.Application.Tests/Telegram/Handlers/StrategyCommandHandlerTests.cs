@@ -59,14 +59,7 @@ public class StrategyCommandHandlerTests
         await _handler.HandleAsync("");
 
         // Assert
-        _loggerMock.Verify(
-            x => x.Log(
-                LogLevel.Information,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((o, t) => o.ToString()!.Contains("Strategy is empty, please create and call later.")),
-                null,
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
+        _loggerMock.VerifyLoggingOnce(LogLevel.Information, "Strategy is empty, please create and call later.");
     }
 
     [Theory]
@@ -106,7 +99,7 @@ public class StrategyCommandHandlerTests
         await _handler.HandleAsync("invalid xyz");
 
         // Assert
-        VerifyLogError("Unknown command. Use: create, delete, pause, or resume");
+        _loggerMock.VerifyLoggingOnce(LogLevel.Error, "Unknown command. Use: create, delete, pause, or resume");
     }
 
     [Fact]
@@ -254,18 +247,6 @@ public class StrategyCommandHandlerTests
                 strategyId,
                 It.Is<Strategy>(x => x.Status == Status.Running),
                 It.IsAny<CancellationToken>()),
-            Times.Once);
-    }
-
-    private void VerifyLogError(string expectedMessage)
-    {
-        _loggerMock.Verify(
-            x => x.Log(
-                LogLevel.Error,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((o, t) => o.ToString()!.Contains(expectedMessage)),
-                null,
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
     }
 }

@@ -98,7 +98,7 @@ public class SpotProcessor : IAccountProcessor
         return result;
     }
 
-    public async Task<WebCallResult<BinanceOrderBase>> CancelOrder(string symbol, long orderId, CancellationToken ct)
+    public async Task<WebCallResult<BinanceOrderBase>> CancelOrderAsync(string symbol, long orderId, CancellationToken ct)
     {
         var webCallResult = await _spotApiClient.Trading.CancelOrderAsync(
             symbol: symbol,

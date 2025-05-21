@@ -15,8 +15,8 @@ namespace Trading.Application.Tests.Services.Alerts;
 
 public class KlineStreamManagerTests
 {
-    private readonly Mock<ILogger<KlineStreamManager>> _loggerMock;
-    private readonly Mock<IMediator> _mediatorMock;
+    private readonly Mock<ILogger<KlineStreamManager>> _mockLogger;
+    private readonly Mock<IMediator> _mockMediator;
     private readonly BinanceSocketClientUsdFuturesApiWrapper _usdFutureSocketClient;
     private readonly KlineStreamManager _manager;
     private readonly CancellationTokenSource _cts;
@@ -27,8 +27,8 @@ public class KlineStreamManagerTests
 
     public KlineStreamManagerTests()
     {
-        _loggerMock = new Mock<ILogger<KlineStreamManager>>();
-        _mediatorMock = new Mock<IMediator>();
+        _mockLogger = new Mock<ILogger<KlineStreamManager>>();
+        _mockMediator = new Mock<IMediator>();
         _cts = new CancellationTokenSource();
 
         _mockAccount = new Mock<IBinanceSocketClientUsdFuturesApiAccount>();
@@ -41,8 +41,8 @@ public class KlineStreamManagerTests
             _mockTrading.Object);
 
         _manager = new KlineStreamManager(
-            _loggerMock.Object,
-            _mediatorMock.Object,
+            _mockLogger.Object,
+            _mockMediator.Object,
             _usdFutureSocketClient);
     }
 
@@ -120,14 +120,7 @@ public class KlineStreamManagerTests
 
         // Assert
         Assert.False(result);
-        _loggerMock.Verify(
-            x => x.Log(
-                LogLevel.Error,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => true),
-                It.IsAny<Exception>(),
-                It.Is<Func<It.IsAnyType, Exception?, string>>((v, t) => true)),
-            Times.Once);
+        _mockLogger.VerifyLoggingOnce(LogLevel.Error, "");
     }
 
     [Fact]

@@ -1,8 +1,5 @@
 using Binance.Net.Enums;
 using Binance.Net.Interfaces;
-using Binance.Net.Objects.Models;
-using Binance.Net.Objects.Models.Spot;
-using CryptoExchange.Net.Objects;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Trading.Application.Services.Alerts;
@@ -45,10 +42,8 @@ public class CloseSellExecutorTests
         _ct = CancellationToken.None;
     }
 
-    [Fact]
-    public async Task Handle_WithNoStrategiesFound_ShouldNotProcessAnything()
+    private static KlineClosedEvent SetupKlineCloseEvent()
     {
-        // Arrange
         var symbol = "BTCUSDT";
         var interval = KlineInterval.OneDay;
         var kline = Mock.Of<IBinanceKline>(k =>
@@ -57,11 +52,19 @@ public class CloseSellExecutorTests
             k.HighPrice == 42000m &&
             k.LowPrice == 39000m);
         var notification = new KlineClosedEvent(symbol, interval, kline);
+        return notification;
+    }
+
+    [Fact]
+    public async Task Handle_WithNoStrategiesFound_ShouldNotProcessAnything()
+    {
+        // Arrange
+        var notification = SetupKlineCloseEvent();
 
         _mockStrategyRepository.Setup(x => x.FindActiveStrategyByType(
             It.IsAny<StrategyType>(),
             It.IsAny<CancellationToken>()
-        )).ReturnsAsync(new List<Strategy>());
+        )).ReturnsAsync([]);
 
         // Act
         await _executor.Handle(notification, _ct);
@@ -79,33 +82,30 @@ public class CloseSellExecutorTests
     public async Task Handle_WithSpotAccountType_ShouldSkipProcessing()
     {
         // Arrange
-        var symbol = "BTCUSDT";
-        var interval = KlineInterval.OneDay;
-        var kline = Mock.Of<IBinanceKline>(k =>
-            k.OpenPrice == 40000m &&
-            k.ClosePrice == 41000m &&
-            k.HighPrice == 42000m &&
-            k.LowPrice == 39000m);
-        var notification = new KlineClosedEvent(symbol, interval, kline);
+        var notification = SetupKlineCloseEvent();
 
         var strategy = new Strategy
         {
+            Id = "test-id",
+            Symbol = "BTCUSDT",
             AccountType = AccountType.Spot,
             StrategyType = StrategyType.CloseSell,
+            Interval = "1d"
         };
-
-        _mockStrategyRepository.Setup(x => x.FindActiveStrategyByType(
-            It.IsAny<StrategyType>(),
-            It.IsAny<CancellationToken>()
-        )).ReturnsAsync(new List<Strategy> { strategy });
+        _mockStrategyStateManager
+            .Setup(x => x.GetState(It.IsAny<StrategyType>()))
+            .Returns(new Dictionary<string, Strategy>
+            {
+                { strategy.Id, strategy }
+            });
+        _mockAccountProcessorFactory.Setup(x => x.GetAccountProcessor(It.IsAny<AccountType>()))
+            .Returns(_mockAccountProcessor.Object);
 
         // Act
         await _executor.Handle(notification, _ct);
 
         // Assert
-        _mockAccountProcessorFactory.Verify(x => x.GetAccountProcessor(It.IsAny<AccountType>()), Times.Never);
-        _mockStrategyRepository.Verify(x => x.UpdateAsync(
-            It.IsAny<string>(),
+        _mockAccountProcessor.Verify(x => x.GetSymbolFilterData(
             It.IsAny<Strategy>(),
             It.IsAny<CancellationToken>()
         ), Times.Never);
@@ -115,14 +115,7 @@ public class CloseSellExecutorTests
     public async Task Handle_WithValidStrategy_ShouldProcessAndUpdateStrategy()
     {
         // Arrange
-        var symbol = "BTCUSDT";
-        var interval = KlineInterval.OneDay;
-        var kline = Mock.Of<IBinanceKline>(k =>
-            k.OpenPrice == 40000m &&
-            k.ClosePrice == 41000m &&
-            k.HighPrice == 42000m &&
-            k.LowPrice == 39000m);
-        var notification = new KlineClosedEvent(symbol, interval, kline);
+        var notification = SetupKlineCloseEvent();
 
         var strategy = new Strategy
         {
@@ -146,8 +139,8 @@ public class CloseSellExecutorTests
         _mockAccountProcessorFactory.Setup(x => x.GetAccountProcessor(It.IsAny<AccountType>()))
             .Returns(_mockAccountProcessor.Object);
 
-        SetupSuccessfulSymbolFilterResponse();
-        SetupSuccessfulPlaceOrderResponse(12345L);
+        _mockAccountProcessor.SetupSuccessfulSymbolFilter();
+        _mockAccountProcessor.SetupSuccessfulPlaceShortOrderAsync(12345L);
 
         // Act
         await _executor.Handle(notification, _ct);
@@ -167,14 +160,7 @@ public class CloseSellExecutorTests
     public async Task Handle_WithNullAccountProcessor_ShouldSkipProcessing()
     {
         // Arrange
-        var symbol = "BTCUSDT";
-        var interval = KlineInterval.OneDay;
-        var kline = Mock.Of<IBinanceKline>(k =>
-            k.OpenPrice == 40000m &&
-            k.ClosePrice == 41000m &&
-            k.HighPrice == 42000m &&
-            k.LowPrice == 39000m);
-        var notification = new KlineClosedEvent(symbol, interval, kline);
+        var notification = SetupKlineCloseEvent();
 
         var strategy = new Strategy
         {
@@ -186,7 +172,7 @@ public class CloseSellExecutorTests
         _mockStrategyRepository.Setup(x => x.FindActiveStrategyByType(
             It.IsAny<StrategyType>(),
             It.IsAny<CancellationToken>()
-        )).ReturnsAsync(new List<Strategy> { strategy });
+        )).ReturnsAsync([strategy]);
 
         _mockAccountProcessorFactory.Setup(x => x.GetAccountProcessor(It.IsAny<AccountType>()))
             .Returns(null as IAccountProcessor);
@@ -210,14 +196,7 @@ public class CloseSellExecutorTests
     public async Task Handle_WithExistingOrder_ShouldNotPlaceNewOrder()
     {
         // Arrange
-        var symbol = "BTCUSDT";
-        var interval = KlineInterval.OneDay;
-        var kline = Mock.Of<IBinanceKline>(k =>
-            k.OpenPrice == 40000m &&
-            k.ClosePrice == 41000m &&
-            k.HighPrice == 42000m &&
-            k.LowPrice == 39000m);
-        var notification = new KlineClosedEvent(symbol, interval, kline);
+        var notification = SetupKlineCloseEvent();
 
         var strategy = new Strategy
         {
@@ -235,7 +214,7 @@ public class CloseSellExecutorTests
         _mockAccountProcessorFactory.Setup(x => x.GetAccountProcessor(It.IsAny<AccountType>()))
             .Returns(_mockAccountProcessor.Object);
 
-        SetupSuccessfulSymbolFilterResponse();
+        _mockAccountProcessor.SetupSuccessfulSymbolFilter();
 
         // Act
         await _executor.Handle(notification, _ct);
@@ -249,37 +228,4 @@ public class CloseSellExecutorTests
             It.IsAny<CancellationToken>()
         ), Times.Never);
     }
-
-    private void SetupSuccessfulSymbolFilterResponse()
-    {
-        _mockAccountProcessor
-            .Setup(x => x.GetSymbolFilterData(
-                It.IsAny<Strategy>(),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync((new BinanceSymbolPriceFilter()
-            {
-                TickSize = 0.001m,
-                MaxPrice = decimal.MaxValue,
-                MinPrice = decimal.MinValue,
-            }, new BinanceSymbolLotSizeFilter()
-            {
-                StepSize = 0.01m,
-                MinQuantity = decimal.MinValue,
-                MaxQuantity = decimal.MaxValue,
-            }));
-    }
-    private void SetupSuccessfulPlaceOrderResponse(long orderId)
-    {
-        _mockAccountProcessor
-            .Setup(x => x.PlaceShortOrderAsync(
-                It.IsAny<string>(),
-                It.IsAny<decimal>(),
-                It.IsAny<decimal>(),
-                It.IsAny<TimeInForce>(),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new WebCallResult<BinanceOrderBase>(
-                null, null, null, 0, null, 0, null, null, null, null,
-                ResultDataSource.Server, new BinanceOrder { Id = orderId }, null));
-    }
-
 }

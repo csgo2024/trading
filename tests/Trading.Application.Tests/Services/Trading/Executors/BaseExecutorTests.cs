@@ -67,8 +67,8 @@ public class BaseExecutorTests
             HasOpenOrder = true,
             OrderPlacedTime = DateTime.UtcNow
         };
-        SetupSuccessfulPlaceOrderResponse(12345L);
-        SetupOrderStatusResponse(OrderStatus.New);
+        _mockAccountProcessor.SetupSuccessfulPlaceLongOrderAsync(12345L);
+        _mockAccountProcessor.SetupSuccessfulGetOrder(OrderStatus.New);
         _mockStrategyRepository.Setup(x => x.UpdateAsync(It.IsAny<string>(), It.IsAny<Strategy>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
@@ -91,7 +91,7 @@ public class BaseExecutorTests
         await _executor.CancelExistingOrder(_mockAccountProcessor.Object, strategy, _ct);
 
         // Assert
-        _mockAccountProcessor.Verify(x => x.CancelOrder(
+        _mockAccountProcessor.Verify(x => x.CancelOrderAsync(
             It.IsAny<string>(),
             It.IsAny<long>(),
             It.IsAny<CancellationToken>()
@@ -109,7 +109,7 @@ public class BaseExecutorTests
             OrderPlacedTime = DateTime.UtcNow
         };
 
-        SetupSuccessfulCancelOrderResponse();
+        _mockAccountProcessor.SetupSuccessfulCancelOrder();
 
         // Act
         await _executor.CancelExistingOrder(_mockAccountProcessor.Object, strategy, _ct);
@@ -127,13 +127,13 @@ public class BaseExecutorTests
         var strategy = new Strategy { OrderId = 12345 };
         var error = "Cancel order failed";
 
-        SetupFailedCancelOrderResponse(error);
+        _mockAccountProcessor.SetupFailedCancelOrder(error);
 
         // Act
         await _executor.CancelExistingOrder(_mockAccountProcessor.Object, strategy, _ct);
 
         // Assert
-        VerifyErrorLogging($"Failed to cancel order. Error: {error}");
+        _mockLogger.VerifyLoggingOnce(LogLevel.Error, $"Failed to cancel order. Error: {error}");
     }
 
     [Fact]
@@ -165,7 +165,7 @@ public class BaseExecutorTests
             OrderPlacedTime = DateTime.UtcNow
         };
 
-        SetupOrderStatusResponse(status);
+        _mockAccountProcessor.SetupSuccessfulGetOrder(status);
 
         // Act
         await _executor.CheckOrderStatus(_mockAccountProcessor.Object, strategy, _ct);
@@ -190,7 +190,7 @@ public class BaseExecutorTests
             OrderPlacedTime = DateTime.UtcNow
         };
 
-        SetupOrderStatusResponse(status);
+        _mockAccountProcessor.SetupSuccessfulGetOrder(status);
 
         // Act
         await _executor.CheckOrderStatus(_mockAccountProcessor.Object, strategy, _ct);
@@ -214,13 +214,13 @@ public class BaseExecutorTests
             OrderPlacedTime = DateTime.UtcNow
         };
 
-        SetupOrderStatusResponse(status);
+        _mockAccountProcessor.SetupSuccessfulGetOrder(status);
 
         // Act
         await _executor.CheckOrderStatus(_mockAccountProcessor.Object, strategy, _ct);
 
         // Assert
-        _mockAccountProcessor.Verify(x => x.CancelOrder(
+        _mockAccountProcessor.Verify(x => x.CancelOrderAsync(
             It.IsAny<string>(),
             It.IsAny<long>(),
             It.IsAny<CancellationToken>()
@@ -238,13 +238,13 @@ public class BaseExecutorTests
         };
 
         var error = "Failed to get order status";
-        SetupFailedGetOrderResponse(error);
+        _mockAccountProcessor.SetupFailedGetOrder(error);
 
         // Act
         await _executor.CheckOrderStatus(_mockAccountProcessor.Object, strategy, _ct);
 
         // Assert
-        VerifyErrorLogging($"Failed to check order status, Error: {error}");
+        _mockLogger.VerifyLoggingOnce(LogLevel.Error, $"Failed to check order status, Error: {error}");
     }
 
     [Fact]
@@ -287,7 +287,7 @@ public class BaseExecutorTests
             TargetPrice = 50000m
         };
 
-        SetupSuccessfulPlaceOrderResponse(12345L);
+        _mockAccountProcessor.SetupSuccessfulPlaceLongOrderAsync(12345L);
 
         // Act
         await _executor.TryPlaceOrder(_mockAccountProcessor.Object, strategy, _ct);
@@ -310,20 +310,14 @@ public class BaseExecutorTests
             TargetPrice = 50000m
         };
 
-        SetupFailedPlaceOrderResponse("Insufficient balance");
+        _mockAccountProcessor.SetupFailedPlaceLongOrderAsync("Insufficient balance");
 
         // Act
         await _executor.TryPlaceOrder(_mockAccountProcessor.Object, strategy, _ct);
 
         // Assert
-        _mockLogger.Verify(
-            x => x.Log(
-                LogLevel.Warning,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Retrying")),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Exactly(2));
+        _mockLogger.VerifyLoggingTimes(LogLevel.Warning, "Retrying", Times.Exactly(2));
+        _mockLogger.VerifyLoggingOnce(LogLevel.Error, "Insufficient balance");
     }
 
     [Fact]
@@ -424,7 +418,7 @@ public class BaseExecutorTests
             It.IsAny<decimal>()))
             .Returns(true);
 
-        SetupSuccessfulStopOrderResponse();
+        _mockAccountProcessor.SetupSuccessfulStopLongOrderAsync();
 
         // Act
         await _executor.Handle(notification, CancellationToken.None);
@@ -485,104 +479,43 @@ public class BaseExecutorTests
                 It.IsAny<CancellationToken>()),
             Times.Exactly(3));
     }
+    [Fact]
+    public async Task TryStopOrderAsync_WhenFailedWithRetries_ShouldLogWarningsAndError()
+    {
+        // Arrange
+        var strategy = new Strategy
+        {
+            Symbol = "BTCUSDT",
+            StrategyType = StrategyType.BottomBuy,
+            Quantity = 1.0m,
+            TargetPrice = 50000m,
+            OrderId = 12345L,
+        };
 
-    private void SetupSuccessfulStopOrderResponse()
-    {
-        _mockAccountProcessor
-            .Setup(x => x.StopLongOrderAsync(
-                It.IsAny<string>(),
-                It.IsAny<decimal>(),
-                It.IsAny<decimal>(),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new WebCallResult<BinanceOrderBase>(
-                null, null, null, 0, null, 0, null, null, null, null,
-                ResultDataSource.Server, new BinanceOrder(), null));
-    }
+        _mockAccountProcessor.SetupFailedStopLongOrderAsync("Network error");
 
-    private void SetupSuccessfulCancelOrderResponse()
-    {
-        _mockAccountProcessor
-            .Setup(x => x.CancelOrder(
-                It.IsAny<string>(),
-                It.IsAny<long>(),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new WebCallResult<BinanceOrderBase>(
-                null, null, null, 0, null, 0, null, null, null, null,
-                ResultDataSource.Server, new BinanceOrder(), null));
-    }
+        // Act
+        await _executor.TryStopOrderAsync(_mockAccountProcessor.Object, strategy, 4000m, _ct);
 
-    private void SetupFailedCancelOrderResponse(string error)
-    {
-        _mockAccountProcessor
-            .Setup(x => x.CancelOrder(
-                It.IsAny<string>(),
-                It.IsAny<long>(),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new WebCallResult<BinanceOrderBase>(
-                null, null, null, 0, null, 0, null, null, null, null,
-                ResultDataSource.Server, null, new ServerError(0, error)));
+        // Assert
+        _mockLogger.VerifyLoggingTimes(LogLevel.Warning, "Retrying", Times.Exactly(2));
+        _mockLogger.VerifyLoggingOnce(LogLevel.Error, $"Network error");
     }
+    [Fact]
+    public async Task TryStopOrderAsync_WhenOrderIdIsEmpty_ShouldDoNothing()
+    {
+        // Arrange
+        var strategy = new Strategy
+        {
+            Symbol = "BTCUSDT",
+            StrategyType = StrategyType.BottomBuy,
+            Quantity = 1.0m,
+            TargetPrice = 50000m,
+        };
+        // Act
+        await _executor.TryStopOrderAsync(_mockAccountProcessor.Object, strategy, 4000m, _ct);
 
-    private void SetupFailedGetOrderResponse(string error)
-    {
-        _mockAccountProcessor
-            .Setup(x => x.GetOrder(
-                It.IsAny<string>(),
-                It.IsAny<long>(),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new WebCallResult<BinanceOrderBase>(
-                null, null, null, 0, null, 0, null, null, null, null,
-                ResultDataSource.Server, null, new ServerError(0, error)));
-    }
-    private void SetupOrderStatusResponse(OrderStatus status)
-    {
-        _mockAccountProcessor
-            .Setup(x => x.GetOrder(
-                It.IsAny<string>(),
-                It.IsAny<long>(),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new WebCallResult<BinanceOrderBase>(
-                null, null, null, 0, null, 0, null, null, null, null,
-                ResultDataSource.Server, new BinanceOrder { Status = status }, null));
-    }
-
-    private void SetupSuccessfulPlaceOrderResponse(long orderId)
-    {
-        _mockAccountProcessor
-            .Setup(x => x.PlaceLongOrderAsync(
-                It.IsAny<string>(),
-                It.IsAny<decimal>(),
-                It.IsAny<decimal>(),
-                It.IsAny<TimeInForce>(),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new WebCallResult<BinanceOrderBase>(
-                null, null, null, 0, null, 0, null, null, null, null,
-                ResultDataSource.Server, new BinanceOrder { Id = orderId }, null));
-    }
-
-    private void SetupFailedPlaceOrderResponse(string error)
-    {
-        _mockAccountProcessor
-            .Setup(x => x.PlaceLongOrderAsync(
-                It.IsAny<string>(),
-                It.IsAny<decimal>(),
-                It.IsAny<decimal>(),
-                It.IsAny<TimeInForce>(),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new WebCallResult<BinanceOrderBase>(
-                null, null, null, 0, null, 0, null, null, null, null,
-                ResultDataSource.Server, null, new ServerError(0, error)));
-    }
-
-    private void VerifyErrorLogging(string expectedMessage)
-    {
-        _mockLogger.Verify(
-            x => x.Log(
-                LogLevel.Error,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(expectedMessage)),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
+        // Assert
+        _mockLogger.VerifyLoggingNever(LogLevel.Warning, "Retrying");
     }
 }
