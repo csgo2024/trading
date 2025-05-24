@@ -169,7 +169,7 @@ public class StrategyRepositoryTests : IClassFixture<MongoDbFixture>
         }
 
         // Act
-        var result = await _repository.FindActiveStrategyByType(StrategyType.TopSell, default);
+        var result = await _repository.FindActiveStrategyByType(StrategyType.TopSell, CancellationToken.None);
 
         // Assert
         Assert.NotNull(result);

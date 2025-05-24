@@ -53,7 +53,7 @@ public class AlertCommandHandlerTests
         _alertRepositoryMock.Setup(x => x.GetAllAlerts())
             .ReturnsAsync([new Alert() { Symbol = "BTCUSDT", Status = status, Expression = "close > 100" }]);
         _botClientMock
-            .Setup(x => x.SendRequest(It.IsAny<SendMessageRequest>(), default))
+            .Setup(x => x.SendRequest(It.IsAny<SendMessageRequest>(), CancellationToken.None))
             .ReturnsAsync(new Message());
         // Act
         await _handler.HandleAsync("");
@@ -64,7 +64,7 @@ public class AlertCommandHandlerTests
                 r.ChatId == _testChatId &&
                 r.Text.Contains(displayText) &&
                 r.ParseMode == ParseMode.Html),
-            default),
+            CancellationToken.None),
             Times.Once);
     }
 

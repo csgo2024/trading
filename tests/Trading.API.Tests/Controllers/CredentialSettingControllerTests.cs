@@ -30,7 +30,7 @@ public class CredentialSettingControllerTests
         var expectedId = "test-credential-id";
 
         _mockMediator
-            .Setup(x => x.Send(command, default))
+            .Setup(x => x.Send(command, CancellationToken.None))
             .ReturnsAsync(expectedId);
 
         // Act
@@ -41,7 +41,7 @@ public class CredentialSettingControllerTests
         var apiResponse = Assert.IsType<ApiResponse<string>>(okResult.Value);
         Assert.True(apiResponse.Success);
         Assert.Equal(expectedId, apiResponse.Data);
-        _mockMediator.Verify(x => x.Send(command, default), Times.Once);
+        _mockMediator.Verify(x => x.Send(command, CancellationToken.None), Times.Once);
     }
 
     [Fact]
@@ -55,7 +55,7 @@ public class CredentialSettingControllerTests
         };
 
         _mockMediator
-            .Setup(x => x.Send(command, default))
+            .Setup(x => x.Send(command, CancellationToken.None))
             .ThrowsAsync(new InvalidOperationException("Invalid credentials"));
 
         // Act & Assert

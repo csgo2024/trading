@@ -77,7 +77,7 @@ public class StrategyCommandHandlerTests
                 }
             ]);
         _botClientMock
-            .Setup(x => x.SendRequest(It.IsAny<SendMessageRequest>(), default))
+            .Setup(x => x.SendRequest(It.IsAny<SendMessageRequest>(), CancellationToken.None))
             .ReturnsAsync(new Message());
         // Act
         await _handler.HandleAsync("");
@@ -88,7 +88,7 @@ public class StrategyCommandHandlerTests
                 r.ChatId == _testChatId &&
                 r.Text.Contains(statusText) &&
                 r.ParseMode == ParseMode.Html),
-            default),
+            CancellationToken.None),
             Times.Once);
     }
 

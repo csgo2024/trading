@@ -251,20 +251,20 @@ public class SpotProcessorTests
     {
         // Act & Assert
         await Assert.ThrowsAsync<NotImplementedException>(
-            () => _processor.PlaceShortOrderAsync("BTCUSDT", 1m, 50000m, TimeInForce.GoodTillCanceled, default));
+            () => _processor.PlaceShortOrderAsync("BTCUSDT", 1m, 50000m, TimeInForce.GoodTillCanceled, CancellationToken.None));
     }
     [Fact]
     public async Task StopLongOrderAsync_ShouldThrowNotImplementedException()
     {
         // Act & Assert
         await Assert.ThrowsAsync<NotImplementedException>(
-            () => _processor.StopLongOrderAsync("BTCUSDT", 1m, 50000m, default));
+            () => _processor.StopLongOrderAsync("BTCUSDT", 1m, 50000m, CancellationToken.None));
     }
     [Fact]
     public async Task StopShortOrderAsync_ShouldThrowNotImplementedException()
     {
         // Act & Assert
         await Assert.ThrowsAsync<NotImplementedException>(
-            () => _processor.StopShortOrderAsync("BTCUSDT", 1m, 50000m, default));
+            () => _processor.StopShortOrderAsync("BTCUSDT", 1m, 50000m, CancellationToken.None));
     }
 }

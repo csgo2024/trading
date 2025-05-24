@@ -37,7 +37,7 @@ public class TelegramLoggerTests
         // Arrange
         var logMessage = "Test log message";
         _mockBotClient
-            .Setup(x => x.SendRequest(It.IsAny<SendMessageRequest>(), default))
+            .Setup(x => x.SendRequest(It.IsAny<SendMessageRequest>(), CancellationToken.None))
             .ReturnsAsync(new Message());
 
         // Act
@@ -53,7 +53,7 @@ public class TelegramLoggerTests
                 r.Text.Contains("ℹ️") &&
                 r.Text.Contains(logMessage) &&
                 r.ParseMode == ParseMode.Html),
-            default),
+            CancellationToken.None),
             Times.Once);
     }
 
@@ -73,7 +73,7 @@ public class TelegramLoggerTests
         }
 
         _mockBotClient
-            .Setup(x => x.SendRequest(It.IsAny<SendMessageRequest>(), default))
+            .Setup(x => x.SendRequest(It.IsAny<SendMessageRequest>(), CancellationToken.None))
             .ReturnsAsync(new Message());
 
         // Act
@@ -92,7 +92,7 @@ public class TelegramLoggerTests
                 r.Text.Contains(exception.Message) &&
                 r.Text.Contains(exception.StackTrace!) &&
                 r.ParseMode == ParseMode.Html),
-            default),
+            CancellationToken.None),
             Times.Once);
     }
 
@@ -108,7 +108,7 @@ public class TelegramLoggerTests
         // Arrange
         var logMessage = "Test message";
         _mockBotClient
-            .Setup(x => x.SendRequest(It.IsAny<SendMessageRequest>(), default))
+            .Setup(x => x.SendRequest(It.IsAny<SendMessageRequest>(), CancellationToken.None))
             .ReturnsAsync(new Message());
 
         // Act
@@ -122,7 +122,7 @@ public class TelegramLoggerTests
             It.Is<SendMessageRequest>(r =>
                 r.ChatId == _testChatId &&
                 r.Text.Contains(expectedEmoji)),
-            default),
+            CancellationToken.None),
             Times.Once);
     }
 
