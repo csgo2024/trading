@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Trading.Exchange.Abstraction\Trading.Exchange.Abstraction.csproj" />
+      <ProjectReference Include="..\Trading.Domain\Trading.Domain.csproj" />
+    </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.4" />
+        <PackageReference Include="MongoDB.Driver" Version="3.4.0" />
+    </ItemGroup>
+
+</Project>

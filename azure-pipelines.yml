@@ -1,0 +1,111 @@
+resources:
+  repositories:
+    - repository: Trading
+      type: git
+      name: trading-service # Ensure this matches the actual repository name
+
+trigger:
+- main
+- master
+
+variables:
+  buildConfiguration: 'Release'
+
+
+# https://github.com/GitTools/actions/blob/main/docs/examples/azure/gitversion/execute.md
+stages:
+- stage: GitVersion_SemVer
+  displayName: 'SemVersion'
+  pool:
+    vmImage: 'ubuntu-latest'
+  jobs:
+  - job: DetermineVersion
+    steps:
+    - checkout: self
+      fetchDepth: 0
+
+    - task: gitversion/setup@3.2.1
+      displayName: Install GitVersion
+      inputs:
+        versionSpec: '6.3.x'
+
+    - task: gitversion/execute@3.2.1
+      displayName: Determine Version
+      name: version_step
+      inputs:
+        useConfigFile: true
+        configFilePath: GitVersion.yml
+        overrideConfig: |
+          update-build-number=false
+
+- stage: BuildAndTest
+  displayName: 'Build and Test'
+  dependsOn: GitVersion_SemVer
+  condition: and(succeeded(), eq(dependencies.GitVersion_SemVer.outputs['DetermineVersion.version_step.branchName'], 'main')) # use in condition
+  variables:
+    fullSemVer: $[ stageDependencies.GitVersion_SemVer.DetermineVersion.outputs['version_step.fullSemVer'] ]
+  pool:
+    vmImage: 'ubuntu-latest'
+  jobs:
+  - job: TestAndCoverage
+    steps:
+
+    - task: UseDotNet@2
+      inputs:
+        packageType: 'sdk'
+        version: '9.0.x'
+        installationPath: $(Agent.ToolsDirectory)/dotnet
+
+    - task: DotNetCoreCLI@2
+      displayName: 'Run Tests with Code Coverage'
+      timeoutInMinutes: 10  # Set timeout for the entire task
+      inputs:
+        command: 'test'
+        publishTestResults: true
+        projects: |
+          tests/**/*.Tests.csproj
+        arguments: >-
+          --configuration $(buildConfiguration)
+          --collect:"XPlat Code Coverage"
+          --logger:"console;verbosity=detailed"
+          -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
+
+    - task: reportgenerator@5
+      displayName: 'Generate Coverage Report'
+      inputs:
+        reports: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
+        targetdir: '$(Build.ArtifactStagingDirectory)/coveragereport'
+        tag: '$(Build.BuildNumber)_$(Build.SourceVersion)'
+        publishCodeCoverageResults: true
+
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Coverage Report'
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)/coveragereport'
+        ArtifactName: 'CodeCoverageReport'
+        publishLocation: 'Container'
+
+# https://stackoverflow.com/questions/59226055/setting-git-tag-from-azure-devops-build-pipeline-on-complete
+- stage: Tag
+  displayName: 'Create Git Tag'
+  dependsOn: 
+    - GitVersion_SemVer
+    - BuildAndTest
+  variables:
+    fullSemVer: $[ stageDependencies.GitVersion_SemVer.DetermineVersion.outputs['version_step.fullSemVer'] ]
+  condition: and(succeeded(), eq(variables['Build.SourceBranchName'], 'main'))
+  pool:
+    vmImage: 'ubuntu-latest'
+  jobs:
+  - job: CreateTag
+    steps:
+
+    - checkout: self
+      persistCredentials: true
+
+    - script: |
+        git config --global user.email "your@outlook.com"
+        git config --global user.name "kaka"
+        git tag -a "$(fullSemVer)" -m "Release $(fullSemVer)"
+        git push origin $(fullSemVer)
+      displayName: "Create and Push Git Tag"

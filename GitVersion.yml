@@ -1,0 +1,25 @@
+mode: ContinuousDelivery
+update-build-number: false
+tag-prefix: ''
+major-version-bump-message: \+semver:\s?(breaking|major)
+minor-version-bump-message: \+semver:\s?(feat|feature|minor)
+patch-version-bump-message: \+semver:\s?(fix|patch)
+
+branches:
+  main:
+    regex: ^master$|^main$
+    increment: Patch
+    
+  feature:
+    regex: ^feature(s)?[\/-](?<BranchName>.+)
+    increment: Minor
+    source-branches: ['main']
+    
+  hotfix:
+    label: 'hotfix'
+    regex: ^hotfix(es)?[\/-](?<BranchName>.+)
+    increment: Patch
+    source-branches: ['main']
+
+ignore:
+  sha: []
