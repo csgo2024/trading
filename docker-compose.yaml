@@ -1,0 +1,10 @@
+﻿# version: '3.8'
+
+services:
+  webapi:
+    image: ghcr.io/csgo2024/trading:latest
+    env_file:
+      - ~/.env
+    ports:
+      - "0:8080"
+    restart: unless-stopped

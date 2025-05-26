@@ -10,29 +10,17 @@ echo "开始部署: $(date)"
 cd "$(dirname "$0")"
 echo "当前目录: $(pwd)"
 
-# 获取当前分支
-current_branch=$(git rev-parse --abbrev-ref HEAD)
-echo "当前分支: $current_branch"
+IMAGE_NAME="ghcr.io/csgo2024/trading:latest"
+SERVICE_NAME="webapi"
 
-# 检查是否有本地变更
-if [[ -n $(git status --porcelain) ]]; then
-    echo "检测到本地变更，执行stash..."
-    git stash -u
-    echo "本地变更已暂存"
-fi
+docker pull $IMAGE_NAME
 
-# 拉取最新代码
-echo "拉取最新代码..."
-git fetch origin
-git pull origin "$current_branch" --rebase
+docker compose -f 'docker-compose.yaml' down
 
-# 重启 Docker 服务
-echo "重启 Docker 服务..."
-docker-compose down
-docker-compose up -d --build
+docker compose -f 'docker-compose.yaml' up -d --build 
 
 # 显示容器状态
 echo "容器状态:"
-docker-compose ps
+docker-compose ps 
 
 echo "部署完成: $(date)"
