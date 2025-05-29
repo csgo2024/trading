@@ -1,56 +1,30 @@
-resources:
-  repositories:
-    - repository: Trading
-      type: git
-      name: trading-service # Ensure this matches the actual repository name
-
 trigger:
-- main
-- master
+  branches:
+    include:
+    - main
+    - master
 
 variables:
-  buildConfiguration: 'Release'
+  - group: github-credentials
+  - name: buildConfiguration
+    value: 'Release'
+  - name: major
+    value: 1
+  - name: minor
+    value: 0
 
-
-# https://github.com/GitTools/actions/blob/main/docs/examples/azure/gitversion/execute.md
 stages:
-- stage: GitVersion_SemVer
-  displayName: 'SemVersion'
+- stage: Tests
+  displayName: 'Tests'
   pool:
     vmImage: 'ubuntu-latest'
   jobs:
-  - job: DetermineVersion
-    steps:
-    - checkout: self
-      fetchDepth: 0
-
-    - task: gitversion/setup@3.2.1
-      displayName: Install GitVersion
-      inputs:
-        versionSpec: '6.3.x'
-
-    - task: gitversion/execute@3.2.1
-      displayName: Determine Version
-      name: version_step
-      inputs:
-        useConfigFile: true
-        configFilePath: GitVersion.yml
-        overrideConfig: |
-          update-build-number=false
-
-- stage: BuildAndTest
-  displayName: 'Build and Test'
-  dependsOn: GitVersion_SemVer
-  condition: and(succeeded(), eq(dependencies.GitVersion_SemVer.outputs['DetermineVersion.version_step.branchName'], 'main')) # use in condition
-  variables:
-    fullSemVer: $[ stageDependencies.GitVersion_SemVer.DetermineVersion.outputs['version_step.fullSemVer'] ]
-  pool:
-    vmImage: 'ubuntu-latest'
-  jobs:
-  - job: TestAndCoverage
+  - job: unit_test
+    displayName: 'Unit Tests'
     steps:
 
     - task: UseDotNet@2
+      displayName: 'Install .Net 9'
       inputs:
         packageType: 'sdk'
         version: '9.0.x'
@@ -58,7 +32,7 @@ stages:
 
     - task: DotNetCoreCLI@2
       displayName: 'Run Tests with Code Coverage'
-      timeoutInMinutes: 10  # Set timeout for the entire task
+      timeoutInMinutes: 10  # Set timeout for the test task
       inputs:
         command: 'test'
         publishTestResults: true
@@ -85,27 +59,100 @@ stages:
         ArtifactName: 'CodeCoverageReport'
         publishLocation: 'Container'
 
-# https://stackoverflow.com/questions/59226055/setting-git-tag-from-azure-devops-build-pipeline-on-complete
-- stage: Tag
-  displayName: 'Create Git Tag'
-  dependsOn: 
-    - GitVersion_SemVer
-    - BuildAndTest
-  variables:
-    fullSemVer: $[ stageDependencies.GitVersion_SemVer.DetermineVersion.outputs['version_step.fullSemVer'] ]
+- stage: Builds
+  displayName: 'Builds'
+  dependsOn:
+    - Tests
   condition: and(succeeded(), eq(variables['Build.SourceBranchName'], 'main'))
   pool:
     vmImage: 'ubuntu-latest'
   jobs:
-  - job: CreateTag
+  - deployment: semver
+    displayName: 'Set Semantic Version'
+    environment: 'production'
+    variables:
+      - name: patch
+        value: $[counter(format('{0}.{1}', variables.major, variables.minor), 0)]
+      - name: fullSemVer
+        value: $(major).$(minor).$(patch)
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          # https://learn.microsoft.com/en-us/azure/devops/pipelines/artifacts/pipeline-artifacts?view=azure-devops&tabs=yaml#artifacts-in-release-and-deployment-jobs
+          - download: none
+
+          - bash: |
+              echo "##vso[task.setvariable variable=fullSemVer;isOutput=true]$(fullSemVer)"
+              echo "Generated version: $(fullSemVer)"
+            name: versions
+            displayName: 'Set Version Variables'
+
+  - deployment: build_image
+    displayName: 'Build Docker Image'
+    environment: 'production'
+    dependsOn: semver
+    variables:
+      fullSemVer: $[ dependencies.semver.outputs['semver.versions.fullSemVer'] ]
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - download: none
+
+          - checkout: self
+            fetchDepth: 1
+
+          - script: |
+              echo $(GITHUB_TOKEN) | docker login ghcr.io -u $(GITHUB_USERNAME) --password-stdin
+            displayName: 'Login to GHCR'
+
+          - script: |
+              docker buildx create --use --name multiarch-builder
+              docker buildx inspect --bootstrap
+            displayName: 'Setup Buildx'
+
+          - script: |
+              docker buildx build \
+                --platform linux/arm64 \
+                -f src/Trading.API/Dockerfile \
+                -t ghcr.io/$(GITHUB_USERNAME)/trading:$(fullSemVer) \
+                -t ghcr.io/$(GITHUB_USERNAME)/trading:latest \
+                --push \
+                .
+            displayName: 'Build Docker image'
+            timeoutInMinutes: 20
+
+# https://stackoverflow.com/questions/59226055/setting-git-tag-from-azure-devops-build-pipeline-on-complete
+- stage: Release
+  displayName: 'Release'
+
+  variables:
+    # https://learn.microsoft.com/en-us/azure/devops/pipelines/process/expressions?view=azure-devops#job-to-job-dependencies-across-stages
+    fullSemVer: $[ stageDependencies.Builds.semver.outputs['semver.versions.fullSemVer'] ]
+
+  dependsOn:
+    - Builds
+  condition: succeeded()
+  pool:
+    vmImage: 'ubuntu-latest'
+  jobs:
+  - job: create_git_tag
+    displayName: 'Create Git Tag'
     steps:
 
     - checkout: self
       persistCredentials: true
 
     - script: |
-        git config --global user.email "your@outlook.com"
-        git config --global user.name "kaka"
-        git tag -a "$(fullSemVer)" -m "Release $(fullSemVer)"
-        git push origin $(fullSemVer)
+        if [ -z $(git tag -l "$(fullSemVer)") ]; then
+          echo "Tag $(fullSemVer) does not exist, creating it."
+          git config --global user.email "azure-pipelines@outlook.com"
+          git config --global user.name "kaka"
+          git tag -a "$(fullSemVer)" -m "Release $(fullSemVer)"
+          git push origin $(fullSemVer)
+        else
+          echo "Tag $(fullSemVer) already exists, skipping creation."
+          exit 1
+        fi
       displayName: "Create and Push Git Tag"

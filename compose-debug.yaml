@@ -1,0 +1,11 @@
+﻿services:
+  trading-api:
+    image: trading-api
+    build:
+      context: .
+      dockerfile: src/Trading.API/Dockerfile
+    ports:
+      - "8000:8080"
+    env_file:
+      - ~/.env
+    restart: unless-stopped
