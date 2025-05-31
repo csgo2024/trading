@@ -316,6 +316,7 @@ public class TopSellExecutorTests
             Volatility = 0.01m,
             HasOpenOrder = hasOpenOrder,
             OrderId = orderId,
+            RequireReset = false,
             OrderPlacedTime = orderPlacedTime
         };
     }

@@ -35,6 +35,10 @@ public class BottomBuyExecutor : BaseExecutor
                                        strategy.Symbol);
                 await CancelExistingOrder(accountProcessor, strategy, ct);
             }
+            strategy.RequireReset = true;
+        }
+        if (strategy.RequireReset)
+        {
             await ResetDailyStrategy(accountProcessor, strategy, currentDate, ct);
         }
         if (strategy.OrderId is null)
@@ -56,6 +60,7 @@ public class BottomBuyExecutor : BaseExecutor
             strategy.HasOpenOrder = false;
             strategy.OrderId = null;
             strategy.OrderPlacedTime = null;
+            strategy.RequireReset = false;
             _logger.LogInformation("[{AccountType}-{Symbol}] New day started, Open price: {OpenPrice}, Target price: {TargetPrice}.",
                 strategy.AccountType, strategy.Symbol, openPrice, strategy.TargetPrice);
             return;
