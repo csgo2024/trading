@@ -239,9 +239,10 @@ public abstract class BaseExecutor :
         var price = CommonHelper.TrimEndZero(strategy.TargetPrice);
         strategy.TargetPrice = price;
         strategy.Quantity = quantity;
+        // always set order placed time when placing order.
+        strategy.OrderPlacedTime = DateTime.UtcNow;
 
         var (success, result) = await ExecuteWithRetry(() => PlaceOrderAsync(accountProcessor, strategy, ct), strategy, ct);
-
         if (success)
         {
             _logger.LogInformation("[{StrategyType}-{AccountType}-{Symbol}] Order placed successfully. Quantity: {Quantity}, Price: {Price}.",
@@ -252,7 +253,6 @@ public abstract class BaseExecutor :
                                    strategy.TargetPrice);
             strategy.OrderId = result!.Data.Id;
             strategy.HasOpenOrder = true;
-            strategy.OrderPlacedTime = DateTime.UtcNow;
             strategy.UpdatedAt = DateTime.UtcNow;
             return;
         }
