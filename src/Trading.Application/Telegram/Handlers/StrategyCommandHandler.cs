@@ -1,14 +1,10 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
-using Telegram.Bot;
-using Telegram.Bot.Requests;
-using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 using Trading.Application.Commands;
+using Trading.Application.Telegram.Logging;
 using Trading.Common.Enums;
-using Trading.Common.Models;
 using Trading.Domain.IRepositories;
 
 namespace Trading.Application.Telegram.Handlers;
@@ -18,22 +14,16 @@ public class StrategyCommandHandler : ICommandHandler
     private readonly ILogger<StrategyCommandHandler> _logger;
     private readonly IMediator _mediator;
     private readonly IStrategyRepository _strategyRepository;
-    private readonly ITelegramBotClient _botClient;
-    private readonly string _chatId;
     public static string Command => "/strategy";
     public static string CallbackPrefix => "strategy";
 
     public StrategyCommandHandler(IMediator mediator,
                                   ILogger<StrategyCommandHandler> logger,
-                                  IStrategyRepository strategyRepository,
-                                  ITelegramBotClient botClient,
-                                  IOptions<TelegramSettings> settings)
+                                  IStrategyRepository strategyRepository)
     {
         _mediator = mediator;
         _logger = logger;
         _strategyRepository = strategyRepository;
-        _botClient = botClient;
-        _chatId = settings.Value.ChatId!;
     }
 
     public async Task HandleAsync(string parameters)
@@ -81,11 +71,10 @@ public class StrategyCommandHandler : ICommandHandler
         {
             var (emoji, status) = strategy.Status.GetStatusInfo();
             var text = $"""
-            📊 <b>策略状态报告</b> ({DateTime.UtcNow.AddHours(8):yyyy-MM-dd HH:mm:ss})
-            <pre>{emoji} [{strategy.AccountType}-{strategy.StrategyType}-{strategy.Symbol}]: {status}
-            时间级别: {strategy.Interval} 
+            {emoji} [{strategy.AccountType}-{strategy.StrategyType}-{strategy.Symbol}]: {status}
+            时间级别: {strategy.Interval}
             波动率: {strategy.Volatility} / 目标价格: {strategy.TargetPrice} 💰
-            金额: {strategy.Amount} / 数量: {strategy.Quantity}</pre>
+            金额: {strategy.Amount} / 数量: {strategy.Quantity}
             """;
             var buttons = strategy.Status switch
             {
@@ -94,15 +83,16 @@ public class StrategyCommandHandler : ICommandHandler
                 _ => throw new InvalidOperationException()
             };
             buttons = [.. buttons, InlineKeyboardButton.WithCallbackData("🗑️ 删除", $"strategy_delete_{strategy.Id}")];
-            await _botClient.SendRequest(new SendMessageRequest
+            var telegramScope = new TelegramLoggerScope
             {
-                ChatId = _chatId,
-                Text = text,
-                ParseMode = ParseMode.Html,
-                DisableNotification = true,
+                Title = "📊 策略状态报告",
                 ReplyMarkup = new InlineKeyboardMarkup([buttons])
-            }, CancellationToken.None);
-            _logger.LogDebug(text);
+            };
+
+            using (_logger.BeginScope(telegramScope))
+            {
+                _logger.LogInformation(text);
+            }
         }
 
     }

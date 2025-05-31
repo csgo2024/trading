@@ -1,6 +1,7 @@
 using Binance.Net.Enums;
 using Microsoft.Extensions.Logging;
 using Trading.Application.Services.Trading.Account;
+using Trading.Application.Telegram.Logging;
 using Trading.Common.Enums;
 using Trading.Common.Helpers;
 using Trading.Common.JavaScript;
