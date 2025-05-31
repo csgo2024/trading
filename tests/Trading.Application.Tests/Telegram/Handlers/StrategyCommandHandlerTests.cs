@@ -1,16 +1,12 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Moq;
 using Newtonsoft.Json;
-using Telegram.Bot;
-using Telegram.Bot.Requests;
-using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Trading.Application.Commands;
 using Trading.Application.Telegram.Handlers;
+using Trading.Application.Telegram.Logging;
 using Trading.Common.Enums;
-using Trading.Common.Models;
 using Trading.Domain.Entities;
 using Trading.Domain.IRepositories;
 
@@ -21,26 +17,18 @@ public class StrategyCommandHandlerTests
     private readonly Mock<IMediator> _mediatorMock;
     private readonly Mock<ILogger<StrategyCommandHandler>> _loggerMock;
     private readonly Mock<IStrategyRepository> _strategyRepositoryMock;
-    private readonly Mock<ITelegramBotClient> _botClientMock;
     private readonly StrategyCommandHandler _handler;
-    private readonly string _testChatId = "456456481";
 
     public StrategyCommandHandlerTests()
     {
         _mediatorMock = new Mock<IMediator>();
         _loggerMock = new Mock<ILogger<StrategyCommandHandler>>();
         _strategyRepositoryMock = new Mock<IStrategyRepository>();
-        _botClientMock = new Mock<ITelegramBotClient>();
-        var settings = new TelegramSettings { ChatId = _testChatId };
-        var optionsMock = new Mock<IOptions<TelegramSettings>>();
-        optionsMock.Setup(x => x.Value).Returns(settings);
 
         _handler = new StrategyCommandHandler(
             _mediatorMock.Object,
             _loggerMock.Object,
-            _strategyRepositoryMock.Object,
-            _botClientMock.Object,
-            optionsMock.Object);
+            _strategyRepositoryMock.Object);
     }
 
     [Fact]
@@ -76,20 +64,15 @@ public class StrategyCommandHandlerTests
                     Status = status,
                 }
             ]);
-        _botClientMock
-            .Setup(x => x.SendRequest(It.IsAny<SendMessageRequest>(), CancellationToken.None))
-            .ReturnsAsync(new Message());
         // Act
         await _handler.HandleAsync("");
 
         // Assert
-        _botClientMock.Verify(x => x.SendRequest(
-            It.Is<SendMessageRequest>(r =>
-                r.ChatId == _testChatId &&
-                r.Text.Contains(statusText) &&
-                r.ParseMode == ParseMode.Html),
-            CancellationToken.None),
+        _loggerMock.Verify(
+            x => x.BeginScope(
+                It.Is<TelegramLoggerScope>(x => x.ParseMode == ParseMode.Html)),
             Times.Once);
+        _loggerMock.VerifyLoggingOnce(LogLevel.Information, statusText);
     }
 
     [Fact]

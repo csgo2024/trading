@@ -1,15 +1,10 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
-using Telegram.Bot;
-using Telegram.Bot.Requests;
-using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 using Trading.Application.Commands;
+using Trading.Application.Telegram.Logging;
 using Trading.Common.Enums;
-using Trading.Common.Extensions;
-using Trading.Common.Models;
 using Trading.Domain.Events;
 using Trading.Domain.IRepositories;
 
@@ -20,22 +15,16 @@ public class AlertCommandHandler : ICommandHandler
     private readonly IAlertRepository _alertRepository;
     private readonly ILogger<AlertCommandHandler> _logger;
     private readonly IMediator _mediator;
-    private readonly ITelegramBotClient _botClient;
-    private readonly string _chatId;
     public static string Command => "/alert";
     public static string CallbackPrefix => "alert";
 
     public AlertCommandHandler(ILogger<AlertCommandHandler> logger,
                                IMediator mediator,
-                               IAlertRepository alertRepository,
-                               ITelegramBotClient botClient,
-                               IOptions<TelegramSettings> settings)
+                               IAlertRepository alertRepository)
     {
         _logger = logger;
         _alertRepository = alertRepository;
         _mediator = mediator;
-        _botClient = botClient;
-        _chatId = settings.Value.ChatId!;
     }
 
     public async Task HandleAsync(string parameters)
@@ -65,7 +54,7 @@ public class AlertCommandHandler : ICommandHandler
                 await HandleDelete(subParameters);
                 break;
             case "pause":
-                await HandlPause(subParameters);
+                await HandlePause(subParameters);
                 break;
             case "resume":
                 await HandleResume(subParameters);
@@ -87,11 +76,9 @@ public class AlertCommandHandler : ICommandHandler
         foreach (var alert in alerts)
         {
             var (emoji, status) = alert.Status.GetStatusInfo();
-            var safeExpression = alert.Expression.ToTelegramSafeString();
             var text = $"""
-            ⏰ <b>警报状态</b> ({DateTime.UtcNow.AddHours(8):yyyy-MM-dd HH:mm:ss})
-            <pre>{emoji} [{alert.Symbol}-{alert.Interval}]:{status}
-            表达式：{safeExpression}</pre>
+            {emoji} [{alert.Symbol}-{alert.Interval}]:{status}
+            表达式：{alert.Expression}
             """;
             var buttons = alert.Status switch
             {
@@ -100,15 +87,17 @@ public class AlertCommandHandler : ICommandHandler
                 _ => throw new InvalidOperationException()
             };
             buttons = [.. buttons, InlineKeyboardButton.WithCallbackData("🗑️ 删除", $"alert_delete_{alert.Id}")];
-            await _botClient.SendRequest(new SendMessageRequest
+
+            var telegramScope = new TelegramLoggerScope
             {
-                ChatId = _chatId,
-                Text = text,
-                ParseMode = ParseMode.Html,
-                DisableNotification = true,
+                Title = "⏰ 警报状态",
                 ReplyMarkup = new InlineKeyboardMarkup([buttons])
-            }, CancellationToken.None);
-            _logger.LogDebug(text);
+            };
+
+            using (_logger.BeginScope(telegramScope))
+            {
+                _logger.LogInformation(text);
+            }
         }
     }
     private async Task HandleEmpty()
@@ -116,7 +105,6 @@ public class AlertCommandHandler : ICommandHandler
         var count = await _alertRepository.ClearAllAlertsAsync(CancellationToken.None);
         await _mediator.Publish(new AlertEmptyedEvent());
         _logger.LogInformation("已清空所有价格警报，共删除 {Count} 个警报", count);
-        return;
     }
     private async Task HandleCreate(string json)
     {
@@ -137,7 +125,7 @@ public class AlertCommandHandler : ICommandHandler
         _logger.LogInformation("Alert {id} deleted successfully.", id);
     }
 
-    private async Task HandlPause(string id)
+    private async Task HandlePause(string id)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(id, nameof(id));
         var alert = await _alertRepository.GetByIdAsync(id);
@@ -171,7 +159,7 @@ public class AlertCommandHandler : ICommandHandler
         switch (action)
         {
             case "pause":
-                await HandlPause(alertId);
+                await HandlePause(alertId);
                 break;
 
             case "resume":

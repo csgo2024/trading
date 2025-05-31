@@ -1,17 +1,12 @@
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using Telegram.Bot;
-using Telegram.Bot.Requests;
 using Telegram.Bot.Types.Enums;
-using Trading.Common.Models;
+using Trading.Application.Telegram.Logging;
 
 namespace Trading.Application.Telegram.Handlers;
 
 public class HelpCommandHandler : ICommandHandler
 {
     private readonly ILogger<HelpCommandHandler> _logger;
-    private readonly ITelegramBotClient _botClient;
-    private readonly string _chatId;
     public static string Command => "/help";
 
     private readonly string _helpText = """
@@ -110,24 +105,22 @@ public class HelpCommandHandler : ICommandHandler
 `/alert empty`
 """;
 
-    public HelpCommandHandler(ILogger<HelpCommandHandler> logger,
-                              ITelegramBotClient botClient,
-                              IOptions<TelegramSettings> settings)
+    public HelpCommandHandler(ILogger<HelpCommandHandler> logger)
     {
-        _botClient = botClient;
-        _chatId = settings.Value.ChatId ?? throw new ArgumentNullException(nameof(settings));
         _logger = logger;
     }
 
     public async Task HandleAsync(string parameters)
     {
-        await _botClient.SendRequest(new SendMessageRequest
+        var telegramScope = new TelegramLoggerScope
         {
-            ChatId = _chatId,
-            Text = _helpText,
             ParseMode = ParseMode.MarkdownV2,
-            DisableNotification = true,
-        }, CancellationToken.None);
+        };
+
+        using (_logger.BeginScope(telegramScope))
+        {
+            await Task.Run(() => _logger.LogInformation(_helpText));
+        }
     }
 
     public Task HandleCallbackAsync(string action, string parameters)

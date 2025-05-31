@@ -1,13 +1,10 @@
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Moq;
-using Telegram.Bot;
 using Trading.API.HostServices;
 using Trading.Application.Services.Alerts;
 using Trading.Application.Services.Common;
 using Trading.Common.Enums;
 using Trading.Common.JavaScript;
-using Trading.Common.Models;
 using Trading.Domain.Entities;
 using Trading.Domain.IRepositories;
 
@@ -28,22 +25,18 @@ public class AlertHostServiceTests : IDisposable
         _klineStreamManagerMock = new Mock<IKlineStreamManager>();
         _alertRepositoryMock = new Mock<IAlertRepository>();
         _strategyRepositoryMock = new Mock<IStrategyRepository>();
-        var botClientMock = new Mock<ITelegramBotClient>();
         var backgroundTaskManagerMock = new Mock<IBackgroundTaskManager>();
         _cts = new CancellationTokenSource();
 
         var notificationLoggerMock = new Mock<ILogger<AlertNotificationService>>();
         var jsEvaluatorLoggerMock = new Mock<ILogger<JavaScriptEvaluator>>();
-        var telegramSettings = Options.Create(new TelegramSettings { ChatId = "test-chat-id" });
         var jsEvaluator = new JavaScriptEvaluator(jsEvaluatorLoggerMock.Object);
 
         var alertNotificationService = new AlertNotificationService(
             notificationLoggerMock.Object,
             _alertRepositoryMock.Object,
-            botClientMock.Object,
             jsEvaluator,
-            backgroundTaskManagerMock.Object,
-            telegramSettings);
+            backgroundTaskManagerMock.Object);
 
         _service = new TestAlertHostService(
             _loggerMock.Object,

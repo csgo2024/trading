@@ -1,16 +1,12 @@
 using Binance.Net.Interfaces;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Moq;
-using Telegram.Bot;
-using Telegram.Bot.Requests;
-using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Trading.Application.Services.Alerts;
 using Trading.Application.Services.Common;
+using Trading.Application.Telegram.Logging;
 using Trading.Common.Enums;
 using Trading.Common.JavaScript;
-using Trading.Common.Models;
 using Trading.Domain.Entities;
 using Trading.Domain.Events;
 using Trading.Domain.IRepositories;
@@ -22,7 +18,6 @@ public class AlertNotificationServiceTests
     private readonly Mock<ILogger<AlertNotificationService>> _mockLogger;
     private readonly Mock<ILogger<JavaScriptEvaluator>> _jsLoggerMock;
     private readonly Mock<IAlertRepository> _alertRepositoryMock;
-    private readonly Mock<ITelegramBotClient> _botClientMock;
     private readonly Mock<JavaScriptEvaluator> _jsEvaluatorMock;
     private readonly Mock<IBackgroundTaskManager> _taskManagerMock;
     private readonly CancellationTokenSource _cts;
@@ -34,23 +29,16 @@ public class AlertNotificationServiceTests
         _jsLoggerMock = new Mock<ILogger<JavaScriptEvaluator>>();
 
         _alertRepositoryMock = new Mock<IAlertRepository>();
-        _botClientMock = new Mock<ITelegramBotClient>();
         _jsEvaluatorMock = new Mock<JavaScriptEvaluator>(_jsLoggerMock.Object);
         _taskManagerMock = new Mock<IBackgroundTaskManager>();
 
         _cts = new CancellationTokenSource();
 
-        var settings = new TelegramSettings { ChatId = "456456481" };
-        var optionsMock = new Mock<IOptions<TelegramSettings>>();
-        optionsMock.Setup(x => x.Value).Returns(settings);
-
         _service = new AlertNotificationService(
             _mockLogger.Object,
             _alertRepositoryMock.Object,
-            _botClientMock.Object,
             _jsEvaluatorMock.Object,
-            _taskManagerMock.Object,
-            optionsMock.Object
+            _taskManagerMock.Object
         );
     }
 
@@ -221,15 +209,6 @@ public class AlertNotificationServiceTests
                 It.IsAny<decimal>()))
             .Returns(true);
 
-        _botClientMock
-            .Setup(x => x.SendRequest(
-                It.Is<SendMessageRequest>(r =>
-                    r.ChatId == "456456481" &&
-                    r.Text.Contains(alert.Symbol) &&
-                    r.ParseMode == ParseMode.Html),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Message());
-
         // Act & Assert
         var task = Task.Run(() => _service.ProcessAlert(alert, _cts.Token), _cts.Token);
 
@@ -243,14 +222,11 @@ public class AlertNotificationServiceTests
         await task;
 
         // Assert
-        _botClientMock.Verify(
-            x => x.SendRequest(
-                It.Is<SendMessageRequest>(r =>
-                    r.ChatId == "456456481" &&
-                    r.Text.Contains(alert.Symbol) &&
-                    r.ParseMode == ParseMode.Html),
-                It.IsAny<CancellationToken>()),
+        _mockLogger.Verify(
+            x => x.BeginScope(
+                It.Is<TelegramLoggerScope>(x => x.ParseMode == ParseMode.Html)),
             Times.Once);
+        _mockLogger.VerifyLoggingOnce(LogLevel.Information, alert.Symbol);
     }
 
     [Fact]
