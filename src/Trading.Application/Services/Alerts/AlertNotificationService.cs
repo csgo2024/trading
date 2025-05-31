@@ -6,7 +6,6 @@ using Telegram.Bot.Types.ReplyMarkups;
 using Trading.Application.Services.Common;
 using Trading.Application.Telegram.Logging;
 using Trading.Common.Enums;
-using Trading.Common.Extensions;
 using Trading.Common.JavaScript;
 using Trading.Domain.Entities;
 using Trading.Domain.Events;
@@ -177,15 +176,15 @@ public class AlertNotificationService :
             var changeText = priceChange >= 0 ? "🟢 上涨" : "🔴 下跌";
 
             var text = $"""
-            ⏰ <b>️ {alert.Symbol}-{alert.Interval} 警报触发</b> ({DateTime.UtcNow.AddHours(8):yyyy-MM-dd HH:mm:ss})
-            <pre>条件: {alert.Expression.ToTelegramSafeString()}
+            条件: {alert.Expression}
             开盘价格: {kline.OpenPrice} 收盘价格: {kline.ClosePrice}
             最高价格: {kline.HighPrice} 最低价格: {kline.LowPrice}
-            {changeText}: {priceChange:F3} ({priceChangePercent:F3}%)</pre>
+            {changeText}: {priceChange:F3} ({priceChangePercent:F3}%)
             """;
 
             var telegramScope = new TelegramLoggerScope
             {
+                Title = $"⏰ 警报触发: {alert.Symbol}-{alert.Interval}",
                 ReplyMarkup = new InlineKeyboardMarkup(
                 [
                     [
