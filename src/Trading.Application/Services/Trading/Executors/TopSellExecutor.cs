@@ -27,16 +27,19 @@ public class TopSellExecutor : BaseExecutor
     public override async Task ExecuteAsync(IAccountProcessor accountProcessor, Strategy strategy, CancellationToken ct)
     {
         var currentDate = DateTime.UtcNow.Date;
-        if (strategy.HasOpenOrder && strategy.OrderPlacedTime.HasValue && strategy.OrderPlacedTime.Value.Date != currentDate)
+        if (strategy.OrderPlacedTime.HasValue && strategy.OrderPlacedTime.Value.Date != currentDate)
         {
-            _logger.LogInformation("[{AccountType}-{Symbol}] Previous day's order not filled, cancelling order before reset.",
-                                   strategy.AccountType,
-                                   strategy.Symbol);
-            await CancelExistingOrder(accountProcessor, strategy, ct);
+            if (strategy.HasOpenOrder)
+            {
+                _logger.LogInformation("[{AccountType}-{Symbol}] Previous day's order not filled, cancelling order before reset.",
+                                       strategy.AccountType,
+                                       strategy.Symbol);
+                await CancelExistingOrder(accountProcessor, strategy, ct);
+            }
+            await ResetDailyStrategy(accountProcessor, strategy, currentDate, ct);
         }
         if (strategy.OrderId is null)
         {
-            await ResetDailyStrategy(accountProcessor, strategy, currentDate, ct);
             await TryPlaceOrder(accountProcessor, strategy, ct);
         }
         await base.ExecuteAsync(accountProcessor, strategy, ct);

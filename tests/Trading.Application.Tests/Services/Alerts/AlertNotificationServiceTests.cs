@@ -225,6 +225,7 @@ public class AlertNotificationServiceTests
         _mockLogger.Verify(
             x => x.BeginScope(
                 It.Is<TelegramLoggerScope>(x => x.ParseMode == ParseMode.Html
+                                                && x.DisableNotification == false
                                                 && x.Title!.Contains(alert.Symbol))),
             Times.Once);
         _mockLogger.VerifyLoggingOnce(LogLevel.Information, "条件");
