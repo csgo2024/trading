@@ -185,6 +185,7 @@ public class AlertNotificationService :
             var telegramScope = new TelegramLoggerScope
             {
                 Title = $"⏰ 警报触发: {alert.Symbol}-{alert.Interval}",
+                DisableNotification = false,
                 ReplyMarkup = new InlineKeyboardMarkup(
                 [
                     [
