@@ -315,6 +315,7 @@ public class BottomBuyExecutorTests
             Volatility = 0.01m,
             HasOpenOrder = hasOpenOrder,
             OrderId = orderId,
+            RequireReset = false,
             OrderPlacedTime = orderPlacedTime ?? DateTime.UtcNow
         };
     }
