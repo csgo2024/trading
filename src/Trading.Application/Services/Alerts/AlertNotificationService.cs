@@ -2,16 +2,11 @@ using System.Collections.Concurrent;
 using Binance.Net.Interfaces;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using Telegram.Bot;
-using Telegram.Bot.Requests;
-using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 using Trading.Application.Services.Common;
+using Trading.Application.Telegram.Logging;
 using Trading.Common.Enums;
-using Trading.Common.Extensions;
 using Trading.Common.JavaScript;
-using Trading.Common.Models;
 using Trading.Domain.Entities;
 using Trading.Domain.Events;
 using Trading.Domain.IRepositories;
@@ -30,22 +25,17 @@ public class AlertNotificationService :
     private readonly IBackgroundTaskManager _backgroundTaskManager;
     private readonly IAlertRepository _alertRepository;
     private readonly ILogger<AlertNotificationService> _logger;
-    private readonly ITelegramBotClient _botClient;
     private readonly JavaScriptEvaluator _javaScriptEvaluator;
-    private readonly string _chatId;
     private static readonly ConcurrentDictionary<string, Alert> _activeAlerts = new();
     private static readonly ConcurrentDictionary<string, IBinanceKline> _lastkLines = new();
     public AlertNotificationService(ILogger<AlertNotificationService> logger,
                                     IAlertRepository alertRepository,
-                                    ITelegramBotClient botClient,
                                     JavaScriptEvaluator javaScriptEvaluator,
-                                    IBackgroundTaskManager backgroundTaskManager,
-                                    IOptions<TelegramSettings> settings)
+                                    IBackgroundTaskManager backgroundTaskManager
+                                    )
     {
         _logger = logger;
         _alertRepository = alertRepository;
-        _botClient = botClient;
-        _chatId = settings.Value.ChatId ?? throw new ArgumentNullException(nameof(settings));
         _javaScriptEvaluator = javaScriptEvaluator;
         _backgroundTaskManager = backgroundTaskManager;
     }
@@ -154,7 +144,7 @@ public class AlertNotificationService :
                             kline.HighPrice,
                             kline.LowPrice))
                     {
-                        await SendNotification(alert, kline);
+                        SendNotification(alert, kline);
                     }
                 }
                 else
@@ -176,7 +166,7 @@ public class AlertNotificationService :
         }
     }
 
-    private async Task SendNotification(Alert alert, IBinanceKline kline)
+    private void SendNotification(Alert alert, IBinanceKline kline)
     {
         try
         {
@@ -186,25 +176,28 @@ public class AlertNotificationService :
             var changeText = priceChange >= 0 ? "🟢 上涨" : "🔴 下跌";
 
             var text = $"""
-            ⏰ <b>️ {alert.Symbol}-{alert.Interval} 警报触发</b> ({DateTime.UtcNow.AddHours(8):yyyy-MM-dd HH:mm:ss})
-            <pre>条件: {alert.Expression.ToTelegramSafeString()}
+            条件: {alert.Expression}
             开盘价格: {kline.OpenPrice} 收盘价格: {kline.ClosePrice}
             最高价格: {kline.HighPrice} 最低价格: {kline.LowPrice}
-            {changeText}: {priceChange:F3} ({priceChangePercent:F3}%)</pre>
+            {changeText}: {priceChange:F3} ({priceChangePercent:F3}%)
             """;
-            await _botClient.SendRequest(new SendMessageRequest
+
+            var telegramScope = new TelegramLoggerScope
             {
-                ChatId = _chatId,
-                Text = text,
-                ParseMode = ParseMode.Html,
+                Title = $"⏰ 警报触发: {alert.Symbol}-{alert.Interval}",
+                DisableNotification = false,
                 ReplyMarkup = new InlineKeyboardMarkup(
                 [
                     [
                         InlineKeyboardButton.WithCallbackData("暂停", $"alert_pause_{alert.Id}")
                     ]
                 ])
-            }, CancellationToken.None);
-            _logger.LogDebug(text);
+            };
+            using (_logger.BeginScope(telegramScope))
+            {
+                _logger.LogInformation(text);
+            }
+
             alert.LastNotification = DateTime.UtcNow;
             alert.UpdatedAt = DateTime.UtcNow;
         }

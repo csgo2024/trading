@@ -1,16 +1,12 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Moq;
 using Newtonsoft.Json;
-using Telegram.Bot;
-using Telegram.Bot.Requests;
-using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Trading.Application.Commands;
 using Trading.Application.Telegram.Handlers;
+using Trading.Application.Telegram.Logging;
 using Trading.Common.Enums;
-using Trading.Common.Models;
 using Trading.Domain.Entities;
 using Trading.Domain.Events;
 using Trading.Domain.IRepositories;
@@ -21,27 +17,19 @@ public class AlertCommandHandlerTests
 {
     private readonly Mock<ILogger<AlertCommandHandler>> _loggerMock;
     private readonly Mock<IMediator> _mediatorMock;
-    private readonly Mock<ITelegramBotClient> _botClientMock;
     private readonly Mock<IAlertRepository> _alertRepositoryMock;
     private readonly AlertCommandHandler _handler;
-    private readonly string _testChatId = "456456481";
 
     public AlertCommandHandlerTests()
     {
         _loggerMock = new Mock<ILogger<AlertCommandHandler>>();
         _mediatorMock = new Mock<IMediator>();
         _alertRepositoryMock = new Mock<IAlertRepository>();
-        _botClientMock = new Mock<ITelegramBotClient>();
-        var settings = new TelegramSettings { ChatId = _testChatId };
-        var optionsMock = new Mock<IOptions<TelegramSettings>>();
-        optionsMock.Setup(x => x.Value).Returns(settings);
 
         _handler = new AlertCommandHandler(
             _loggerMock.Object,
             _mediatorMock.Object,
-            _alertRepositoryMock.Object,
-            _botClientMock.Object,
-            optionsMock.Object);
+            _alertRepositoryMock.Object);
     }
 
     [Theory]
@@ -52,20 +40,15 @@ public class AlertCommandHandlerTests
         // arrange
         _alertRepositoryMock.Setup(x => x.GetAllAlerts())
             .ReturnsAsync([new Alert() { Symbol = "BTCUSDT", Status = status, Expression = "close > 100" }]);
-        _botClientMock
-            .Setup(x => x.SendRequest(It.IsAny<SendMessageRequest>(), CancellationToken.None))
-            .ReturnsAsync(new Message());
         // Act
         await _handler.HandleAsync("");
 
         // Assert
-        _botClientMock.Verify(x => x.SendRequest(
-            It.Is<SendMessageRequest>(r =>
-                r.ChatId == _testChatId &&
-                r.Text.Contains(displayText) &&
-                r.ParseMode == ParseMode.Html),
-            CancellationToken.None),
+        _loggerMock.Verify(
+            x => x.BeginScope(
+                It.Is<TelegramLoggerScope>(x => x.ParseMode == ParseMode.Html)),
             Times.Once);
+        _loggerMock.VerifyLoggingOnce(LogLevel.Information, displayText);
     }
 
     [Fact]

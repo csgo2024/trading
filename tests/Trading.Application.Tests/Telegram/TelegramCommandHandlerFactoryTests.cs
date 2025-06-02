@@ -1,7 +1,6 @@
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Moq;
 using Telegram.Bot;
 using Trading.Application.Services.Alerts;
@@ -9,7 +8,6 @@ using Trading.Application.Services.Common;
 using Trading.Application.Telegram;
 using Trading.Application.Telegram.Handlers;
 using Trading.Common.JavaScript;
-using Trading.Common.Models;
 using Trading.Domain.IRepositories;
 
 namespace Trading.Application.Tests.Telegram;
@@ -29,14 +27,6 @@ public class TelegramCommandHandlerFactoryTests
             builder.AddConsole();
             builder.SetMinimumLevel(LogLevel.Debug);
         });
-        // Configure Telegram settings
-        var telegramSettings = new TelegramSettings { ChatId = "test-chat-id" };
-        services.AddSingleton(Options.Create(telegramSettings));
-
-        var settings = new TelegramSettings { ChatId = "456456481" };
-        var optionsMock = new Mock<IOptions<TelegramSettings>>();
-        optionsMock.Setup(x => x.Value).Returns(settings);
-
         // Add mock dependencies
         services.AddSingleton(Mock.Of<IMediator>());
         services.AddSingleton(Mock.Of<IStrategyRepository>());
@@ -51,10 +41,8 @@ public class TelegramCommandHandlerFactoryTests
         var alertNotificationMock = new Mock<AlertNotificationService>(
             Mock.Of<ILogger<AlertNotificationService>>(),
             Mock.Of<IAlertRepository>(),
-            Mock.Of<ITelegramBotClient>(),
             jsEvaluatorMock.Object,
-            taskManagerMock.Object,
-            optionsMock.Object
+            taskManagerMock.Object
         );
         services.AddSingleton(alertNotificationMock.Object);
 

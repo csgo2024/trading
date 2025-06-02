@@ -9,6 +9,7 @@ public class Strategy : BaseEntity
     public decimal TargetPrice { get; set; }
     public long? OrderId { get; set; }
     public bool HasOpenOrder { get; set; }
+    public bool RequireReset { get; set; } = true;
     public DateTime? OrderPlacedTime { get; set; }
     public int Amount { get; set; }
     public decimal Volatility { get; set; }

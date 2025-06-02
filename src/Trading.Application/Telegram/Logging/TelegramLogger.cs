@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 using Telegram.Bot;
 using Telegram.Bot.Requests;
 using Telegram.Bot.Types.Enums;
+using Telegram.Bot.Types.ReplyMarkups;
 using Trading.Common.Extensions;
 using Trading.Common.Models;
 
@@ -24,14 +25,21 @@ internal sealed class DisposableScope : IDisposable
     }
 }
 
+public class TelegramLoggerScope
+{
+    public string? Title { get; set; }
+    public bool DisableNotification { get; set; } = true;
+    public ParseMode ParseMode { get; set; } = ParseMode.Html;
+    public ReplyMarkup? ReplyMarkup { get; set; }
+}
+
 public class TelegramLogger : ILogger
 {
     private readonly IOptions<TelegramLoggerOptions> _loggerOptions;
     private readonly ITelegramBotClient _botClient;
     private readonly string _categoryName;
     private readonly string _chatId;
-    private const string NotificationKey = "DisableNotification";
-    private readonly AsyncLocal<Stack<IReadOnlyDictionary<string, object>>> _scopeStack = new();
+    private readonly AsyncLocal<Stack<TelegramLoggerScope>> _scopeStack = new();
 
     public TelegramLogger(ITelegramBotClient botClient,
                           IOptions<TelegramLoggerOptions> loggerOptions,
@@ -46,12 +54,15 @@ public class TelegramLogger : ILogger
 
     public IDisposable BeginScope<TState>(TState state) where TState : notnull
     {
-        var scopeStack = _scopeStack.Value ??= new Stack<IReadOnlyDictionary<string, object>>();
+        var scopeStack = _scopeStack.Value ??= new Stack<TelegramLoggerScope>();
 
-        var scopeData = state as IReadOnlyDictionary<string, object>
-            ?? new Dictionary<string, object> { { "Scope", state } };
+        if (state is not TelegramLoggerScope scope)
+        {
+            // If the state is not a TelegramLoggerScope, we create a new one
+            scope = new TelegramLoggerScope();
+        }
 
-        scopeStack.Push(scopeData);
+        scopeStack.Push(scope);
 
         return new DisposableScope(() =>
         {
@@ -62,23 +73,12 @@ public class TelegramLogger : ILogger
         });
     }
 
-    private bool ShouldDisableNotification()
+    private TelegramLoggerScope GetCurrentScope()
     {
         var scopeStack = _scopeStack.Value;
-        if (scopeStack == null || scopeStack.Count == 0)
-        {
-            return true;
-        }
-
-        foreach (var scope in scopeStack)
-        {
-            if (scope.TryGetValue(NotificationKey, out var value) &&
-                value is bool disableNotification)
-            {
-                return disableNotification;
-            }
-        }
-        return true;
+        return scopeStack?.Count > 0
+            ? scopeStack.Peek()
+            : new TelegramLoggerScope();
     }
 
     public bool IsEnabled(LogLevel logLevel)
@@ -98,36 +98,24 @@ public class TelegramLogger : ILogger
         task.ConfigureAwait(false).GetAwaiter().GetResult();
     }
 
-    internal async Task LogInternalAsync<TState>(LogLevel logLevel, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+    private async Task LogInternalAsync<TState>(LogLevel logLevel, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
     {
         try
         {
-            var message = new StringBuilder();
-            message.AppendLine($"<b>{GetEmoji(logLevel)} {logLevel.ToString()}</b> ({DateTime.UtcNow.AddHours(8):yyyy-MM-dd HH:mm:ss})");
-            if (_loggerOptions.Value.IncludeCategory)
-            {
-                message.AppendLine($"📁 {_categoryName}");
-            }
+            var scope = GetCurrentScope();
 
-            if (exception != null)
-            {
-                message.AppendLine($"<pre>{exception.Message.ToTelegramSafeString()}");
-                message.AppendLine($"{formatter(state, exception).ToTelegramSafeString()}");
-                message.AppendLine($"{exception.StackTrace?.ToTelegramSafeString()}</pre>");
-            }
-            else
-            {
-                message.AppendLine($"<pre>{formatter(state, exception).ToTelegramSafeString()}</pre>");
-            }
+            var text = scope.ParseMode == ParseMode.Html
+                ? BuildHtmlMessage(logLevel, state, exception, formatter, scope)
+                : formatter(state, exception);
 
             await _botClient.SendRequest(new SendMessageRequest
             {
                 ChatId = _chatId,
-                Text = message.ToString(),
-                ParseMode = ParseMode.Html,
-                DisableNotification = ShouldDisableNotification(),
-            }
-            );
+                Text = text,
+                ParseMode = scope.ParseMode,
+                DisableNotification = scope.DisableNotification,
+                ReplyMarkup = scope.ReplyMarkup
+            });
         }
         catch (Exception ex)
         {
@@ -136,7 +124,7 @@ public class TelegramLogger : ILogger
                 await _botClient.SendRequest(new SendMessageRequest
                 {
                     ChatId = _chatId,
-                    Text = ex.Message,
+                    Text = $"Failed to send log message: {ex.Message}",
                     ParseMode = ParseMode.Html,
                 });
             }
@@ -146,6 +134,41 @@ public class TelegramLogger : ILogger
             }
         }
     }
+
+    private string BuildHtmlMessage<TState>(LogLevel logLevel, TState state, Exception? exception, Func<TState, Exception?, string> formatter, TelegramLoggerScope scope)
+    {
+        var message = new StringBuilder();
+
+        var title = !string.IsNullOrEmpty(scope.Title)
+            ? scope.Title
+            : $"{GetEmoji(logLevel)} {logLevel}";
+
+        message.AppendLine($"<b>{title}</b> ({DateTime.UtcNow.AddHours(8):yyyy-MM-dd HH:mm:ss})");
+
+        if (_loggerOptions.Value.IncludeCategory)
+        {
+            message.AppendLine($"📁 {_categoryName}");
+        }
+
+        if (exception != null)
+        {
+            message.AppendLine("<pre>");
+            message.AppendLine(exception.Message.ToTelegramSafeString());
+            message.AppendLine(formatter(state, exception).ToTelegramSafeString());
+            if (!string.IsNullOrEmpty(exception.StackTrace))
+            {
+                message.AppendLine(exception.StackTrace.ToTelegramSafeString());
+            }
+            message.AppendLine("</pre>");
+        }
+        else
+        {
+            message.AppendLine($"<pre>{formatter(state, exception).ToTelegramSafeString()}</pre>");
+        }
+
+        return message.ToString();
+    }
+
     private static string GetEmoji(LogLevel level) => level switch
     {
         LogLevel.Trace => "🔍",

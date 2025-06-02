@@ -1,6 +1,7 @@
 using Binance.Net.Enums;
 using Microsoft.Extensions.Logging;
 using Trading.Application.Services.Trading.Account;
+using Trading.Application.Telegram.Logging;
 using Trading.Common.Enums;
 using Trading.Common.Helpers;
 using Trading.Common.JavaScript;
@@ -25,16 +26,23 @@ public class BottomBuyExecutor : BaseExecutor
     public override async Task ExecuteAsync(IAccountProcessor accountProcessor, Strategy strategy, CancellationToken ct)
     {
         var currentDate = DateTime.UtcNow.Date;
-        if (strategy.HasOpenOrder && strategy.OrderPlacedTime.HasValue && strategy.OrderPlacedTime.Value.Date != currentDate)
+        if (strategy.OrderPlacedTime.HasValue && strategy.OrderPlacedTime.Value.Date != currentDate)
         {
-            _logger.LogInformation("[{AccountType}-{Symbol}] Previous day's order not filled, cancelling order before reset.",
-                                   strategy.AccountType,
-                                   strategy.Symbol);
-            await CancelExistingOrder(accountProcessor, strategy, ct);
+            if (strategy.HasOpenOrder)
+            {
+                _logger.LogInformation("[{AccountType}-{Symbol}] Previous day's order not filled, cancelling order before reset.",
+                                       strategy.AccountType,
+                                       strategy.Symbol);
+                await CancelExistingOrder(accountProcessor, strategy, ct);
+            }
+            strategy.RequireReset = true;
+        }
+        if (strategy.RequireReset)
+        {
+            await ResetDailyStrategy(accountProcessor, strategy, currentDate, ct);
         }
         if (strategy.OrderId is null)
         {
-            await ResetDailyStrategy(accountProcessor, strategy, currentDate, ct);
             await TryPlaceOrder(accountProcessor, strategy, ct);
         }
         await base.ExecuteAsync(accountProcessor, strategy, ct);
@@ -52,6 +60,7 @@ public class BottomBuyExecutor : BaseExecutor
             strategy.HasOpenOrder = false;
             strategy.OrderId = null;
             strategy.OrderPlacedTime = null;
+            strategy.RequireReset = false;
             _logger.LogInformation("[{AccountType}-{Symbol}] New day started, Open price: {OpenPrice}, Target price: {TargetPrice}.",
                 strategy.AccountType, strategy.Symbol, openPrice, strategy.TargetPrice);
             return;

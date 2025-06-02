@@ -1,5 +1,5 @@
 ﻿services:
-  trading-api:
+  trading-api-debug:
     image: trading-api
     build:
       context: .
