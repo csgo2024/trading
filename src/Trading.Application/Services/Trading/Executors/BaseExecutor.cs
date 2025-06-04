@@ -60,7 +60,7 @@ public abstract class BaseExecutor :
     }
     private async Task<(bool, WebCallResult<T>?)> ExecuteWithRetry<T>(Func<Task<WebCallResult<T>>> operation, Strategy strategy, CancellationToken ct)
     {
-        var MAX_RETRIES = 3;
+        var MAX_RETRIES = 1;
         WebCallResult<T>? result = null;
         for (var attempt = 0; attempt < MAX_RETRIES; attempt++)
         {
