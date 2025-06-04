@@ -309,6 +309,7 @@ public class BaseExecutorTests
             Quantity = 1.0m,
             TargetPrice = 50000m
         };
+        var MAX_RETRIES = 1;
 
         _mockAccountProcessor.SetupFailedPlaceLongOrderAsync("Insufficient balance");
 
@@ -316,7 +317,7 @@ public class BaseExecutorTests
         await _executor.TryPlaceOrder(_mockAccountProcessor.Object, strategy, _ct);
 
         // Assert
-        _mockLogger.VerifyLoggingTimes(LogLevel.Warning, "Retrying", Times.Exactly(2));
+        _mockLogger.VerifyLoggingTimes(LogLevel.Warning, "Retrying", Times.Exactly(MAX_RETRIES - 1));
         _mockLogger.VerifyLoggingOnce(LogLevel.Error, "Insufficient balance");
     }
 
@@ -446,6 +447,7 @@ public class BaseExecutorTests
             TargetPrice = 50000m,
             OrderId = 12345L,
         };
+        var MAX_RETRIES = 1;
 
         var failCount = 0;
         _mockAccountProcessor
@@ -456,7 +458,7 @@ public class BaseExecutorTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(() =>
             {
-                if (failCount++ < 2)
+                if (failCount++ < MAX_RETRIES - 1)
                 {
                     return new WebCallResult<BinanceOrderBase>(null, null, null, 0, null, 0, null, null, null, null,
                         ResultDataSource.Server, null, new ServerError(0, "Temporary error"));
@@ -477,7 +479,7 @@ public class BaseExecutorTests
                 It.IsAny<decimal>(),
                 It.IsAny<decimal>(),
                 It.IsAny<CancellationToken>()),
-            Times.Exactly(3));
+            Times.Exactly(MAX_RETRIES));
     }
     [Fact]
     public async Task TryStopOrderAsync_WhenFailedWithRetries_ShouldLogWarningsAndError()
@@ -491,6 +493,7 @@ public class BaseExecutorTests
             TargetPrice = 50000m,
             OrderId = 12345L,
         };
+        var MAX_RETRIES = 1;
 
         _mockAccountProcessor.SetupFailedStopLongOrderAsync("Network error");
 
@@ -498,7 +501,7 @@ public class BaseExecutorTests
         await _executor.TryStopOrderAsync(_mockAccountProcessor.Object, strategy, 4000m, _ct);
 
         // Assert
-        _mockLogger.VerifyLoggingTimes(LogLevel.Warning, "Retrying", Times.Exactly(2));
+        _mockLogger.VerifyLoggingTimes(LogLevel.Warning, "Retrying", Times.Exactly(MAX_RETRIES - 1));
         _mockLogger.VerifyLoggingOnce(LogLevel.Error, $"Network error");
     }
     [Fact]
