@@ -73,7 +73,8 @@ public class StrategyCommandHandler : ICommandHandler
             var text = $"""
             {emoji} [{strategy.AccountType}-{strategy.StrategyType}-{strategy.Symbol}]: {status}
             Internal: {strategy.Interval} / Open: {strategy.Open}
-            Volatility: {strategy.Volatility} / TargetPrice: {strategy.TargetPrice} 💰
+            TargetPrice: {strategy.TargetPrice} 💰
+            Volatility: {strategy.Volatility:P2} 
             Amount: {strategy.Amount} / Quantity: {strategy.Quantity}
             """;
             var buttons = strategy.Status switch

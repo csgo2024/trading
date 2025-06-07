@@ -57,6 +57,7 @@ public class BottomBuyExecutor : BaseExecutor
             var filterData = await accountProcessor.GetSymbolFilterData(strategy, ct);
             strategy.TargetPrice = BinanceHelper.AdjustPriceByStepSize(openPrice * (1 - strategy.Volatility), filterData.Item1);
             strategy.Quantity = BinanceHelper.AdjustQuantityBystepSize(strategy.Amount / strategy.TargetPrice, filterData.Item2);
+            strategy.Open = openPrice;
             strategy.HasOpenOrder = false;
             strategy.OrderId = null;
             strategy.OrderPlacedTime = null;
