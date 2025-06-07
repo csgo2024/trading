@@ -51,8 +51,8 @@ public class StrategyCommandHandlerTests
     }
 
     [Theory]
-    [InlineData(Status.Running, "运行中")]
-    [InlineData(Status.Paused, "已暂停")]
+    [InlineData(Status.Running, "Running")]
+    [InlineData(Status.Paused, "Paused")]
     public async Task HandleAsync_WithEmptyParameters_ShouldReturnStrategyInformation(Status status, string statusText)
     {
         // arrange

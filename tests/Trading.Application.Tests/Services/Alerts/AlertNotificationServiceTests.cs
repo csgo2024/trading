@@ -228,7 +228,7 @@ public class AlertNotificationServiceTests
                                                 && x.DisableNotification == false
                                                 && x.Title!.Contains(alert.Symbol))),
             Times.Once);
-        _mockLogger.VerifyLoggingOnce(LogLevel.Information, "条件");
+        _mockLogger.VerifyLoggingOnce(LogLevel.Information, "Expression");
     }
 
     [Fact]

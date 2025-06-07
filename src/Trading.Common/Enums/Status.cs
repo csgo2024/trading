@@ -19,9 +19,9 @@ public static class StatusExtensions
     {
         return status switch
         {
-            Status.Running => ("🟢", "运行中"),
-            Status.Paused => ("🔴", "已暂停"),
-            _ => ("⚠️", "未知状态")
+            Status.Running => ("🟢", "Running"),
+            Status.Paused => ("🔴", "Paused"),
+            _ => ("⚠️", "Unknown"),
         };
     }
 }

@@ -72,20 +72,20 @@ public class StrategyCommandHandler : ICommandHandler
             var (emoji, status) = strategy.Status.GetStatusInfo();
             var text = $"""
             {emoji} [{strategy.AccountType}-{strategy.StrategyType}-{strategy.Symbol}]: {status}
-            时间级别: {strategy.Interval}
-            波动率: {strategy.Volatility} / 目标价格: {strategy.TargetPrice} 💰
-            金额: {strategy.Amount} / 数量: {strategy.Quantity}
+            Internal: {strategy.Interval} / Open: {strategy.Open}
+            Volatility: {strategy.Volatility} / TargetPrice: {strategy.TargetPrice} 💰
+            Amount: {strategy.Amount} / Quantity: {strategy.Quantity}
             """;
             var buttons = strategy.Status switch
             {
-                Status.Running => [InlineKeyboardButton.WithCallbackData("⏸️ 暂停", $"strategy_pause_{strategy.Id}")],
-                Status.Paused => new[] { InlineKeyboardButton.WithCallbackData("▶️ 启用", $"strategy_resume_{strategy.Id}") },
+                Status.Running => [InlineKeyboardButton.WithCallbackData("⏸️ Pause", $"strategy_pause_{strategy.Id}")],
+                Status.Paused => new[] { InlineKeyboardButton.WithCallbackData("▶️ Resume", $"strategy_resume_{strategy.Id}") },
                 _ => throw new InvalidOperationException()
             };
-            buttons = [.. buttons, InlineKeyboardButton.WithCallbackData("🗑️ 删除", $"strategy_delete_{strategy.Id}")];
+            buttons = [.. buttons, InlineKeyboardButton.WithCallbackData("🗑️ Delete", $"strategy_delete_{strategy.Id}")];
             var telegramScope = new TelegramLoggerScope
             {
-                Title = "📊 策略状态报告",
+                Title = "📊 Strategy Status",
                 ReplyMarkup = new InlineKeyboardMarkup([buttons])
             };
 
@@ -130,7 +130,7 @@ public class StrategyCommandHandler : ICommandHandler
         var strategy = await _strategyRepository.GetByIdAsync(id);
         if (strategy == null)
         {
-            _logger.LogError("未找到策略 ID: {Id}", id);
+            _logger.LogError("Not found strategy: {Id}", id);
             return;
         }
         strategy.Pause();
@@ -144,7 +144,7 @@ public class StrategyCommandHandler : ICommandHandler
         var strategy = await _strategyRepository.GetByIdAsync(id);
         if (strategy == null)
         {
-            _logger.LogError("未找到策略 ID: {Id}", id);
+            _logger.LogError("Not found strategy: {Id}", id);
             return;
         }
         strategy.Resume();

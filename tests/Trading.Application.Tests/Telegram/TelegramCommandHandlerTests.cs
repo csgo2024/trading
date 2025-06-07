@@ -21,8 +21,6 @@ public class TelegramCommandHandlerTests
         _handler = new TelegramCommandHandler(_mockLogger.Object, _mockHandlerFactory.Object);
     }
 
-    // HandleCommand 测试
-
     [Fact]
     public async Task HandleCommand_WithNullText_ShouldReturnWithoutProcessing()
     {
@@ -116,8 +114,6 @@ public class TelegramCommandHandlerTests
         // Assert
         _mockLogger.VerifyLoggingOnce(LogLevel.Error, "Command execution failed");
     }
-
-    // HandleCallbackQuery 测试
 
     [Fact]
     public async Task HandleCallbackQuery_WithNullQuery_ShouldDoNothing()
