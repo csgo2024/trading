@@ -129,7 +129,7 @@ public class DefaultErrorMessageResolverTests
         var result = await resolver.ResolveAsync(-1, "default message");
 
         // Assert
-        Assert.Equal("系统错误", result);
+        Assert.Equal("System error.", result);
     }
 
     [Fact]

@@ -6,6 +6,7 @@ namespace Trading.Domain.Entities;
 public class Strategy : BaseEntity
 {
     public string Symbol { get; set; } = string.Empty;
+    public decimal? Open { get; set; }
     public decimal TargetPrice { get; set; }
     public long? OrderId { get; set; }
     public bool HasOpenOrder { get; set; }

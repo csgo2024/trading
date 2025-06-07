@@ -33,8 +33,8 @@ public class AlertCommandHandlerTests
     }
 
     [Theory]
-    [InlineData(Status.Running, "运行中")]
-    [InlineData(Status.Paused, "已暂停")]
+    [InlineData(Status.Running, "Running")]
+    [InlineData(Status.Paused, "Paused")]
     public async Task HandleAsync_WithEmptyParameters_ReturnAlertInformation(Status status, string displayText)
     {
         // arrange
@@ -77,7 +77,7 @@ public class AlertCommandHandlerTests
         // Assert
         _alertRepositoryMock.Verify(x => x.ClearAllAlertsAsync(It.IsAny<CancellationToken>()), Times.Once);
         _mediatorMock.Verify(x => x.Publish(It.IsAny<AlertEmptyedEvent>(), It.IsAny<CancellationToken>()), Times.Once);
-        _loggerMock.VerifyLoggingOnce(LogLevel.Information, "已清空所有价格警报");
+        _loggerMock.VerifyLoggingOnce(LogLevel.Information, "Alarms empty successfully");
     }
 
     [Fact]
@@ -203,7 +203,7 @@ public class AlertCommandHandlerTests
         await _handler.HandleAsync($"{command} {alertId}");
 
         // Assert
-        _loggerMock.VerifyLoggingOnce(LogLevel.Error, $"未找到报警 ID: {alertId}");
+        _loggerMock.VerifyLoggingOnce(LogLevel.Error, $"Not found alarm: {alertId}");
     }
 
     [Theory]

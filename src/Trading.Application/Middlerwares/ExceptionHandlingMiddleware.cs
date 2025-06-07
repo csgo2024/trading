@@ -140,7 +140,7 @@ public class DefaultErrorMessageResolver : IErrorMessageResolver
     {
         _errorMessages = new Dictionary<int, string>
         {
-            { -1, "系统错误" },
+            { -1, "System error." },
         };
     }
 

@@ -78,19 +78,19 @@ public class AlertCommandHandler : ICommandHandler
             var (emoji, status) = alert.Status.GetStatusInfo();
             var text = $"""
             {emoji} [{alert.Symbol}-{alert.Interval}]:{status}
-            表达式：{alert.Expression}
+            Expression: {alert.Expression}
             """;
             var buttons = alert.Status switch
             {
-                Status.Running => [InlineKeyboardButton.WithCallbackData("⏸️ 暂停", $"alert_pause_{alert.Id}")],
-                Status.Paused => new[] { InlineKeyboardButton.WithCallbackData("▶️ 启用", $"alert_resume_{alert.Id}") },
+                Status.Running => [InlineKeyboardButton.WithCallbackData("⏸️ Pause", $"alert_pause_{alert.Id}")],
+                Status.Paused => new[] { InlineKeyboardButton.WithCallbackData("▶️ Resume", $"alert_resume_{alert.Id}") },
                 _ => throw new InvalidOperationException()
             };
-            buttons = [.. buttons, InlineKeyboardButton.WithCallbackData("🗑️ 删除", $"alert_delete_{alert.Id}")];
+            buttons = [.. buttons, InlineKeyboardButton.WithCallbackData("🗑️ Delete", $"alert_delete_{alert.Id}")];
 
             var telegramScope = new TelegramLoggerScope
             {
-                Title = "⏰ 警报状态",
+                Title = "⏰ Alarm Status",
                 ReplyMarkup = new InlineKeyboardMarkup([buttons])
             };
 
@@ -104,7 +104,7 @@ public class AlertCommandHandler : ICommandHandler
     {
         var count = await _alertRepository.ClearAllAlertsAsync(CancellationToken.None);
         await _mediator.Publish(new AlertEmptyedEvent());
-        _logger.LogInformation("已清空所有价格警报，共删除 {Count} 个警报", count);
+        _logger.LogInformation("{Count} Alarms empty successfully.", count);
     }
     private async Task HandleCreate(string json)
     {
@@ -131,7 +131,7 @@ public class AlertCommandHandler : ICommandHandler
         var alert = await _alertRepository.GetByIdAsync(id);
         if (alert == null)
         {
-            _logger.LogError("未找到报警 ID: {AlertId}", id);
+            _logger.LogError("Not found alarm: {AlertId}", id);
             return;
         }
         alert.Pause();
@@ -145,7 +145,7 @@ public class AlertCommandHandler : ICommandHandler
         var alert = await _alertRepository.GetByIdAsync(id);
         if (alert == null)
         {
-            _logger.LogError("未找到报警 ID: {AlertId}", id);
+            _logger.LogError("Not found alarm: {AlertId}", id);
             return;
         }
         alert.Resume();

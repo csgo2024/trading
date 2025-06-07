@@ -173,23 +173,23 @@ public class AlertNotificationService :
 
             var priceChange = kline.ClosePrice - kline.OpenPrice;
             var priceChangePercent = priceChange / kline.OpenPrice * 100;
-            var changeText = priceChange >= 0 ? "🟢 上涨" : "🔴 下跌";
+            var changeText = priceChange >= 0 ? "🟢 " : "🔴 ";
 
             var text = $"""
-            条件: {alert.Expression}
-            开盘价格: {kline.OpenPrice} 收盘价格: {kline.ClosePrice}
-            最高价格: {kline.HighPrice} 最低价格: {kline.LowPrice}
+            Expression: {alert.Expression}
+            Open: {kline.OpenPrice} Close: {kline.ClosePrice}
+            High: {kline.HighPrice} Low: {kline.LowPrice}
             {changeText}: {priceChange:F3} ({priceChangePercent:F3}%)
             """;
 
             var telegramScope = new TelegramLoggerScope
             {
-                Title = $"⏰ 警报触发: {alert.Symbol}-{alert.Interval}",
+                Title = $"⏰ Alarm Triggered: {alert.Symbol}-{alert.Interval}",
                 DisableNotification = false,
                 ReplyMarkup = new InlineKeyboardMarkup(
                 [
                     [
-                        InlineKeyboardButton.WithCallbackData("暂停", $"alert_pause_{alert.Id}")
+                        InlineKeyboardButton.WithCallbackData("Pause", $"alert_pause_{alert.Id}")
                     ]
                 ])
             };

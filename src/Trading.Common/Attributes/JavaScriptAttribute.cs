@@ -25,7 +25,6 @@ public class JavaScriptAttribute : ValidationAttribute
                 : ValidationResult.Success;
         }
 
-        // 验证JavaScript表达式
         if (!_evaluator.ValidateExpression(expression, out var errorMessage))
         {
             return new ValidationResult($"Invalid JavaScript expression: {errorMessage}");

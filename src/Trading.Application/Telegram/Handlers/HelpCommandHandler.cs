@@ -8,8 +8,7 @@ public class HelpCommandHandler : ICommandHandler
 {
     private readonly ILogger<HelpCommandHandler> _logger;
     public static string Command => "/help";
-
-    private readonly string _helpText = """
+    public const string HelpText = """
 *基础命令:*
 /help \- 显示此帮助信息
 /strategy \- [create\|delete\|pause\|resume] 策略管理
@@ -119,7 +118,9 @@ public class HelpCommandHandler : ICommandHandler
 
         using (_logger.BeginScope(telegramScope))
         {
-            await Task.Run(() => _logger.LogInformation(_helpText));
+#pragma warning disable CA2017 // Parameter count mismatch
+            await Task.Run(() => _logger.LogInformation(HelpText));
+#pragma warning restore CA2017 // Parameter count mismatch
         }
     }
 

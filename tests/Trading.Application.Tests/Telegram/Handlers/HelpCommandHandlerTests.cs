@@ -29,7 +29,7 @@ public class HelpCommandHandlerTests
             x => x.BeginScope(
                 It.Is<TelegramLoggerScope>(x => x.ParseMode == ParseMode.MarkdownV2)),
             Times.Once);
-        _loggerMock.VerifyLoggingOnce(LogLevel.Information, "基础命令");
+        _loggerMock.VerifyLoggingOnce(LogLevel.Information, "CloseBuy");
 
     }
     [Fact]
