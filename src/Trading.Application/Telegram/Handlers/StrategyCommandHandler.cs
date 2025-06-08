@@ -72,7 +72,7 @@ public class StrategyCommandHandler : ICommandHandler
             var (emoji, status) = strategy.Status.GetStatusInfo();
             var text = $"""
             {emoji} [{strategy.AccountType}-{strategy.StrategyType}-{strategy.Symbol}]: {status}
-            Internal: {strategy.Interval} / Open: {strategy.Open}
+            Internal: {strategy.Interval} / OpenPrice: {strategy.OpenPrice}
             TargetPrice: {strategy.TargetPrice} 💰
             Volatility: {strategy.Volatility:P2} 
             Amount: {strategy.Amount} / Quantity: {strategy.Quantity}

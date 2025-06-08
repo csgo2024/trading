@@ -32,9 +32,27 @@ public class CloseSellExecutor : BaseExecutor
         {
             var filterData = await accountProcessor.GetSymbolFilterData(strategy, cancellationToken);
             var closePrice = notification.Kline.ClosePrice;
+            strategy.OpenPrice = closePrice; // Update open price to the current close price
             strategy.TargetPrice = BinanceHelper.AdjustPriceByStepSize(closePrice * (1 + strategy.Volatility), filterData.Item1);
             strategy.Quantity = BinanceHelper.AdjustQuantityBystepSize(strategy.Amount / strategy.TargetPrice, filterData.Item2);
             await TryPlaceOrder(accountProcessor, strategy, cancellationToken);
         }
+    }
+
+    public override async Task ExecuteAsync(IAccountProcessor accountProcessor, Strategy strategy, CancellationToken ct)
+    {
+        if (strategy.AccountType == AccountType.Spot)
+        {
+            return;
+        }
+        if (strategy.OpenPrice is null || strategy.TargetPrice <= 0 || strategy.Quantity <= 0)
+        {
+            return;
+        }
+        if (strategy.OrderId is null)
+        {
+            await TryPlaceOrder(accountProcessor, strategy, ct);
+        }
+        await base.ExecuteAsync(accountProcessor, strategy, ct);
     }
 }
