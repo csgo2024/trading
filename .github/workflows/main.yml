@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   build-and-test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
 
     env:
       BUILD_CONFIGURATION: Release
@@ -49,3 +49,12 @@ jobs:
         path: ${{ runner.temp }}/*.trx
         reporter: dotnet-trx
         fail-on-error: false
+
+    - name: Build and Push Docker Image
+      run: |
+        echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+        docker buildx build \
+          --platform linux/arm64 \
+          -f src/Trading.API/Dockerfile \
+          -t ghcr.io/${{ github.actor }}/trading:latest \
+          --push .
