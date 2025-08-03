@@ -1,0 +1,126 @@
+trigger:
+  branches:
+    include:
+    - main
+    - master
+
+resources:
+  repositories:
+    - repository: templates
+      type: git
+      name: core-layer/ci-cd-templates
+      ref: refs/heads/main
+
+variables:
+  - group: github-credentials
+  - name: buildConfiguration
+    value: 'Release'
+
+stages:
+- stage: Tests
+  displayName: 'Tests'
+  pool:
+    vmImage: 'ubuntu-latest'
+  jobs:
+  - job: unit_test
+    displayName: 'Unit Tests'
+    steps:
+
+    - task: UseDotNet@2
+      displayName: 'Install .Net 9'
+      inputs:
+        packageType: 'sdk'
+        version: '9.0.x'
+        installationPath: $(Agent.ToolsDirectory)/dotnet
+
+    - task: DotNetCoreCLI@2
+      displayName: 'Run Tests with Code Coverage'
+      timeoutInMinutes: 10  # Set timeout for the test task
+      inputs:
+        command: 'test'
+        publishTestResults: true
+        projects: |
+          tests/**/*.Tests.csproj
+        arguments: >-
+          --configuration $(buildConfiguration)
+          --collect:"XPlat Code Coverage"
+          --logger:"console;verbosity=detailed"
+          -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
+
+    - task: reportgenerator@5
+      displayName: 'Generate Coverage Report'
+      inputs:
+        reports: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
+        targetdir: '$(Build.ArtifactStagingDirectory)/coveragereport'
+        tag: '$(Build.BuildNumber)_$(Build.SourceVersion)'
+        publishCodeCoverageResults: true
+
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Coverage Report'
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)/coveragereport'
+        ArtifactName: 'CodeCoverageReport'
+        publishLocation: 'Container'
+
+- stage: Builds
+  displayName: 'Builds'
+  dependsOn:
+    - Tests
+  condition: and(succeeded(), eq(variables['Build.SourceBranchName'], 'main'))
+  pool:
+    vmImage: 'ubuntu-latest'
+  jobs:
+
+  - template: semver-job.yml@templates
+    parameters:
+      minor: 1
+      environment: 'production'
+
+  - deployment: build_image
+    displayName: 'Build Docker Image'
+    environment: 'production'
+    dependsOn: semver
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - download: current
+            artifact: BuildVersion
+
+          - checkout: self
+            fetchDepth: 1
+
+          - script: |
+              echo $(GITHUB_TOKEN) | docker login ghcr.io -u $(GITHUB_USERNAME) --password-stdin
+            displayName: 'Login to GHCR'
+
+          - script: |
+              docker buildx create --use --name multiarch-builder
+              docker buildx inspect --bootstrap
+            displayName: 'Setup Buildx'
+
+          - script: |
+              source $(Pipeline.Workspace)/BuildVersion/version.env
+              docker buildx build \
+                --platform linux/arm64 \
+                -f src/Trading.API/Dockerfile \
+                -t ghcr.io/$(GITHUB_USERNAME)/trading:$BuildVersion \
+                -t ghcr.io/$(GITHUB_USERNAME)/trading:latest \
+                --push \
+                .
+            displayName: 'Build Docker image'
+            timeoutInMinutes: 20
+
+# https://stackoverflow.com/questions/59226055/setting-git-tag-from-azure-devops-build-pipeline-on-complete
+- stage: Release
+  displayName: 'Release'
+  dependsOn:
+    - Builds
+  condition: succeeded()
+  pool:
+    vmImage: 'ubuntu-latest'
+  jobs:
+    - job: create_git_tag
+      displayName: 'Create Git Tag'
+      steps:
+        - template: create-git-tag.yml@templates 
