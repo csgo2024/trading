@@ -154,7 +154,7 @@ public static class TestExtensions
                 It.IsAny<DateTime?>(),
                 It.IsAny<int?>(),
                 It.IsAny<CancellationToken>()))
-            .ReturnsAsync(CreateSuccessResult<IEnumerable<IBinanceKline>>([kline]));
+            .ReturnsAsync(CreateSuccessResult<IBinanceKline[]>([kline]));
     }
 
     public static void SetupFailedGetKlines(this Mock<IAccountProcessor> mockAccountProcessor)
@@ -168,7 +168,7 @@ public static class TestExtensions
                 It.IsAny<DateTime?>(),
                 It.IsAny<int?>(),
                 It.IsAny<CancellationToken>()))
-            .ReturnsAsync(CreateFailedResult<IEnumerable<IBinanceKline>>([kline], "Server Error."));
+            .ReturnsAsync(CreateFailedResult<IBinanceKline[]>([kline], "Server Error."));
     }
     public static void VerifyLoggingTimes<T>(this Mock<ILogger<T>> logger, LogLevel logLevel, string expectedMessage, Times time) where T : class
     {
@@ -207,7 +207,7 @@ public static class TestExtensions
 
     public static void SetupSuccessfulGetKlinesAsync(
         this Mock<IBinanceRestClientUsdFuturesApiExchangeData> mockExchangeData,
-        IEnumerable<IBinanceKline> klines)
+        IBinanceKline[] klines)
     {
         mockExchangeData
             .Setup(x => x.GetKlinesAsync(
@@ -383,7 +383,7 @@ public static class TestExtensions
     #region Spot API
     public static void SetupSuccessfulGetKlinesAsync(
         this Mock<IBinanceRestClientSpotApiExchangeData> mockExchangeData,
-        IEnumerable<IBinanceKline> klines)
+        IBinanceKline[] klines)
     {
         mockExchangeData
             .Setup(x => x.GetKlinesAsync(
