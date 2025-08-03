@@ -12,7 +12,7 @@ public interface IAccountProcessor
     Task<WebCallResult<BinanceOrderBase>> GetOrder(string symbol,
                                                    long? orderId,
                                                    CancellationToken ct);
-    Task<WebCallResult<IEnumerable<IBinanceKline>>> GetKlines(string symbol,
+    Task<WebCallResult<IBinanceKline[]>> GetKlines(string symbol,
                                                               KlineInterval interval,
                                                               DateTime? startTime = null,
                                                               DateTime? endTime = null,

@@ -49,7 +49,7 @@ public class FutureProcessor : IAccountProcessor
         return result;
     }
 
-    public async Task<WebCallResult<IEnumerable<IBinanceKline>>> GetKlines(string symbol,
+    public async Task<WebCallResult<IBinanceKline[]>> GetKlines(string symbol,
         KlineInterval interval,
         DateTime? startTime = null,
         DateTime? endTime = null,

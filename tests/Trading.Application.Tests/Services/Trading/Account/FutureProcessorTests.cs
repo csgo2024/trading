@@ -105,7 +105,7 @@ public class FutureProcessorTests
     public async Task GetKlines_ShouldPassThroughToClient()
     {
         // Arrange
-        var expectedKlines = new List<IBinanceKline>();
+        var expectedKlines = Array.Empty<IBinanceKline>();
         _mockExchangeData.SetupSuccessfulGetKlinesAsync(expectedKlines);
 
         // Act
