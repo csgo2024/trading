@@ -1,6 +1,6 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
+using System.Text.Json;
 using Telegram.Bot.Types.ReplyMarkups;
 using Trading.Application.Commands;
 using Trading.Application.Telegram.Logging;
@@ -109,7 +109,14 @@ public class AlertCommandHandler : ICommandHandler
     private async Task HandleCreate(string json)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(json, nameof(json));
-        var command = JsonConvert.DeserializeObject<CreateAlertCommand>(json) ?? throw new InvalidOperationException("Failed to parse alert parameters");
+        var options = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        };
+
+        var command = JsonSerializer.Deserialize<CreateAlertCommand>(json, options)
+                      ?? throw new InvalidOperationException("Failed to parse alert parameters");
+
         await _mediator.Send(command);
     }
 

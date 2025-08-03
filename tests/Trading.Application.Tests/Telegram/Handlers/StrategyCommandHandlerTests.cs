@@ -1,7 +1,7 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Newtonsoft.Json;
+using System.Text.Json;
 using Telegram.Bot.Types.Enums;
 using Trading.Application.Commands;
 using Trading.Application.Telegram.Handlers;
@@ -118,7 +118,7 @@ public class StrategyCommandHandlerTests
         var invalidJson = "invalid json";
 
         // Act & Assert
-        await Assert.ThrowsAsync<JsonReaderException>(
+        await Assert.ThrowsAsync<JsonException>(
             () => _handler.HandleAsync($"create {invalidJson}"));
     }
 

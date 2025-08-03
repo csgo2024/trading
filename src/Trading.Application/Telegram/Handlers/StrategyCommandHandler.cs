@@ -1,6 +1,6 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
+using System.Text.Json;
 using Telegram.Bot.Types.ReplyMarkups;
 using Trading.Application.Commands;
 using Trading.Application.Telegram.Logging;
@@ -74,7 +74,7 @@ public class StrategyCommandHandler : ICommandHandler
             {emoji} [{strategy.AccountType}-{strategy.StrategyType}-{strategy.Symbol}]: {status}
             Internal: {strategy.Interval} / OpenPrice: {strategy.OpenPrice}
             TargetPrice: {strategy.TargetPrice} 💰
-            Volatility: {strategy.Volatility:P2} 
+            Volatility: {strategy.Volatility:P2}
             Amount: {strategy.Amount} / Quantity: {strategy.Quantity}
             """;
             var buttons = strategy.Status switch
@@ -104,7 +104,13 @@ public class StrategyCommandHandler : ICommandHandler
             throw new ArgumentNullException(nameof(json));
         }
 
-        var command = JsonConvert.DeserializeObject<CreateStrategyCommand>(json) ?? throw new InvalidOperationException("Failed to parse strategy parameters");
+        var options = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        };
+
+        var command = JsonSerializer.Deserialize<CreateStrategyCommand>(json, options)
+                      ?? throw new InvalidOperationException("Failed to parse strategy parameters");
         await _mediator.Send(command);
     }
 
