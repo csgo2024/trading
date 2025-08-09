@@ -5,6 +5,9 @@ EXPOSE 8080
 FROM mcr.microsoft.com/dotnet/sdk:9.0-alpine AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
+
+COPY Directory.Packages.props .
+
 COPY ["src/Trading.API/Trading.API.csproj", "Trading.API/"]
 COPY ["src/Trading.Common/Trading.Common.csproj", "Trading.Common/"]
 COPY ["src/Trading.Domain/Trading.Domain.csproj", "Trading.Domain/"]
