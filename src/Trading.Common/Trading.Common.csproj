@@ -6,8 +6,8 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
     <ItemGroup>
-      <PackageReference Include="Jint" Version="4.4.1" />
-      <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.8" />
+      <PackageReference Include="Jint" />
+      <PackageReference Include="Microsoft.Extensions.Logging" />
     </ItemGroup>
 
 </Project>

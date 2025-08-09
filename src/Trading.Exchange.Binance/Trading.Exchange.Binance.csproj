@@ -4,7 +4,7 @@
     <ProjectReference Include="..\Trading.Exchange.Abstraction\Trading.Exchange.Abstraction.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Binance.Net" Version="11.4.0" />
+    <PackageReference Include="Binance.Net" />
   </ItemGroup>
 
   <PropertyGroup>
